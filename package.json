@@ -9,18 +9,39 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.50",
+    "@ai-sdk/google": "^0.0.48",
+    "@ai-sdk/mistral": "^0.0.40",
+    "@ai-sdk/openai": "^0.0.60",
+    "@clerk/nextjs": "^5.5.2",
+    "@stripe/react-stripe-js": "^2.8.0",
+    "@tiptap/extension-collaboration": "^2.6.6",
+    "@tiptap/extension-collaboration-cursor": "^2.6.6",
+    "@tiptap/extension-document": "^2.6.6",
+    "@tiptap/react": "^2.6.6",
+    "@tiptap/starter-kit": "^2.6.6",
+    "ai": "^3.3.37",
+    "firebase": "^10.13.1",
+    "next": "14.2.11",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.11"
+    "react-firebase-hooks": "^5.1.1",
+    "react-hot-toast": "^2.4.1",
+    "react-spinners": "^0.14.1",
+    "stripe": "^16.11.0",
+    "y-indexeddb": "^9.0.12",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.19",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
+    "@types/node": "^22.5.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.11",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.11"
+    "typescript": "^5"
   }
 }
