@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit"; // StarterKit provides the necessary schema
 import { Collaboration } from "@tiptap/extension-collaboration";
@@ -38,33 +38,28 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     };
   }, [docId]);
 
-  const editor = useEditor(
-    isReady
-      ? {
-          extensions: [
-            StarterKit, // Ensure StarterKit is included first for the base schema
-            Collaboration.configure({
-              document: ydocRef.current!,
-              field: "content", // Correctly sync the content field
-            }),
-            CollaborationCursor.configure({
-              provider: providerRef.current!,
-              user: {
-                name: user?.displayName || "Anonymous",
-                color: "#f783ac",
-              },
-            }),
-          ],
-          content: "",
-          onUpdate: ({ editor }) => {
-            const docRef = doc(collection(db, "docs"), docId);
-            const content = editor.getJSON();
-            setDoc(docRef, { content }, { merge: true });
-          },
-        }
-      : undefined, // Pass undefined if not ready
-    [isReady, docId, user?.displayName]
-  );
+  const editor = useEditor({
+    extensions: [
+      StarterKit, // Ensure StarterKit is included first for the base schema
+      // Collaboration.configure({
+      //   document: ydocRef.current!,
+      //   field: "content", // Correctly sync the content field
+      // }),
+      // CollaborationCursor.configure({
+      //   provider: providerRef.current!,
+      //   user: {
+      //     name: user?.displayName || "Anonymous",
+      //     color: "#f783ac",
+      //   },
+      // }),
+    ],
+    content: "",
+    onUpdate: ({ editor }) => {
+      const docRef = doc(collection(db, "docs"), docId);
+      const content = editor.getJSON();
+      setDoc(docRef, { content }, { merge: true });
+    },
+  });
 
   useEffect(() => {
     if (!editor) return;
@@ -92,10 +87,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   }
 
   return (
-    <EditorContent
-      editor={editor}
-      className="prose prose-sm max-w-none p-4 border border-gray-200 rounded-md shadow-md"
-    />
+    <Fragment>
+      {isReady ? <EditorContent
+        editor={editor}
+        className="prose prose-sm max-w-none p-4 border border-gray-200 rounded-md shadow-md p-2"
+      /> : <Fragment>Loading editor...</Fragment>}
+    </Fragment>
   );
 };
 
