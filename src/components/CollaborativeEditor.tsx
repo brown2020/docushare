@@ -1,21 +1,18 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit"; // StarterKit provides the necessary schema
-import { Collaboration } from "@tiptap/extension-collaboration";
-import { CollaborationCursor } from "@tiptap/extension-collaboration-cursor";
+
 import { IndexeddbPersistence } from "y-indexeddb";
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "@/firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 
 interface CollaborativeEditorProps {
   docId: string;
 }
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
-  const [user] = useAuthState(auth);
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebrtcProvider | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -88,10 +85,14 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
 
   return (
     <Fragment>
-      {isReady ? <EditorContent
-        editor={editor}
-        className="prose prose-sm max-w-none p-4 border border-gray-200 rounded-md shadow-md p-2"
-      /> : <Fragment>Loading editor...</Fragment>}
+      {isReady ? (
+        <EditorContent
+          editor={editor}
+          className="prose prose-sm max-w-none p-4 border border-gray-200 rounded-md shadow-md p-2"
+        />
+      ) : (
+        <Fragment>Loading editor...</Fragment>
+      )}
     </Fragment>
   );
 };
