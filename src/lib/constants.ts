@@ -1,1 +1,1 @@
-export const DOCUMENT_COLLECTION = "test";
+export const DOCUMENT_COLLECTION = "docs";
