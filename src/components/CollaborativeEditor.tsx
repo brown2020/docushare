@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit"; // StarterKit provides the necessa
 
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
+import { DOCUMENT_COLLECTION } from "@/lib/constants";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -27,7 +28,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       }
 
       debounceTimeout.current = setTimeout(() => {
-        const docRef = doc(collection(db, "docs"), docId);
+        const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
         const content = editor.getJSON();
         setDoc(docRef, { content }, { merge: true });
       }, 500);
@@ -41,7 +42,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   useEffect(() => {
     if (!editor) return;
 
-    const docRef = doc(collection(db, "docs"), docId);
+    const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
 
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       const data = snapshot.data();
