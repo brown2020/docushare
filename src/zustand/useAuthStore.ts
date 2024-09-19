@@ -17,6 +17,7 @@ interface AuthState {
   lastSignIn: Timestamp | null;
   premium: boolean;
   credits: number;
+  docs: { id: string; name?: string }[];
 }
 
 interface AuthActions {
@@ -41,6 +42,7 @@ const defaultAuthState: AuthState = {
   lastSignIn: null,
   premium: false,
   credits: 0,
+  docs: [],
 };
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
