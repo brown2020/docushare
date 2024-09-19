@@ -2,66 +2,47 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit"; // StarterKit provides the necessary schema
 
-import { IndexeddbPersistence } from "y-indexeddb";
-import * as Y from "yjs";
-import { WebrtcProvider } from "y-webrtc";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
+import { DOCUMENT_COLLECTION } from "@/lib/constants";
 
 interface CollaborativeEditorProps {
   docId: string;
 }
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
-  const ydocRef = useRef<Y.Doc | null>(null);
-  const providerRef = useRef<WebrtcProvider | null>(null);
   const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (ydocRef.current) {
-      return;
-    }
-
-    ydocRef.current = new Y.Doc();
-    providerRef.current = new WebrtcProvider(docId, ydocRef.current);
-
-    new IndexeddbPersistence(docId, ydocRef.current);
-
-    setIsReady(true);
-
-    return () => {
-      providerRef.current?.destroy();
-      ydocRef.current?.destroy();
-    };
-  }, [docId]);
+  const [userPosition, setUserPosition] = useState({ from: 0, to: 0 });
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit, // Ensure StarterKit is included first for the base schema
-      // Collaboration.configure({
-      //   document: ydocRef.current!,
-      //   field: "content", // Correctly sync the content field
-      // }),
-      // CollaborationCursor.configure({
-      //   provider: providerRef.current!,
-      //   user: {
-      //     name: user?.displayName || "Anonymous",
-      //     color: "#f783ac",
-      //   },
-      // }),
     ],
     content: "",
     onUpdate: ({ editor }) => {
-      const docRef = doc(collection(db, "docs"), docId);
-      const content = editor.getJSON();
-      setDoc(docRef, { content }, { merge: true });
+      const { from, to } = editor.state.selection;
+      setUserPosition({ from, to });
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+
+      debounceTimeout.current = setTimeout(() => {
+        const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
+        const content = editor.getJSON();
+        setDoc(docRef, { content }, { merge: true });
+      }, 500);
     },
   });
 
   useEffect(() => {
+    setIsReady(editor ? true : false);
+  }, [editor])
+
+  useEffect(() => {
     if (!editor) return;
 
-    const docRef = doc(collection(db, "docs"), docId);
+    const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
 
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       const data = snapshot.data();
@@ -70,7 +51,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         data.content &&
         JSON.stringify(data.content) !== JSON.stringify(editor.getJSON())
       ) {
-        editor.commands.setContent(data.content);
+        editor.chain().setContent(data.content).run();
+        // editor.chain().setContent(data.content).focus(userPosition.from).run();
+        
       }
     });
 
@@ -88,7 +71,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       {isReady ? (
         <EditorContent
           editor={editor}
-          className="prose prose-sm max-w-none p-4 border border-gray-200 rounded-md shadow-md p-2"
+          className="prose prose-sm max-w-none border border-gray-200 rounded-md shadow-md p-2"
         />
       ) : (
         <Fragment>Loading editor...</Fragment>
