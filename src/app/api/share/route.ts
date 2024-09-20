@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { db } from '@/firebase/firebaseAdminConfig';
+import { FieldValue } from 'firebase-admin/firestore'
 import { auth } from '@clerk/nextjs/server';
 import { DOCUMENT_COLLECTION } from '@/lib/constants';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 
-const firestore = getFirestore();
 export const POST = async (req: NextRequest) => {
   try {
     const { userId } = auth()
@@ -29,7 +29,7 @@ export const POST = async (req: NextRequest) => {
     const user = userList.data[0];
 
     // Fetch the document to update
-    const docRef = firestore.collection(DOCUMENT_COLLECTION).doc(documentId);
+    const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
     const docSnapshot = await docRef.get();
     if (!docSnapshot.exists) {
       return NextResponse.json({ status: false, message: 'Document not found.' });
@@ -62,7 +62,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     // Fetch the document
-    const docRef = firestore.collection(DOCUMENT_COLLECTION).doc(documentId);
+    const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
     const docSnapshot = await docRef.get();
     if (!docSnapshot.exists) {
       return new Response('Document not found.', { status: 404 });
