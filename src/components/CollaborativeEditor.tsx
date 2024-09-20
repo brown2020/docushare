@@ -12,7 +12,7 @@ interface CollaborativeEditorProps {
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const [isReady, setIsReady] = useState(false);
-  const [userPosition, setUserPosition] = useState({ from: 0, to: 0 });
+  // const [userPosition, setUserPosition] = useState({ from: 0, to: 0 });
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const editor = useEditor({
@@ -21,8 +21,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     ],
     content: "",
     onUpdate: ({ editor }) => {
-      const { from, to } = editor.state.selection;
-      setUserPosition({ from, to });
+      // const { from, to } = editor.state.selection;
+      // setUserPosition({ from, to });
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
       }

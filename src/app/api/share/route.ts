@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldPath, FieldValue, getFirestore } from 'firebase-admin/firestore'
-// import { db } from '../../../firebaseConfig'; // Adjust the import according to your project structure
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { auth } from '@clerk/nextjs/server';
-import { NextApiResponse } from 'next';
-import { db } from '@/firebase/firebaseAdminConfig';
 import { DOCUMENT_COLLECTION } from '@/lib/constants';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 
 const firestore = getFirestore();
-export const POST = async (req: NextRequest, res: NextApiResponse) => {
+export const POST = async (req: NextRequest) => {
   try {
     const { userId } = auth()
 
@@ -46,11 +43,12 @@ export const POST = async (req: NextRequest, res: NextApiResponse) => {
     return NextResponse.json({ status: true });
 
   } catch (error) {
+    console.log("Error sharing document:", error);
     return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
   }
 };
 
-export const GET = async (req: NextRequest, res: NextApiResponse) => {
+export const GET = async (req: NextRequest) => {
   try {
     const { userId } = auth();
 
@@ -83,6 +81,7 @@ export const GET = async (req: NextRequest, res: NextApiResponse) => {
 
     return NextResponse.json({ emails });
   } catch (error) {
+    console.log("Error fetching user emails:", error);
     return NextResponse.json({ error: 'Failed to fetch user emails' }, { status: 500 });
   } 
 }

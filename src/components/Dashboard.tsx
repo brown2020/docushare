@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
 import CollaborativeEditor from "./CollaborativeEditor";
-import { CircleX, LoaderCircle, Pencil, Save, Share, Share2, Trash2 } from 'lucide-react';
+import { CircleX, LoaderCircle, Pencil, Save, Share2, Trash2 } from 'lucide-react';
 import DeleteDocument from "./Models/DeleteDocument";
 import ShereDocument from "@/components/Models/ShereDocument";
 import { useAuth } from "@clerk/nextjs";
@@ -19,7 +19,7 @@ interface DocumentSchema {
 }
 
 const Dashboard = () => {
-  const { isLoaded, userId, sessionId, getToken } = useAuth();
+  const { isLoaded } = useAuth();
   const [user] = useAuthState(auth);
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
@@ -39,6 +39,7 @@ const Dashboard = () => {
       setFetching(false);
       setDocuments(data);
     } catch (error) {
+      console.log("Error fetching documents:", error);
       setFetching(false);
       toast.error("Something went wrong.");
     }
@@ -129,6 +130,7 @@ const Dashboard = () => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.log("Error sharing document:", error);
       toast.error("Something went wrong.");
       setProcessing(false);
     }

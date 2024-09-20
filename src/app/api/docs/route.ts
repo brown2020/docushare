@@ -1,15 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { collection, getDocs } from 'firebase/firestore';
-import { FieldPath } from 'firebase-admin/firestore'
-// import { db } from '../../../firebaseConfig'; // Adjust the import according to your project structure
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { NextApiResponse } from 'next';
 import { db } from '@/firebase/firebaseAdminConfig';
 import { DOCUMENT_COLLECTION } from '@/lib/constants';
 
-export const GET = async (req: NextRequest, res: NextApiResponse) => {
+export const GET = async () => {
   try {
-    const { userId, getToken, } = auth()
+    const { userId } = auth()
 
     if (!userId) {
       return new Response('User is not signed in.', { status: 401 })
@@ -35,6 +31,8 @@ export const GET = async (req: NextRequest, res: NextApiResponse) => {
     return NextResponse.json([...documents, ...sharedDocuments]);
 
   } catch (error) {
+    console.log("Error fetching documents:", error);
+    
     return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
   }
 };
