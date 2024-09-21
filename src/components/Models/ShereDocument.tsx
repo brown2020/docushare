@@ -1,4 +1,4 @@
-import { LoaderCircle, Mail, TriangleAlert, X } from "lucide-react";
+import { LoaderCircle, Mail, X } from "lucide-react";
 import PopupModel from "./PopupModel";
 import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -29,6 +29,7 @@ export default function ShereDocument({ setShereDocument, handleShereDocument, d
             setFetching(false);
             setEmailList(data.emails);
         } catch (error) {
+            console.log("Error fetching documents:", error);
             setFetching(false);
             toast.error("Something went wrong.");
         }

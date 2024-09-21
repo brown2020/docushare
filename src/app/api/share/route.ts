@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldPath, FieldValue, getFirestore } from 'firebase-admin/firestore'
-// import { db } from '../../../firebaseConfig'; // Adjust the import according to your project structure
-import { auth } from '@clerk/nextjs/server';
-import { NextApiResponse } from 'next';
 import { db } from '@/firebase/firebaseAdminConfig';
+import { FieldValue } from 'firebase-admin/firestore'
+import { auth } from '@clerk/nextjs/server';
 import { DOCUMENT_COLLECTION } from '@/lib/constants';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 
-const firestore = getFirestore();
-export const POST = async (req: NextRequest, res: NextApiResponse) => {
+export const POST = async (req: NextRequest) => {
   try {
     const { userId } = auth()
 
@@ -32,7 +29,7 @@ export const POST = async (req: NextRequest, res: NextApiResponse) => {
     const user = userList.data[0];
 
     // Fetch the document to update
-    const docRef = firestore.collection(DOCUMENT_COLLECTION).doc(documentId);
+    const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
     const docSnapshot = await docRef.get();
     if (!docSnapshot.exists) {
       return NextResponse.json({ status: false, message: 'Document not found.' });
@@ -46,11 +43,12 @@ export const POST = async (req: NextRequest, res: NextApiResponse) => {
     return NextResponse.json({ status: true });
 
   } catch (error) {
+    console.log("Error sharing document:", error);
     return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
   }
 };
 
-export const GET = async (req: NextRequest, res: NextApiResponse) => {
+export const GET = async (req: NextRequest) => {
   try {
     const { userId } = auth();
 
@@ -64,7 +62,7 @@ export const GET = async (req: NextRequest, res: NextApiResponse) => {
     }
 
     // Fetch the document
-    const docRef = firestore.collection(DOCUMENT_COLLECTION).doc(documentId);
+    const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
     const docSnapshot = await docRef.get();
     if (!docSnapshot.exists) {
       return new Response('Document not found.', { status: 404 });
@@ -83,6 +81,7 @@ export const GET = async (req: NextRequest, res: NextApiResponse) => {
 
     return NextResponse.json({ emails });
   } catch (error) {
+    console.log("Error fetching user emails:", error);
     return NextResponse.json({ error: 'Failed to fetch user emails' }, { status: 500 });
   } 
 }

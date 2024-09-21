@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
 import CollaborativeEditor from "./CollaborativeEditor";
-import { CircleX, LoaderCircle, Pencil, Save, Share, Share2, Trash2 } from 'lucide-react';
+import { CircleX, LoaderCircle, Pencil, Save, Share2, Trash2 } from 'lucide-react';
 import DeleteDocument from "./Models/DeleteDocument";
 import ShereDocument from "@/components/Models/ShereDocument";
 import { useAuth } from "@clerk/nextjs";
@@ -19,7 +19,7 @@ interface DocumentSchema {
 }
 
 const Dashboard = () => {
-  const { isLoaded, userId, sessionId, getToken } = useAuth();
+  const { isLoaded } = useAuth();
   const [user] = useAuthState(auth);
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
@@ -39,6 +39,7 @@ const Dashboard = () => {
       setFetching(false);
       setDocuments(data);
     } catch (error) {
+      console.log("Error fetching documents:", error);
       setFetching(false);
       toast.error("Something went wrong.");
     }
@@ -56,6 +57,7 @@ const Dashboard = () => {
   }, [activeRename]);
 
   const handleCreateNewDocument = async () => {
+    setFetching(true);
     const docRef = await addDoc(collection(db, DOCUMENT_COLLECTION), {
       name: "Untitled Document",
       content: "",
@@ -67,6 +69,7 @@ const Dashboard = () => {
       { id: docRef.id, name: "Untitled Document" },
     ]);
     setActiveDocId(docRef.id);
+    setFetching(false);
   };
 
   const handleActiveDocument = (docId: string) => {
@@ -129,6 +132,7 @@ const Dashboard = () => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.log("Error sharing document:", error);
       toast.error("Something went wrong.");
       setProcessing(false);
     }
@@ -163,16 +167,18 @@ const Dashboard = () => {
   const sharedDocs = () => documents.filter(doc => doc.isShared)
 
   return (
-    <div className="flex h-screen">
-      <div className="w-1/4 bg-gray-100 p-4 border-r">
-        <h2 className="text-lg font-semibold mb-4 flex justify-between">Documents <LoaderCircle className={`animate-spin ${fetching ? "opacity-100" : 'opacity-0'}`} /> </h2>
-        <button
-          onClick={handleCreateNewDocument}
-          className="w-full px-4 py-2 mb-4 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          New Document
-        </button>
-        <ul className="z-9">
+    <div className="flex h-full">
+      <div className="w-1/4 bg-gray-100 p-4 border-r flex flex-col">
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex justify-between">Documents <LoaderCircle className={`animate-spin transition ${fetching ? "opacity-100" : 'opacity-0'}`} /> </h2>
+          <button
+            onClick={handleCreateNewDocument}
+            className="w-full px-4 py-2 mb-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            New Document
+          </button>
+        </div>
+        <ul className="z-9 grow overflow-y-auto">
           {documents.filter(doc => !doc.isShared).map((doc) => documentObject(doc))}
           {
             sharedDocs().length > 0 && <Fragment>
@@ -183,11 +189,14 @@ const Dashboard = () => {
         </ul>
       </div>
 
-      <div className="flex-1 p-4">
+      <div className="grow px-4">
         {activeDocId ? (
-          <CollaborativeEditor key={activeDocId} docId={activeDocId} />
+          <div key={activeDocId} className="flex flex-col h-full gap-2">
+          <CollaborativeEditor docId={activeDocId} />
+          </div>
+            
         ) : (
-          <div className="text-center text-gray-500">
+          <div className="text-center text-gray-500 py-4">
             Select or create a document to start editing.
           </div>
         )}
