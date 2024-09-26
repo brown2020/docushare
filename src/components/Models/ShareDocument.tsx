@@ -3,15 +3,15 @@ import PopupModel from "./PopupModel";
 import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-interface ShereDocumentProps {
-    setShereDocument: React.Dispatch<React.SetStateAction<string | null>>;
-    handleShereDocument: (email: string) => void;
+interface ShareDocumentProps {
+    setShareDocument: React.Dispatch<React.SetStateAction<string | null>>;
+    handleShareDocument: (email: string) => void;
     documentName: string;
     processing: boolean;
     documentId: string;
 }
 
-export default function ShereDocument({ setShereDocument, handleShereDocument, documentName, processing, documentId }: ShereDocumentProps) {
+export default function ShareDocument({ setShareDocument, handleShareDocument, documentName, processing, documentId }: ShareDocumentProps) {
 
     const [email, setEmail] = useState("");
     const [fetching, setFetching] = useState(false);
@@ -19,7 +19,7 @@ export default function ShereDocument({ setShereDocument, handleShereDocument, d
 
     useEffect(() => {
         fetchSearched();
-    }, [])
+    })
 
     const fetchSearched = async () => {
         setFetching(true);
@@ -38,11 +38,11 @@ export default function ShereDocument({ setShereDocument, handleShereDocument, d
     return (
         <div>
             <PopupModel isOpen={true} onClose={() => {
-                if (!processing) setShereDocument(null)
+                if (!processing) setShareDocument(null)
             }}>
                 <div className="flex gap-2 border-b justify-between py-3 px-3">
                     <h2>Share Document <strong>{documentName}</strong></h2>
-                    <X onClick={() => setShereDocument(null)} color="#9CA3AF" size={22} />
+                    <X onClick={() => setShareDocument(null)} color="#9CA3AF" size={22} />
                 </div>
 
                 <div className="px-3 pb-3 w-full">
@@ -66,9 +66,9 @@ export default function ShereDocument({ setShereDocument, handleShereDocument, d
                         <hr />
                     </div>
                     <div className="flex gap-2 w-full mt-2">
-                        <button disabled={processing} onClick={() => setShereDocument(null)} className="w-full border rounded-lg py-1">Cancel</button>
-                        <button disabled={processing} onClick={() => handleShereDocument(email)} className="w-full border rounded-lg py-1 bg-red-300 border-red-300 hover:bg-red-400 hover:border-red-400">
-                            {processing ? 'Wait...' : 'Shere'}
+                        <button disabled={processing} onClick={() => setShareDocument(null)} className="w-full border rounded-lg py-1">Cancel</button>
+                        <button disabled={processing} onClick={() => handleShareDocument(email)} className="w-full border rounded-lg py-1 bg-red-300 border-red-300 hover:bg-red-400 hover:border-red-400">
+                            {processing ? 'Wait...' : 'Share'}
                         </button>
                     </div>
                 </div>

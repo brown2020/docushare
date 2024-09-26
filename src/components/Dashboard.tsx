@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, useCallback } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
 import CollaborativeEditor from "./CollaborativeEditor";
 import { CircleX, LoaderCircle, Pencil, Save, Share2, Trash2 } from 'lucide-react';
 import DeleteDocument from "./Models/DeleteDocument";
-import ShereDocument from "@/components/Models/ShereDocument";
+import ShareDocument from "@/components/Models/ShareDocument";
 import { useAuth } from "@clerk/nextjs";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import toast from "react-hot-toast";
@@ -25,12 +25,12 @@ const Dashboard = () => {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [activeRename, setActiveRename] = useState<string | null>(null);
   const [deleteDocument, setDeleteDocument] = useState<string | null>(null);
-  const [shereDocument, setShereDocument] = useState<string | null>(null);
+  const [shareDocument, setShareDocument] = useState<string | null>(null);
   const [docName, setDocName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     if (!isLoaded) return;
     setFetching(true);
     try {
@@ -43,12 +43,12 @@ const Dashboard = () => {
       setFetching(false);
       toast.error("Something went wrong.");
     }
-  };
+  }, [isLoaded]);
 
   useEffect(() => {
     if (!user) return;
     fetchDocuments();
-  }, [user]);
+  }, [user, fetchDocuments]);
 
   useEffect(() => {
     if (activeRename && inputRef.current) {
@@ -105,7 +105,7 @@ const Dashboard = () => {
     setDeleteDocument(null);
   }
 
-  const handleShereDocument = async (email: string) => {
+  const handleShareDocument = async (email: string) => {
     if (!email) {
       toast.error('Email address is required.')
       return;
@@ -119,14 +119,14 @@ const Dashboard = () => {
         },
         body: JSON.stringify({
           email,
-          documentId: shereDocument
+          documentId: shareDocument
         })
       });
       setProcessing(false);
       const data = await response.json();
 
       if (data.status) {
-        setShereDocument(null);
+        setShareDocument(null);
         toast.success("Document shared successfully");
       } else {
         toast.error(data.message);
@@ -150,7 +150,7 @@ const Dashboard = () => {
       {activeRename != doc.id &&
         <div className="flex gap-2">
           <Pencil className="cursor-pointer" onClick={() => handleActiveRename(doc.id)} color="#9CA3AF" size={22} />
-          <Share2 className="cursor-pointer" onClick={() => { setShereDocument(doc.id); setDocName(doc.name || "Untitled") }} color="#9CA3AF" size={22} />
+          <Share2 className="cursor-pointer" onClick={() => { setShareDocument(doc.id); setDocName(doc.name || "Untitled") }} color="#9CA3AF" size={22} />
           <Trash2 className="cursor-pointer" onClick={() => setDeleteDocument(doc.id)} color="#9CA3AF" size={22} />
         </div>
       }
@@ -202,7 +202,7 @@ const Dashboard = () => {
         )}
         {/* delete pop up */}
         {deleteDocument && <DeleteDocument setDeleteDoc={setDeleteDocument} deleteDocumentHandle={deleteDocumentHandle} />}
-        {shereDocument && <ShereDocument documentId={shereDocument} processing={processing} documentName={docName} setShereDocument={setShereDocument} handleShereDocument={handleShereDocument} />}
+        {shareDocument && <ShareDocument documentId={shareDocument} processing={processing} documentName={docName} setShareDocument={setShareDocument} handleShareDocument={handleShareDocument} />}
       </div>
     </div>
   );

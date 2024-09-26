@@ -70,7 +70,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       setProcessing(false);
     }
     
-  }, [processing, isUpdating, editor, docId]);
+  }, [isUpdating, editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -81,7 +81,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     return () => {
       unsubscribe();
     };
-  }, [editor, docId]);
+  }, [editor, docId, updateContent]);
 
   if (!editor) {
     return <div>Loading editor...</div>;

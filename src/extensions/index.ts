@@ -12,6 +12,7 @@ export { TextStyle } from '@tiptap/extension-text-style'
 export { Subscript } from '@tiptap/extension-subscript'
 export { Superscript } from '@tiptap/extension-superscript'
 export { TextAlign } from '@tiptap/extension-text-align'
+export { Markdown } from 'tiptap-markdown'
 
 
 export { Link } from './Link'
