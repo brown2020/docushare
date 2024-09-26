@@ -1,7 +1,31 @@
 import { Editor } from '@tiptap/react'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import API from '../../../../lib/api'
+import toast from 'react-hot-toast';
+import { Slice } from '@tiptap/pm/model';
 
 export const useTextmenuCommands = (editor: Editor) => {
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiContent, setAiContent] = useState("");
+
+  const aiCommand = useCallback( async (option: string, command = '') => {
+    setAiContent("");
+    console.info("response.status 1", aiContent);
+
+    const slice: Slice = editor.state.selection.content();
+    const text:string = editor.storage.markdown.serializer.serialize(slice.content);
+
+    setAiProcessing(true);
+    const response = await API.aiGenerate(option, text, command)
+    setAiProcessing(false);
+    if (response.status) {
+      setAiContent(response.data!);
+      console.log("response.status 2", response.status);
+    } else {
+      toast.error(`Something went wrong. Please try again later.`);
+    }
+  }, [editor, aiContent])
+
   const onBold = useCallback(() => editor.chain().focus().toggleBold().run(), [editor])
   const onItalic = useCallback(() => editor.chain().focus().toggleItalic().run(), [editor])
   const onStrike = useCallback(() => editor.chain().focus().toggleStrike().run(), [editor])
@@ -25,12 +49,15 @@ export const useTextmenuCommands = (editor: Editor) => {
   const onSimplify = useCallback(() => editor.chain().focus().run(), [editor])
   const onEmojify = useCallback(() => editor.chain().focus().run(), [editor])
   const onCompleteSentence = useCallback(() => editor.chain().focus().run(), [editor])
-  const onFixSpelling = useCallback(() => editor.chain().focus().run(), [editor])
-  const onMakeLonger = useCallback(() => editor.chain().focus().run(), [editor])
-  const onMakeShorter = useCallback(() => editor.chain().focus().run(), [editor])
+  const onFixSpelling = useCallback(() => aiCommand('fix'), [aiCommand])
+  const onMakeLonger = useCallback(async () => aiCommand('longer'), [aiCommand])
+  const onMakeShorter = useCallback(() => aiCommand('shorter'), [aiCommand])
   const onTldr = useCallback(() => editor.chain().focus().run(), [editor])
   const onTone = useCallback(() => editor.chain().focus().run(), [editor])
   const onTranslate = useCallback(() => editor.chain().focus().run(), [editor])
+  // const onCitation = useCallback((details:string) => editor.chain().focus().setCitation(details).run(), [editor])
+  const onImprove = useCallback(() => aiCommand('improve'), [aiCommand])
+  const onContinue = useCallback(() => aiCommand('continue'), [aiCommand])
   // const onChangeColor = useCallback((color: string) => editor.chain().setColor(color).run(), [editor])
   // const onClearColor = useCallback(() => editor.chain().focus().unsetColor().run(), [editor])
 
@@ -46,6 +73,12 @@ export const useTextmenuCommands = (editor: Editor) => {
   // const onTldr = useCallback(() => editor.chain().focus().aiTldr().run(), [editor])
   // const onTone = useCallback((tone: string) => editor.chain().focus().aiAdjustTone(tone).run(), [editor])
   // const onTranslate = useCallback((language: Language) => editor.chain().focus().aiTranslate(language).run(), [editor])
+  
+  const onCustomAiInput = useCallback((input?: string) => {
+    // editor.chain().focus().aiTranslate(language).run()
+    aiCommand('zap', input)
+  }, [aiCommand])
+
   const onLink = useCallback(
     (url: string, inNewTab?: boolean) =>
       editor
@@ -76,6 +109,37 @@ export const useTextmenuCommands = (editor: Editor) => {
     [editor],
   )
 
+  const onReplaceAiContent = useCallback(() => {
+    const selection = editor.view.state.selection;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(
+        {
+          from: selection.from,
+          to: selection.to,
+        },
+        aiContent,
+      )
+      .run();
+    setAiContent('');
+  }, [editor, aiContent])
+
+  const onAppendAiContent = useCallback(() => {
+    const selection = editor.view.state.selection;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(selection.to + 1, aiContent)
+      .run();
+    setAiContent('');
+  }, [editor, aiContent]);
+
+  const onDiscardAiContent = useCallback(() => {
+    setAiContent('');
+  }, []);
+
+
   return {
     onBold,
     onItalic,
@@ -105,5 +169,14 @@ export const useTextmenuCommands = (editor: Editor) => {
     onTone,
     onTranslate,
     onLink,
+    aiProcessing,
+    aiCommand,
+    aiContent,
+    onAppendAiContent,
+    onDiscardAiContent,
+    onReplaceAiContent,
+    onImprove,
+    onContinue,
+    onCustomAiInput
   }
 }

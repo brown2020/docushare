@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import React from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'ghost'
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'ghost' | 'icon'
 export type ButtonSize = 'medium' | 'small' | 'icon' | 'iconSmall'
 
 export type ButtonProps = {

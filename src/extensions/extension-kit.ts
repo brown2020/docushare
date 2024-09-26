@@ -13,7 +13,8 @@ import {
   Subscript,
   Superscript,
   TextAlign,
-  FontSize
+  FontSize,
+  Markdown
 } from '.'
 import { AnyExtension } from '@tiptap/core'
 
@@ -39,6 +40,7 @@ export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
   HighLightSelection,
   FontFamily,
   Typography,
+  Markdown,
   TextStyle,
   Link.configure({
     openOnClick: false,
