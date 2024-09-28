@@ -15,7 +15,6 @@ export async function POST(req){
   // await new Promise((resolve) => setTimeout(resolve, 3000));
 
   // return new Response(JSON.stringify({ response: demotext }))
-  console.log("IS_UAT", process.env.IS_UAT);
   
   if(process.env.IS_UAT == "1"){
     return new Response(JSON.stringify({ response: `# Gandhi Jayanti: A Reflection on the Life and Legacy of Mahatma Gandhi` }))
