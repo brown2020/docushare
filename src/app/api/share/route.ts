@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/firebase/firebaseAdminConfig';
 import { FieldValue } from 'firebase-admin/firestore'
 import { auth } from '@clerk/nextjs/server';
-import { DOCUMENT_COLLECTION } from '@/lib/constants';
+import { DOCUMENT_COLLECTION, USER_COLLECTION } from '@/lib/constants';
 import { clerkClient } from '@clerk/clerk-sdk-node';
 
 export const POST = async (req: NextRequest) => {
@@ -51,6 +51,7 @@ export const POST = async (req: NextRequest) => {
 export const GET = async (req: NextRequest) => {
   try {
     const { userId } = auth();
+
 
     if (!userId) {
       return new Response('User is not signed in.', { status: 401 });
