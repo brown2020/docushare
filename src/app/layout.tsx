@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "ShareDoc AI",
+  title: "Docushare AI",
   description: "Share and collaborate on docs with AI tools",
 };
 
