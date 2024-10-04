@@ -1,28 +1,33 @@
 "use server";
 
 import { createStreamableValue } from "ai/rsc";
-import { CoreMessage, streamText } from "ai";
+import { CoreMessage, generateText, streamText } from "ai";
 import { createOpenAI, openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+import { createMistral, mistral } from "@ai-sdk/mistral";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { AI_MODEL_CLAUDE, AI_MODEL_GEMINI, AI_MODEL_GPT, AI_MODEL_LLAMA, AI_MODEL_MISTRAL, AI_MODELS_LIST, DEFAULT_AI_MODEL, MAX_OUTPUT_TOKEN, RESPONSE_CODE, USER_COLLECTION } from "@/lib/constants";
 
-const fireworks = createOpenAI({
-  apiKey: process.env.FIREWORKS_API_KEY ?? "",
-  baseURL: "https://api.fireworks.ai/inference/v1",
-});
+async function getModel(modelName: string, api_key: string | null = null) {
+  let aiOptions = api_key ? { apiKey: api_key } : {};
 
-async function getModel(modelName: string) {
   switch (modelName) {
-    case "gpt-4o":
-      return openai("gpt-4o");
-    case "gemini-1.5-pro":
-      return google("models/gemini-1.5-pro-latest");
-    case "mistral-large":
-      return mistral("mistral-large-latest");
-    case "claude-3-5-sonnet":
-      return anthropic("claude-3-5-sonnet-20240620");
+    case AI_MODEL_GPT:
+      const openai11 = createOpenAI(aiOptions);
+      return openai11("gpt-4o");
+    case AI_MODEL_GEMINI:
+      return createGoogleGenerativeAI(aiOptions)(
+        "models/gemini-1.5-pro-latest"
+      );
+    case AI_MODEL_MISTRAL:
+      return createMistral(aiOptions)("mistral-large-latest");
+    case AI_MODEL_CLAUDE:
+      return createAnthropic(aiOptions)("claude-3-5-sonnet-20240620");
     case "llama-v3p1-405b":
+      const fireworks = createOpenAI({
+        ...aiOptions,
+        baseURL: "https://api.fireworks.ai/inference/v1",
+      });
       return fireworks("accounts/fireworks/models/llama-v3p1-405b-instruct");
 
     default:
@@ -30,12 +35,14 @@ async function getModel(modelName: string) {
   }
 }
 
-async function generateResponse(
+
+export async function generateResponse(
   systemPrompt: string,
   userPrompt: string,
-  modelName: string
+  modelName: string,
+  api_key: string | null = null,
 ) {
-  const model = await getModel(modelName);
+  const model = await getModel(modelName, api_key);
 
   const messages: CoreMessage[] = [
     {
@@ -48,13 +55,72 @@ async function generateResponse(
     },
   ];
 
-  const result = await streamText({
-    model,
-    messages,
-  });
+  if(process.env.IS_UAT == "1"){
+//     const stream = createStreamableValue('# Gandhi Jayanti: A Reflection on the Life and Legacy of Mahatma Gandhi');
+//     stream.value.
+//     setTimeout(() => {
+//       stream.update(`## The Significance of Gandhi Jayanti
+  
+//     Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
+    
+//     ### Activities on Gandhi Jayanti
+    
+//     - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
+//     - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
+//     - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
+//     - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+    
+//     ## Gandhi's Philosophy and Its Global Impact`);
+//   }, 1000);
+//     setTimeout(() => {
+//       stream.done(`## The Significance of Gandhi Jayanti
+  
+// Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
 
-  const stream = createStreamableValue(result.textStream);
-  return stream.value;
+// ### Activities on Gandhi Jayanti
+
+// - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
+// - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
+// - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
+// - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+
+// ## Gandhi's Philosophy and Its Global Impact`);
+//     }, 2000);
+  
+//     return stream.value;
+    return `## The Significance of Gandhi Jayanti
+  
+Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
+
+### Activities on Gandhi Jayanti
+
+- **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
+- **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
+- **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
+- **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+
+## Gandhi's Philosophy and Its Global Impact`;
+  }else{
+    // const result = await streamText({
+    //   model,
+    //   messages,
+    //   maxTokens: MAX_OUTPUT_TOKEN
+    // });
+    // const stream = createStreamableValue(result.textStream);
+    // return stream.value
+    const { text } = await generateText({
+      model,
+      system: systemPrompt,
+      prompt: userPrompt,
+      maxTokens: MAX_OUTPUT_TOKEN,
+      temperature: 0.7,
+      topP: 1,
+      frequencyPenalty: 0,
+      presencePenalty: 0,
+    });
+    return text;
+  }
+
 }
 
 export async function generateSummary(

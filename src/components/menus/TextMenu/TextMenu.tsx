@@ -32,15 +32,9 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
   return (
     <Toolbar.Wrapper className='relative z-[2] mb-2 !border-white'>
       <AIDropdown
-      //  onCompleteSentence={commands.onCompleteSentence}
-      //  onEmojify={commands.onEmojify}
        onFixSpelling={commands.onFixSpelling}
        onMakeLonger={commands.onMakeLonger}
        onMakeShorter={commands.onMakeShorter}
-      //  onSimplify={commands.onCitation}
-      //  onTldr={commands.onTldr}
-      //  onTone={commands.onTone}
-      //  onTranslate={commands.onTranslate}
        aiProcessing={commands.aiProcessing}
        aiContent={commands.aiContent}
        onAppendAiContent={commands.onAppendAiContent}
