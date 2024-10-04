@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [docName, setDocName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     if (!isLoaded) return;
@@ -85,9 +86,19 @@ const Dashboard = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDocName(e.target.value);
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(async (document_id) => {
+      if (!document_id) return;
+      handleSave(document_id);
+    }, 400, activeRename);
+
   };
 
-  const handleSave = async (docId: string) => {
+  const handleSave = async (docId: string, close = false) => {
     const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
     const name = docName;
     setDoc(docRef, { name }, { merge: true });
@@ -96,7 +107,7 @@ const Dashboard = () => {
     const index = _documents.findIndex(doc => doc.id === docId);
     _documents[index].name = name;
     setDocuments(_documents);
-    setActiveRename(null);
+    if (close) setActiveRename(null);
   }
 
   const deleteDocumentHandle = () => {
@@ -141,7 +152,7 @@ const Dashboard = () => {
   const documentObject = (doc: DocumentSchema) => {
     return <li key={doc.id} className={`flex gap-2 p-2 w-full justify-between rounded items-center ${doc.id === activeDocId ? "bg-blue-100" : ""}`}>
       {activeRename == doc.id ?
-        <input type="text" onChange={(e) => { handleInputChange(e) }} value={docName} ref={inputRef}
+        <input type="text" onBlur={(e) => handleSave(doc.id, true)} onKeyDown={e => { if (e.key === 'Escape') setActiveRename(null) }} onChange={(e) => { handleInputChange(e) }} value={docName} ref={inputRef}
           className="w-full h-full bg-transparent outline-none border-b border-neutral-400" /> :
         <button onDoubleClick={() => handleActiveRename(doc.id)} onClick={() => handleActiveDocument(doc.id)} className={`text-left flex-1 ${doc.id === activeDocId ? "bg-blue-100" : ""}`} >
           {doc.name || "Untitled"}
@@ -157,8 +168,8 @@ const Dashboard = () => {
       {
         activeRename == doc.id &&
         <div className="flex gap-2">
-          <CircleX onClick={() => setActiveRename(null)} color="#9CA3AF" size={22} />
-          <Save onClick={() => handleSave(doc.id)} color="#9CA3AF" size={22} />
+          <CircleX onClick={() => handleSave(doc.id, true)} color="#9CA3AF" size={22} />
+          {/* <Save onClick={() => handleSave(doc.id)} color="#9CA3AF" size={22} /> */}
         </div>
       }
     </li>;
@@ -167,8 +178,8 @@ const Dashboard = () => {
   const sharedDocs = () => documents.filter(doc => doc.isShared)
 
   return (
-    <div className="flex h-full">
-      <div className="w-1/4 bg-gray-100 p-4 border-r flex flex-col">
+    <div className="flex h-full w-full">
+      <div className="w-64 bg-gray-100 p-4 border-r flex flex-col">
         <div>
           <h2 className="text-lg font-semibold mb-4 flex justify-between">Documents <LoaderCircle className={`animate-spin transition ${fetching ? "opacity-100" : 'opacity-0'}`} /> </h2>
           <button
@@ -189,20 +200,23 @@ const Dashboard = () => {
         </ul>
       </div>
 
-      <div className="grow px-4">
-        {activeDocId ? (
-          <div key={activeDocId} className="flex flex-col h-full gap-2">
-          <CollaborativeEditor docId={activeDocId} />
-          </div>
-            
-        ) : (
-          <div className="text-center text-gray-500 py-4">
-            Select or create a document to start editing.
-          </div>
-        )}
-        {/* delete pop up */}
-        {deleteDocument && <DeleteDocument setDeleteDoc={setDeleteDocument} deleteDocumentHandle={deleteDocumentHandle} />}
-        {shareDocument && <ShareDocument documentId={shareDocument} processing={processing} documentName={docName} setShareDocument={setShareDocument} handleShareDocument={handleShareDocument} />}
+      <div className="grow px-4 overflow-hidden">
+        <div className="w-full h-full">
+          {activeDocId ? (
+            <div key={activeDocId} className="flex flex-col h-full gap-2">
+              <CollaborativeEditor docId={activeDocId} />
+            </div>
+
+          ) : (
+            <div className="text-center text-gray-500 py-4">
+              Select or create a document to start editing.
+            </div>
+          )}
+          {/* delete pop up */}
+          {deleteDocument && <DeleteDocument setDeleteDoc={setDeleteDocument} deleteDocumentHandle={deleteDocumentHandle} />}
+          {shareDocument && <ShareDocument documentId={shareDocument} processing={processing} documentName={docName} setShareDocument={setShareDocument} handleShareDocument={handleShareDocument} />}
+
+        </div>
       </div>
     </div>
   );
