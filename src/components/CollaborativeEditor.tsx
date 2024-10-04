@@ -92,10 +92,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       {isReady ? (
         <Fragment>
           <div className="flex w-full justify-between bg-white rounded-lg">
+            <div className="grow overflow-y-hidden scroll-bar-design">
             <TextMenu editor={editor} />
+            </div>
             <LoaderCircle className={`animate-spin transition self-center mr-2 ${processing ? "opacity-100" : 'opacity-0'}`} />
           </div>
-          <div className="grow overflow-y-auto bg-white  border border-gray-200 rounded-md shadow-md">
+          <div className="grow overflow-y-auto scroll-bar-design bg-white  border border-gray-200 rounded-md shadow-md">
             <EditorContent
               editor={editor}
               className="h-full relative prose prose-sm max-w-none p-2 [&>div]:h-full"
