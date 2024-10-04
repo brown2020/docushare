@@ -193,12 +193,12 @@ const Dashboard = () => {
         )}
         {activeRename != doc.id && (
           <div className="flex gap-2">
-            <Pencil
+            {/* <Pencil
               className="cursor-pointer"
               onClick={() => handleActiveRename(doc.id)}
               color="#9CA3AF"
               size={22}
-            />
+            /> */}
             <Share2
               className="cursor-pointer"
               onClick={() => {
@@ -218,11 +218,11 @@ const Dashboard = () => {
         )}
         {activeRename == doc.id && (
           <div className="flex gap-2">
-            <CircleX
+            {/* <CircleX
               onClick={() => setActiveRename(null)}
               color="#9CA3AF"
               size={22}
-            />
+            /> */}
             {/* <Save
               onClick={() => handleSave(doc.id)}
               color="#9CA3AF"
@@ -238,7 +238,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-full w-full">
-      <div className="w-64 bg-gray-100 p-4 border-r flex flex-col">
+      <div className="min-w-64 bg-gray-100 p-4 border-r flex flex-col">
         <div>
           <h2 className="text-lg font-semibold mb-4 flex justify-between">
             Documents{" "}
@@ -270,7 +270,9 @@ const Dashboard = () => {
         </ul>
       </div>
 
-      <div className="grow px-4">
+      <div className="grow px-4 overflow-hidden">
+        <div className="h-full w-full">
+
         {activeDocId ? (
           <div key={activeDocId} className="flex flex-col h-full gap-2">
             <CollaborativeEditor docId={activeDocId} />
@@ -296,6 +298,8 @@ const Dashboard = () => {
             handleShareDocument={handleShareDocument}
           />
         )}
+      
+        </div>
       </div>
     </div>
   );
