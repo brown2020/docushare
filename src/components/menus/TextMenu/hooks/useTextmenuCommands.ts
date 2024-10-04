@@ -3,26 +3,52 @@ import { useCallback, useState } from 'react'
 import API from '../../../../lib/api'
 import toast from 'react-hot-toast';
 import { Slice } from '@tiptap/pm/model';
+import { AIOptions } from '@/interfaces/general';
+import { generateText } from '@/actions/generateEditorActions';
+import { readStreamableValue } from 'ai/rsc';
 
 export const useTextmenuCommands = (editor: Editor) => {
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiContent, setAiContent] = useState("");
 
-  const aiCommand = useCallback( async (option: string, command = '') => {
+  const aiCommand = useCallback( async (option: AIOptions, command = '') => {
     setAiContent("");
-    console.info("response.status 1", aiContent);
 
     const slice: Slice = editor.state.selection.content();
     const text:string = editor.storage.markdown.serializer.serialize(slice.content);
-
+    
     setAiProcessing(true);
-    const response = await API.aiGenerate(option, text, command)
-    setAiProcessing(false);
-    if (response.status) {
-      setAiContent(response.data!);
-      console.log("response.status 2", response.status);
-    } else {
-      toast.error(`Something went wrong. Please try again later.`);
+    try {
+      const response = await generateText(text, option, command)
+      console.log("response", response);
+      
+
+      if(response !== undefined) {  
+        setAiContent(response.trim())
+        // for await (const content of readStreamableValue(response)) {
+        //   console.log("content", content);
+          
+        //   if (typeof content == 'string') {
+        //     // setSummary(content.trim());
+        //     setAiContent(content.trim());
+        //   }
+        // }
+      }
+      setAiProcessing(false);
+      // if (response.status) {
+      //   console.log("response.status 2", response.status);
+      // } else {
+      //   toast.error(`Something went wrong. Please try again later.`);
+      // }
+    } catch (error: Error | any) {
+      setAiProcessing(false);      
+      if(error instanceof Error) {
+        toast.error(error.message);
+        console.log("error", error);
+      }else{
+        toast.error("Something went wrong.");
+      }
+      
     }
   }, [editor, aiContent])
 

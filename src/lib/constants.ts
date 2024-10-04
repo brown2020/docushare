@@ -3,6 +3,9 @@ import { AiToneOption, LanguageOption } from "@/components/types";
 export const DOCUMENT_COLLECTION = "docs";
 export const USER_COLLECTION = "users";
 
+export const MAX_OUTPUT_TOKEN = 100;
+export const COST_POINT_PER_TOKEN = 0.1;
+
 export const AI_MODEL_GPT = "gpt-4o";
 export const AI_MODEL_GEMINI = "gemini-1.5-pro";
 export const AI_MODEL_MISTRAL = "mistral-large";
@@ -21,7 +24,8 @@ export const DEFAULT_AI_MODEL = AI_MODEL_GPT;
 
 export const RESPONSE_CODE = {
   api_key_not_found: "api_key_not_found",
-  api_key_not_set: "api_key_not_set"
+  api_key_not_set: "api_key_not_set",
+  insufficient_points: "insufficient_points"
 }
 
 export const languages: LanguageOption[] = [
