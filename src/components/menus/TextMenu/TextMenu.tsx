@@ -49,6 +49,10 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       <MemoFontFamilyPicker onChange={commands.onSetFont} value={states.currentFont || ''} />
       {/* <MemoFontSizePicker onChange={commands.onSetFontSize} value={states.currentSize || ''} /> */}
       <Toolbar.Divider />
+      <MemoButton tooltip="Image" onClick={commands.onImageUpload} active={states.isBold}>
+        <Icon name="Image" />
+      </MemoButton>
+      <Toolbar.Divider />
       <MemoButton tooltip="Bold" tooltipShortcut={['Mod', 'B']} onClick={commands.onBold} active={states.isBold}>
         <Icon name="Bold" />
       </MemoButton>

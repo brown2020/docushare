@@ -12,14 +12,13 @@ export class API {
 
   static uploadImage = async ({ file, isBase64 = false }: uploadImageType) => {
     try {
-      const url = process.env.NEXT_PUBLIC_UPLOAD_IMAGE_API;
+      const url = '/api/image';
       let body: string | FormData;
       let filename: string | undefined;
       let heading: string | undefined;
       let size: number | undefined;
 
       const headers: Record<string, string> = {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_UPLOAD_IMAGE_TOKEN}`,
       };
 
       if (typeof file === "string") {
@@ -39,15 +38,15 @@ export class API {
         size = file.size;
       }
 
-      const response = await fetch(`${url}?isIcon=false`, {
+      const response = await fetch(`${url}`, {
         method: 'POST',
         headers,
         body
       });
 
       const json = await response.json();
-      if (json.status === 200) {
-        return { status: true, url: json.message, filename, heading, size };
+      if (json.status === true) {
+        return { status: true, url: json.data.filename };
       }
 
       return { status: false };

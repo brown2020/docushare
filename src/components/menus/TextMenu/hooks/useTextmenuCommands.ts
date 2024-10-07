@@ -53,6 +53,7 @@ export const useTextmenuCommands = (editor: Editor) => {
   }, [editor, aiContent])
 
   const onBold = useCallback(() => editor.chain().focus().toggleBold().run(), [editor])
+  const onImageUpload = useCallback(() => editor.chain().focus().setImageUpload().run(), [editor])
   const onItalic = useCallback(() => editor.chain().focus().toggleItalic().run(), [editor])
   const onStrike = useCallback(() => editor.chain().focus().toggleStrike().run(), [editor])
   const onUnderline = useCallback(() => editor.chain().focus().toggleUnderline().run(), [editor])
@@ -167,6 +168,7 @@ export const useTextmenuCommands = (editor: Editor) => {
 
 
   return {
+    onImageUpload,
     onBold,
     onItalic,
     onStrike,
