@@ -14,7 +14,9 @@ import {
   Superscript,
   TextAlign,
   FontSize,
-  Markdown
+  Markdown,
+  ImageUpload,
+  ImageBlock
 } from '.'
 import { AnyExtension } from '@tiptap/core'
 
@@ -54,7 +56,12 @@ export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
   }).configure({
     types: ['heading', 'paragraph'],
   }),
-  FontSize
+  FontSize,
+  ImageUpload.configure(),
+  ImageBlock.configure({
+    imageBaseUrl: `${process.env.NEXT_PUBLIC_BASE_PATH}api/image`,
+  }),
+
 ]
 
 export default ExtensionKit

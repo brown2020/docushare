@@ -29,6 +29,38 @@
       @apply border-t-black/40 dark:border-t-white/40 w-full -top-[1.5em] max-w-2xl mx-auto left-0 right-0;
     }
   }
+  .node-imageUpload {
+    @apply rounded border-2 border-dotted border-black border-opacity-10 p-2 dark:border-neutral-500;
+    transition: border 160ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
+    &:hover {
+      @apply border-opacity-30;
+    }
+
+    &:has(.is-active),
+    &.has-focus {
+      @apply border-opacity-40;
+    }
+  }
+  .node-imageBlock {
+    & img {
+      @apply border-2 border-transparent rounded-xl overflow-hidden;
+    }
+
+    &:hover img {
+      @apply border-2 border-neutral-100 dark:border-neutral-900;
+    }
+
+    &:has(.is-active) img,
+    &.has-focus img {
+      @apply border-2 border-neutral-800 dark:border-neutral-200;
+    }
+  }
+  .ProseMirror-gapcursor+.node-imageBlock,
+  .ProseMirror-gapcursor+.node-imageUpload
+  {
+    @apply outline-neutral-700 hover:outline-neutral-600 dark:outline-neutral-300 dark:hover:outline-neutral-400;
+  }
 }
 
 [data-theme='slash-command'] {

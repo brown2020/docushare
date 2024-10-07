@@ -17,3 +17,5 @@ export { Markdown } from 'tiptap-markdown'
 
 export { Link } from './Link'
 export { FontSize } from './FontSize'
+export { ImageUpload } from './ImageUpload'
+export { ImageBlock } from './ImageBlock'

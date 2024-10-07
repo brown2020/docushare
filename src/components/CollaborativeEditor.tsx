@@ -9,6 +9,7 @@ import { TextMenu } from "./menus/TextMenu";
 import '@/styles/index.css'
 import { LinkMenu } from "./menus/LinkMenu";
 import { LoaderCircle } from "lucide-react";
+import ImageBlockMenu from "@/extensions/ImageBlock/components/ImageBlockMenu";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -20,6 +21,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const userPosition = useRef({ from: 0, to: 0 });
   const isUpdating = useRef(false);
   const [processing, setProcessing] = useState(true);
+  const menuContainerRef = useRef(null)
+
 
   const editor = useEditor({
     extensions: [...ExtensionKit({})],
@@ -51,8 +54,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   }, [editor])
 
   const updateContent = useCallback((snapshot: DocumentSnapshot) => {
-    if(editor === null) return;
-    
+    if (editor === null) return;
+
     const data = snapshot.data();
     if (
       data &&
@@ -66,16 +69,16 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         isUpdating.current = false;
         setProcessing(false)
       }, 0);
-    }else{
+    } else {
       setProcessing(false);
     }
-    
+
   }, [isUpdating, editor]);
 
   useEffect(() => {
     if (!editor) return;
     const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
-    
+
     const unsubscribe = onSnapshot(docRef, updateContent);
 
     return () => {
@@ -93,17 +96,18 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         <Fragment>
           <div className="flex w-full justify-between bg-white rounded-lg">
             <div className="grow overflow-y-hidden scroll-bar-design">
-            <TextMenu editor={editor} />
+              <TextMenu editor={editor} />
             </div>
             <LoaderCircle className={`animate-spin transition self-center mr-2 ${processing ? "opacity-100" : 'opacity-0'}`} />
           </div>
-          <div className="grow overflow-y-auto scroll-bar-design bg-white  border border-gray-200 rounded-md shadow-md">
+          <div ref={menuContainerRef} className="grow overflow-y-auto scroll-bar-design bg-white  border border-gray-200 rounded-md shadow-md">
             <EditorContent
               editor={editor}
               className="h-full relative prose prose-sm max-w-none p-2 [&>div]:h-full"
             />
           </div>
           <LinkMenu editor={editor} />
+          <ImageBlockMenu editor={editor} appendTo={menuContainerRef} />
         </Fragment>
       ) : (
         <Fragment>Loading editor...</Fragment>
