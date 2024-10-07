@@ -14,9 +14,9 @@ export class API {
     try {
       const url = '/api/image';
       let body: string | FormData;
-      let filename: string | undefined;
-      let heading: string | undefined;
-      let size: number | undefined;
+      // let filename: string | undefined;
+      // let heading: string | undefined;
+      // let size: number | undefined;
 
       const headers: Record<string, string> = {
       };
@@ -33,9 +33,9 @@ export class API {
       } else {
         body = new FormData();
         body.append('file', file);
-        filename = file.name ? file.name : '';
-        heading = filename.replace(/\.[^/.]+$/, "");
-        size = file.size;
+        // filename = file.name ? file.name : '';
+          // heading = filename.replace(/\.[^/.]+$/, "");
+          // size = file.size;
       }
 
       const response = await fetch(`${url}`, {

@@ -11,7 +11,6 @@ export const ImageUploader = ({ onUpload }: { onUpload: (url: string) => void })
   const { draggedInside, onDrop, onDragEnter, onDragLeave } = useDropZone({ uploader: uploadFile })
 
   const onFileChange = useCallback(
-    // @ts-ignore:next-line
     (e: ChangeEvent<HTMLInputElement>) => (e.target.files ? uploadFile(e.target.files[0]) : null),
     [uploadFile],
   )

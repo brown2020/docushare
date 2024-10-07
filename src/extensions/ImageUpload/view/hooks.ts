@@ -16,7 +16,7 @@ export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) =
             const url = process.env.NEXT_PUBLIC_BASE_PATH + `api/image?image_key=${encodeURIComponent(image_key)}`
             onUpload(url)
         }
-    } catch (errPayload: any) {
+    } catch (errPayload) {
       console.log("errPayload", errPayload);
       
       const error = errPayload?.response?.data?.error || 'Something went wrong'

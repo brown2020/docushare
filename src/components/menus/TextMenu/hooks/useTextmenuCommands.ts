@@ -1,11 +1,9 @@
 import { Editor } from '@tiptap/react'
 import { useCallback, useState } from 'react'
-import API from '../../../../lib/api'
 import toast from 'react-hot-toast';
 import { Slice } from '@tiptap/pm/model';
 import { AIOptions } from '@/interfaces/general';
 import { generateText } from '@/actions/generateEditorActions';
-import { readStreamableValue } from 'ai/rsc';
 
 export const useTextmenuCommands = (editor: Editor) => {
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -40,7 +38,7 @@ export const useTextmenuCommands = (editor: Editor) => {
       // } else {
       //   toast.error(`Something went wrong. Please try again later.`);
       // }
-    } catch (error: Error | any) {
+    } catch (error: Error| unknown) {
       setAiProcessing(false);      
       if(error instanceof Error) {
         toast.error(error.message);
@@ -50,7 +48,7 @@ export const useTextmenuCommands = (editor: Editor) => {
       }
       
     }
-  }, [editor, aiContent])
+  }, [editor])
 
   const onBold = useCallback(() => editor.chain().focus().toggleBold().run(), [editor])
   const onImageUpload = useCallback(() => editor.chain().focus().setImageUpload().run(), [editor])

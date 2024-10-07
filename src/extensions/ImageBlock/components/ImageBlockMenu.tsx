@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/Icon'
 import { ImageBlockWidth } from './ImageBlockWidth'
 import { MenuProps } from '@/components/menus/types'
 
-export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => {
+export const ImageBlockMenu = ({ editor }: MenuProps): JSX.Element => {
   const menuRef = useRef<HTMLDivElement>(null)
 
   const shouldShow = useCallback(() => {

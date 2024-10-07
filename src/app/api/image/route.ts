@@ -4,7 +4,6 @@ import { auth } from "@clerk/nextjs/server";
 import fs from "fs";
 import path from "path";
 import { File } from "buffer";
-import { NextApiResponse } from "next";
 async function uploadFile(filePath: string, bucketPath: string) {
     try {
         const bucket = admin.storage().bucket();
@@ -92,7 +91,7 @@ export const POST = async (req: NextRequest) => {
     })
 };
 
-export const GET = async (req: NextRequest, res: NextApiResponse) => {
+export const GET = async (req: NextRequest) => {
     try {
 
         const image_key = req.nextUrl.searchParams.get("image_key");
