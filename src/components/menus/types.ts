@@ -6,7 +6,7 @@ import { EditorView } from '@tiptap/pm/view'
 export interface MenuProps {
   editor: Editor
   shouldHide?: boolean
-  appendTo?: React.RefObject<any>
+  appendTo?: React.RefObject<HTMLElement>
 }
 
 export interface ShouldShowProps {

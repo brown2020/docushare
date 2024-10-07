@@ -5,8 +5,6 @@ import { generateResponse } from "./generateActions";
 import { AI_MODEL_CLAUDE, AI_MODEL_GEMINI, AI_MODEL_GPT, AI_MODEL_LLAMA, AI_MODEL_MISTRAL, AI_MODELS_LIST, COST_POINT_PER_TOKEN, DEFAULT_AI_MODEL, MAX_OUTPUT_TOKEN, RESPONSE_CODE, USER_COLLECTION } from "@/lib/constants";
 import { AIOptions } from "@/interfaces/general";
 import { auth } from "@clerk/nextjs/server";
-import { match } from "ts-pattern";
-import { readStreamableValue } from "ai/rsc";
 
 class User {
     userRef: FirebaseFirestore.DocumentReference;
@@ -147,7 +145,7 @@ const aiCommandPrompts: Record<AIOptions, (text: string, command: string) => { s
         userPrompt: `For this text: ${text}. You have to respect the command: ${command}`,
     }),
 }
-const costPerToken = 0.1; // Example point cost per token
+// const costPerToken = 0.1; // Example point cost per token
 
 function countTokens(text: string) {
     // Rough estimate by considering each word as a token
@@ -174,13 +172,13 @@ export async function generateText(
     console.log("modelOfUser", modelOfUser);
 
     const { systemPrompt, userPrompt } = aiCommandPrompts[option](prompt, command);
-    let deductUserPoints = false;
+    // let deductUserPoints = false;
     let modelName = DEFAULT_AI_MODEL;
     let api_key = process.env.OPENAI_API_KEY ?? '';
     if (modelOfUser.status === false) {
         if (modelOfUser.code === RESPONSE_CODE.api_key_not_set) {
             const hasExpectedPoint = await user.checkExpectedPointForPrompt(userPrompt);
-            deductUserPoints = true;
+            // deductUserPoints = true;
             if (!hasExpectedPoint) {
                 throw new Error("You don't have enough points to run this command.", { cause: { code: RESPONSE_CODE.insufficient_points } });
             }

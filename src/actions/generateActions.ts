@@ -1,15 +1,14 @@
 "use server";
 
-import { createStreamableValue } from "ai/rsc";
-import { CoreMessage, generateText, streamText } from "ai";
-import { createOpenAI, openai } from "@ai-sdk/openai";
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
-import { createMistral, mistral } from "@ai-sdk/mistral";
+import { generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createMistral } from "@ai-sdk/mistral";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { AI_MODEL_CLAUDE, AI_MODEL_GEMINI, AI_MODEL_GPT, AI_MODEL_LLAMA, AI_MODEL_MISTRAL, AI_MODELS_LIST, DEFAULT_AI_MODEL, MAX_OUTPUT_TOKEN, RESPONSE_CODE, USER_COLLECTION } from "@/lib/constants";
+import { AI_MODEL_CLAUDE, AI_MODEL_GEMINI, AI_MODEL_GPT, AI_MODEL_MISTRAL, MAX_OUTPUT_TOKEN } from "@/lib/constants";
 
 async function getModel(modelName: string, api_key: string | null = null) {
-  let aiOptions = api_key ? { apiKey: api_key } : {};
+  const aiOptions = api_key ? { apiKey: api_key } : {};
 
   switch (modelName) {
     case AI_MODEL_GPT:
@@ -44,16 +43,16 @@ export async function generateResponse(
 ) {
   const model = await getModel(modelName, api_key);
 
-  const messages: CoreMessage[] = [
-    {
-      role: "system",
-      content: systemPrompt,
-    },
-    {
-      role: "user",
-      content: userPrompt,
-    },
-  ];
+  // const messages: CoreMessage[] = [
+  //   {
+  //     role: "system",
+  //     content: systemPrompt,
+  //   },
+  //   {
+  //     role: "user",
+  //     content: userPrompt,
+  //   },
+  // ];
 
   if(process.env.IS_UAT == "1"){
 //     const stream = createStreamableValue('# Gandhi Jayanti: A Reflection on the Life and Legacy of Mahatma Gandhi');

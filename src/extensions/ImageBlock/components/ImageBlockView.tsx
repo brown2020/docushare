@@ -18,7 +18,6 @@ interface ImageBlockViewProps {
 export const ImageBlockView = (props: ImageBlockViewProps) => {
   const { editor, getPos, node } = props
   const imageWrapperRef = useRef<HTMLDivElement>(null)
-  const { src } = node.attrs
 
   const wrapperClassName = cn(
     node.attrs.align === 'left' ? 'ml-0' : 'ml-auto',
@@ -31,7 +30,7 @@ export const ImageBlockView = (props: ImageBlockViewProps) => {
   }, [getPos, editor.commands])
   
   const [imageUrl, setImageUrl] = useState(node.attrs.src);
-  const [isUploading, setIsUploading] = useState(false);
+  const isUploading = useState(false);
 
   useEffect(() => {
     
@@ -46,7 +45,7 @@ export const ImageBlockView = (props: ImageBlockViewProps) => {
         }
         
     } catch (error) {
-        
+        console.log(error);
     }
   }, [node.attrs.src])
 

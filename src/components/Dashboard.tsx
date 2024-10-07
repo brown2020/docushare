@@ -6,10 +6,7 @@ import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
 import CollaborativeEditor from "./CollaborativeEditor";
 import {
-  CircleX,
   LoaderCircle,
-  Pencil,
-  Save,
   Share2,
   Trash2,
 } from "lucide-react";
@@ -172,7 +169,7 @@ const Dashboard = () => {
         {activeRename == doc.id ? (
           <input
             type="text"
-            onBlur={(e) => handleSave(doc.id, true)} onKeyDown={e => { if (e.key === 'Escape' || e.key === 'Enter') {handleSave(doc.id, true)} }}
+            onBlur={() => handleSave(doc.id, true)} onKeyDown={e => { if (e.key === 'Escape' || e.key === 'Enter') {handleSave(doc.id, true)} }}
             onChange={(e) => {
               handleInputChange(e);
             }}

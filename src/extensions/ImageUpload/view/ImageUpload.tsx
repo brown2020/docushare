@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 
 import { ImageUploader } from './ImageUploader'
 
-export const ImageUpload = ({ getPos, editor, node }: { getPos: () => number; editor: Editor, node: any }) => {
+export const ImageUpload = ({ getPos, editor }: { getPos: () => number; editor: Editor, node: Node }) => {
   const onUpload = useCallback(
     (url: string) => {
       if (url) {

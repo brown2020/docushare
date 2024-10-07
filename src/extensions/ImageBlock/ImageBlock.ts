@@ -24,7 +24,7 @@ export interface ImageOptions {
      * @default {}
      * @example { class: 'foo' }
      */
-    HTMLAttributes: Record<string, any>;
+    HTMLAttributes: Record<string | number | symbol, unknown>;
 }
 
 declare module '@tiptap/core' {
@@ -105,7 +105,7 @@ export const ImageBlock = Image.extend<ImageOptions>({
         
       setImageBlock:
         attrs =>
-         ({ commands, editor }) => {
+         ({ commands }) => {
           return commands.insertContent({ type: 'imageBlock', attrs: { src: attrs.src } })
         },
 
