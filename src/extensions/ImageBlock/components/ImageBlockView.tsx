@@ -1,22 +1,9 @@
 import { cn } from '@/lib/utils'
-import { Node } from '@tiptap/pm/model'
-import { Editor, NodeViewWrapper } from '@tiptap/react'
+import { NodeViewProps, NodeViewWrapper } from '@tiptap/react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image';
 
-interface ImageBlockViewProps {
-  editor: Editor,
-  selected: boolean,
-  getPos: () => number
-  node: Node & {
-    attrs: {
-      src: string
-    }
-  }
-  updateAttributes: (attrs: Record<string, string>) => void
-}
-
-export const ImageBlockView = (props: ImageBlockViewProps) => {
+const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   const { editor, getPos, node } = props
   const imageWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -64,4 +51,4 @@ export const ImageBlockView = (props: ImageBlockViewProps) => {
   )
 }
 
-export default ImageBlockView
+export default ImageBlockView;

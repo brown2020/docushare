@@ -1,9 +1,9 @@
-import { Editor, NodeViewWrapper } from '@tiptap/react'
+import { NodeViewProps, NodeViewWrapper } from '@tiptap/react'
 import { useCallback } from 'react'
 
 import { ImageUploader } from './ImageUploader'
 
-export const ImageUpload = ({ getPos, editor }: { getPos: () => number; editor: Editor, node: Node }) => {
+export const ImageUpload: React.FC<NodeViewProps> = ({ getPos, editor }) => {
   const onUpload = useCallback(
     (url: string) => {
       if (url) {
