@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils'
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import Image from 'next/image';
 
 const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   const { editor, getPos, node } = props
@@ -41,8 +40,8 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
     <NodeViewWrapper>
       <div className={wrapperClassName} style={{ width: node.attrs.width }}>
         <div contentEditable={false} ref={imageWrapperRef} style={{position: "relative"}} className={`${props.selected ? "selected is-active" : ''}`}>
-            <Image className="block" src={imageUrl} alt="" onClick={onClick} />
-            <div style={{"position":"absolute", 'display': 'flex', flexDirection: 'column', 'justifyContent': 'center',"top":"0px","left":"0px","height":"100%","width":"100%","background":"white","opacity": isUploading ?"0.7" :"0" ,"transition":"all","transitionDuration":"300ms"}}>
+            <img className="block" src={imageUrl} alt="" onClick={onClick} />
+            <div style={{"position":"absolute", 'display': 'flex', flexDirection: 'column', 'justifyContent': 'center',"top":"0px","left":"0px","height":"100%","width":"100%","background":"white","opacity": isUploading[0] ?"0.7" :"0" ,"transition":"all","transitionDuration":"300ms"}}>
                 <h1 style={{textAlign: 'center'}}>Processing...</h1> 
             </div> 
         </div>
