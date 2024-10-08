@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import { Node } from '@tiptap/pm/model'
 import { Editor, NodeViewWrapper } from '@tiptap/react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import Image from 'next/image';
 
 interface ImageBlockViewProps {
   editor: Editor,
@@ -47,13 +48,13 @@ export const ImageBlockView = (props: ImageBlockViewProps) => {
     } catch (error) {
         console.log(error);
     }
-  }, [node.attrs.src])
+  }, [node.attrs.src, editor])
 
   return (
     <NodeViewWrapper>
       <div className={wrapperClassName} style={{ width: node.attrs.width }}>
         <div contentEditable={false} ref={imageWrapperRef} style={{position: "relative"}} className={`${props.selected ? "selected is-active" : ''}`}>
-            <img className="block" src={imageUrl} alt="" onClick={onClick} />
+            <Image className="block" src={imageUrl} alt="" onClick={onClick} />
             <div style={{"position":"absolute", 'display': 'flex', flexDirection: 'column', 'justifyContent': 'center',"top":"0px","left":"0px","height":"100%","width":"100%","background":"white","opacity": isUploading ?"0.7" :"0" ,"transition":"all","transitionDuration":"300ms"}}>
                 <h1 style={{textAlign: 'center'}}>Processing...</h1> 
             </div> 
