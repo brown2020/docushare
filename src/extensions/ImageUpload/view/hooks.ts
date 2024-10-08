@@ -13,7 +13,7 @@ export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) =
         const resp = await API.uploadImage({ file: file })
         if (resp.status === true) {
             const image_key = resp.url;
-            const url = process.env.NEXT_PUBLIC_BASE_PATH + `api/image?image_key=${encodeURIComponent(image_key)}`
+            const url = process.env.NEXT_PUBLIC_BASE_URL + `api/image?image_key=${encodeURIComponent(image_key)}`
             onUpload(url)
         }
     } catch (errPayload) {

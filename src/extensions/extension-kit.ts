@@ -59,7 +59,7 @@ export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
   FontSize,
   ImageUpload.configure(),
   ImageBlock.configure({
-    imageBaseUrl: `${process.env.NEXT_PUBLIC_BASE_PATH}api/image`,
+    imageBaseUrl: `${process.env.NEXT_PUBLIC_BASE_URL}api/image`,
   }),
 
 ]
