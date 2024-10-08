@@ -18,8 +18,7 @@ export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) =
         }
     } catch (errPayload) {
       console.log("errPayload", errPayload);
-      
-      const error = errPayload?.response?.data?.error || 'Something went wrong'
+      const error = 'Something went wrong'
       toast.error(error)
     }
     setLoading(false)

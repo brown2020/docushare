@@ -1,7 +1,7 @@
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { mergeAttributes, Range } from '@tiptap/core'
 
-import { ImageBlockView } from './components/ImageBlockView'
+import ImageBlockView from './components/ImageBlockView'
 import { Image } from '../Image'
 
 export interface ImageOptions {
@@ -90,14 +90,14 @@ export const ImageBlock = Image.extend<ImageOptions>({
   parseHTML() {
     return [
       {
-        tag: 'img',
+        tag: 'div[data-type="imageBlock"]',
         // tag: 'img[src*="tiptap.dev"]:not([src^="data:"]), img[src*="windows.net"]:not([src^="data:"])',
       },
     ]
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['img', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)]
+    return ['div', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)]
   },
 
   addCommands() {

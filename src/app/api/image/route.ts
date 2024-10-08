@@ -47,7 +47,7 @@ async function downloadFile(bucketPath: string, filePath: string) {
 }
 
 export const POST = async (req: NextRequest) => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise<void | Response>(async (resolve, reject) => {
         try {
             const { userId } = auth();
 
