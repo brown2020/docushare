@@ -12,8 +12,9 @@ export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) =
         formData.append('file', file)
         const resp = await API.uploadImage({ file: file })
         if (resp.status === true) {
-            const image_key = resp.url;
-            const url = process.env.NEXT_PUBLIC_BASE_URL + `api/image?image_key=${encodeURIComponent(image_key)}`
+            // const image_key = resp.url;
+            // const url = process.env.NEXT_PUBLIC_BASE_URL + `api/image?image_key=${encodeURIComponent(image_key)}`
+            const url = resp.url;
             onUpload(url)
         }
     } catch (errPayload) {

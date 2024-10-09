@@ -4,23 +4,29 @@ import { auth } from "@clerk/nextjs/server";
 import fs from "fs";
 import path from "path";
 import { File } from "buffer";
-async function uploadFile(filePath: string, bucketPath: string) {
+async function uploadFile(fileBuffer: Buffer, bucketPath: string) {
     try {
         const bucket = admin.storage().bucket();
         const file = bucket.file(bucketPath);
 
-        const stream = file.createWriteStream({
-            metadata: {
-                contentType: 'image/jpeg' // Adjust content type as needed
-            }
-        });
+        // const stream = file.createWriteStream({
+        //     metadata: {
+        //         contentType: 'image/jpeg' // Adjust content type as needed
+        //     }
+        // });
 
-        return new Promise((resolve, reject) => {
-            stream.on('error', reject);
-            stream.on('finish', resolve);
-
-            fs.createReadStream(filePath).pipe(stream);
+        await file.save(Buffer.from(fileBuffer));
+        const [url] = await file.getSignedUrl({
+            action: "read",
+            expires: "03-17-2125",
         });
+        return url;
+        // return new Promise((resolve, reject) => {
+        //     stream.on('error', reject);
+        //     stream.on('finish', resolve);
+
+        //     fs.createReadStream(filePath).pipe(stream);
+        // });
     } catch (error) {
         console.error('Error uploading file:', error);
         throw error;
@@ -66,17 +72,17 @@ export const POST = async (req: NextRequest) => {
             }
 
             // You can now handle the file upload here
-            const directoryPath = path.join(__dirname, '../../public');
+            // const directoryPath = path.join(__dirname, '../../public');
             const filename = `${parseInt((Math.random() * 100000000).toString())}_${file.name}`;
-            const filePath = path.join(directoryPath, filename);
-            await fs.mkdirSync(directoryPath, { recursive: true });
+            // const filePath = path.join(directoryPath, filename);
+            // await fs.mkdirSync(directoryPath, { recursive: true });
             const buffer = Buffer.from(await file.arrayBuffer());
-            await fs.promises.writeFile(filePath, buffer);
+            // await fs.promises.writeFile(filePath, buffer);
             const bucketPath = `uploads/${filename}`;
-            await uploadFile(filePath, bucketPath);
+            const url = await uploadFile(buffer, bucketPath);
 
             resolve(NextResponse.json(
-                { status: true, message: 'File uploaded successfully', data: { filename } },
+                { status: true, message: 'File uploaded successfully', data: { filename, url } },
                 { status: 200 }
             ))
 

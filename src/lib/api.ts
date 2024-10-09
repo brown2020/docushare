@@ -46,7 +46,7 @@ export class API {
 
       const json = await response.json();
       if (json.status === true) {
-        return { status: true, url: json.data.filename };
+        return { status: true, url: json.data.url };
       }
 
       return { status: false };
