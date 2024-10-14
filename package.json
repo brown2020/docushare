@@ -42,7 +42,7 @@
     "firebase": "^10.13.2",
     "firebase-admin": "^12.5.0",
     "formidable": "^3.5.1",
-    "lucide-react": "^0.451.0",
+    "lucide-react": "^0.452.0",
     "mv": "^2.1.1",
     "next": "^14.2.12",
     "openai": "^4.63.0",
@@ -61,7 +61,7 @@
     "y-indexeddb": "^9.0.12",
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.19",
-    "zustand": "^4.5.5"
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
