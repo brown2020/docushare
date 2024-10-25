@@ -7,7 +7,7 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return new Response("User is not signed in.", { status: 401 });
@@ -60,7 +60,7 @@ export const POST = async (req: NextRequest) => {
 
 export const GET = async (req: NextRequest) => {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return new Response("User is not signed in.", { status: 401 });
