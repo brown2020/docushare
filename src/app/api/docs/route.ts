@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = async () => {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return new Response("User is not signed in.", { status: 401 });

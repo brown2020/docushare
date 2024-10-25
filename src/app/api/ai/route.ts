@@ -31,7 +31,7 @@ async function getModel(modelName: string, api_key: string) {
     case AI_MODEL_MISTRAL:
       return createMistral({ apiKey: api_key })("mistral-large-latest");
     case AI_MODEL_CLAUDE:
-      return createAnthropic({ apiKey: api_key })("claude-3-5-sonnet-20240620");
+      return createAnthropic({ apiKey: api_key })("claude-3-5-sonnet-20241022");
     case "llama-v3p1-405b":
       const fireworks = createOpenAI({
         apiKey: api_key,
@@ -114,7 +114,7 @@ export const POST = async (req: NextRequest) => {
     );
   }
   // return new Response(JSON.stringify({ response: demotext }))
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) {
     return new Response("User is not signed in.", { status: 401 });
   }

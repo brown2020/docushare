@@ -5,7 +5,13 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createMistral } from "@ai-sdk/mistral";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { AI_MODEL_CLAUDE, AI_MODEL_GEMINI, AI_MODEL_GPT, AI_MODEL_MISTRAL, MAX_OUTPUT_TOKEN } from "@/lib/constants";
+import {
+  AI_MODEL_CLAUDE,
+  AI_MODEL_GEMINI,
+  AI_MODEL_GPT,
+  AI_MODEL_MISTRAL,
+  MAX_OUTPUT_TOKEN,
+} from "@/lib/constants";
 
 async function getModel(modelName: string, api_key: string | null = null) {
   const aiOptions = api_key ? { apiKey: api_key } : {};
@@ -21,7 +27,7 @@ async function getModel(modelName: string, api_key: string | null = null) {
     case AI_MODEL_MISTRAL:
       return createMistral(aiOptions)("mistral-large-latest");
     case AI_MODEL_CLAUDE:
-      return createAnthropic(aiOptions)("claude-3-5-sonnet-20240620");
+      return createAnthropic(aiOptions)("claude-3-5-sonnet-20241022");
     case "llama-v3p1-405b":
       const fireworks = createOpenAI({
         ...aiOptions,
@@ -34,12 +40,11 @@ async function getModel(modelName: string, api_key: string | null = null) {
   }
 }
 
-
 export async function generateResponse(
   systemPrompt: string,
   userPrompt: string,
   modelName: string,
-  api_key: string | null = null,
+  api_key: string | null = null
 ) {
   const model = await getModel(modelName, api_key);
 
@@ -54,39 +59,39 @@ export async function generateResponse(
   //   },
   // ];
 
-  if(process.env.IS_UAT == "1"){
-//     const stream = createStreamableValue('# Gandhi Jayanti: A Reflection on the Life and Legacy of Mahatma Gandhi');
-//     stream.value.
-//     setTimeout(() => {
-//       stream.update(`## The Significance of Gandhi Jayanti
-  
-//     Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
-    
-//     ### Activities on Gandhi Jayanti
-    
-//     - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
-//     - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
-//     - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
-//     - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
-    
-//     ## Gandhi's Philosophy and Its Global Impact`);
-//   }, 1000);
-//     setTimeout(() => {
-//       stream.done(`## The Significance of Gandhi Jayanti
-  
-// Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
+  if (process.env.IS_UAT == "1") {
+    //     const stream = createStreamableValue('# Gandhi Jayanti: A Reflection on the Life and Legacy of Mahatma Gandhi');
+    //     stream.value.
+    //     setTimeout(() => {
+    //       stream.update(`## The Significance of Gandhi Jayanti
 
-// ### Activities on Gandhi Jayanti
+    //     Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
 
-// - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
-// - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
-// - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
-// - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+    //     ### Activities on Gandhi Jayanti
 
-// ## Gandhi's Philosophy and Its Global Impact`);
-//     }, 2000);
-  
-//     return stream.value;
+    //     - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
+    //     - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
+    //     - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
+    //     - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+
+    //     ## Gandhi's Philosophy and Its Global Impact`);
+    //   }, 1000);
+    //     setTimeout(() => {
+    //       stream.done(`## The Significance of Gandhi Jayanti
+
+    // Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
+
+    // ### Activities on Gandhi Jayanti
+
+    // - **Prayer Meetings:** People gather to sing Gandhi's favorite devotional songs and read from religious scriptures. This reflects Gandhi's belief in the power of spirituality.
+    // - **Award Ceremonies:** Various awards for promoting peace and non-violence are presented.
+    // - **Educational Events:** Schools and colleges organize events that include debates, essay competitions, and art exhibitions themed around Gandhi's life and teachings.
+    // - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
+
+    // ## Gandhi's Philosophy and Its Global Impact`);
+    //     }, 2000);
+
+    //     return stream.value;
     return `## The Significance of Gandhi Jayanti
   
 Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also to reaffirm the values of non-violence, peace, and truth. The celebration is marked by prayer services and tributes across India, especially at Raj Ghat, Gandhi's memorial in New Delhi where he was cremated following his assassination in 1948.
@@ -99,7 +104,7 @@ Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also 
 - **Community Service:** Emphasizing Gandhi's principle of 'Seva' or service, many volunteer groups engage in community cleanup, tree planting, and helping the underprivileged.
 
 ## Gandhi's Philosophy and Its Global Impact`;
-  }else{
+  } else {
     // const result = await streamText({
     //   model,
     //   messages,
@@ -119,7 +124,6 @@ Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also 
     });
     return text;
   }
-
 }
 
 export async function generateSummary(
