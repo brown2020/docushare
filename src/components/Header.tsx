@@ -19,12 +19,15 @@ import {
 import { serverTimestamp, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect } from "react";
+import logo from "@/assets/svg/logo.svg"
+import Image from "next/image";
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
   const { user } = useUser();
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
+  const photoUrl = useAuthStore((state) => state.authPhotoUrl);
   useInitializeStores();
 
   useEffect(() => {
@@ -67,21 +70,30 @@ export default function Header() {
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
 
   return (
-    <div className="flex h-14 items-center justify-between px-4 py-2">
-      <Link href="/" className="font-medium text-xl">
-        Docushare AI Demo
-      </Link>
-
+    <>
       <SignedOut>
-        <SignInButton />
+        <div className="flex items-center justify-end border px-10 py-4">
+          <SignInButton>
+            <button className="text-white bg-blue-500 p-3 rounded-lg ">
+              Sign In
+            </button>
+          </SignInButton>
+        </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex gap-2 items-center">
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/profile">Profile</Link>
-          <UserButton />
+        <div className="flex items-center justify-between px-10 py-4 shadow-md z-[99]">
+          <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
+          <div className="flex gap-[10px] items-center">
+            <div className="flex gap-4">
+              <Link href="/dashboard" className="hover:text-blue-700">Dashboard</Link>
+              <Link href="/profile" className="hover:text-blue-700">Profile</Link>
+            </div>
+            {photoUrl && (
+              <UserButton />
+            )}
+          </div>
         </div>
       </SignedIn>
-    </div>
+    </>
   );
 }
