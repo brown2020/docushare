@@ -33,6 +33,7 @@ export default function ShareDocument({
       const data = await response.json();
       setFetching(false);
       setEmailList(data.emails);
+      console.log("emailList", emailList);
     } catch (error) {
       console.log("Error fetching documents:", error);
       setFetching(false);
@@ -47,33 +48,28 @@ export default function ShareDocument({
         onClose={() => {
           if (!processing) setShareDocument(null);
         }}
+        extraCss="w-[400px] !m-0"
       >
-        <div className="flex gap-2 border-b justify-between py-3 px-3">
-          <h2>
-            Share Document <strong>{documentName}</strong>
+        <div className="flex gap-2 border-b justify-between p-5">
+          <h2 className="text-base">
+            Share Document {documentName}
           </h2>
-          <X onClick={() => setShareDocument(null)} color="#9CA3AF" size={22} />
+          <X onClick={() => setShareDocument(null)}  className="text-[#9CA3AF] hover:text-red-500 cursor-pointer" size={22} />
         </div>
 
-        <div className="px-3 pb-3 w-full">
+        <div className="p-5 w-full">
           <div>
-            <div className="flex gap-2 my-2 py-2">
+            <div className="flex gap-2 border p-3 rounded-lg"> 
               <Mail color="#9CA3AF" size={22} />
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="Email"
-                className="outline-none border-b"
+                className="outline-none border-none w-full"
               />
             </div>
-            {/* <div className="flex gap-2 my-2">
-                            <input type="checkbox" className="border" />
-                            <p className="text-neutral-600">Editable</p>
-                        </div> */}
-
-            <hr />
-            <div className="py-2">
+            <div className="py-2 pt-4">
               <div className="text-sm text-gray-500 flex justify-between">
                 Shared With{" "}
                 <LoaderCircle
@@ -90,20 +86,20 @@ export default function ShareDocument({
                 )}
               </ol>
             </div>
-            <hr />
           </div>
-          <div className="flex gap-2 w-full mt-2">
+          <div className="flex gap-[10px] w-full mt-2">
             <button
               disabled={processing}
               onClick={() => setShareDocument(null)}
-              className="w-full border rounded-lg py-1"
+              className="border rounded-lg py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
             >
-              Cancel
+                Cancel
+              {/* <X size={16} /> */}
             </button>
             <button
               disabled={processing}
               onClick={() => handleShareDocument(email)}
-              className="w-full border rounded-lg py-1 bg-red-300 border-red-300 hover:bg-red-400 hover:border-red-400"
+              className=" py-3 w-full border text-base rounded-lg text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
             >
               {processing ? "Wait..." : "Share"}
             </button>
