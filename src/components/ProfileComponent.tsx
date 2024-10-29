@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import useProfileStore, { ProfileType } from "@/zustand/useProfileStore";
 import { useEffect, useState } from "react";
 
@@ -132,7 +131,6 @@ export default function ProfileComponent() {
             onChange={handleChange}
           />
         ))}
-
       </div>
       <div className="mt-10 w-full">
         <button
