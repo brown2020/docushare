@@ -181,11 +181,11 @@ const Dashboard = () => {
           <button
             onDoubleClick={() => handleActiveRename(doc.id)}
             onClick={() => handleActiveDocument(doc.id)}
-            className={`text-left flex-1 ${
+            className={`text-left flex-1 font-semibold  text-base  ${
               doc.id === activeDocId ? "bg-blue-100" : ""
             }`}
           >
-            {doc.name || "Untitled"}
+            {doc.name || "Untitled"}  
           </button>
         )}
         {activeRename != doc.id && (
@@ -235,9 +235,9 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-full w-full">
-      <div className="min-w-64 bg-gray-100 p-4 border-r flex flex-col">
+      <div className="min-w-[310px] shadow-lg p-5 flex flex-col">
         <div>
-          <h2 className="text-lg font-semibold mb-4 flex justify-between">
+          <h2 className="text-[22px] font-semibold mb-5 mt-5 flex justify-between">
             Documents{" "}
             <LoaderCircle
               className={`animate-spin transition ${
@@ -247,12 +247,12 @@ const Dashboard = () => {
           </h2>
           <button
             onClick={handleCreateNewDocument}
-            className="w-full px-4 py-2 mb-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             New Document
           </button>
         </div>
-        <ul className="z-9 grow overflow-y-auto">
+        <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
           {documents
             .filter((doc) => !doc.isShared)
             .map((doc) => documentObject(doc))}
@@ -267,7 +267,7 @@ const Dashboard = () => {
         </ul>
       </div>
 
-      <div className="grow px-4 overflow-hidden">
+      <div className="grow overflow-hidden">
         <div className="h-full w-full">
 
         {activeDocId ? (
@@ -275,7 +275,7 @@ const Dashboard = () => {
             <CollaborativeEditor docId={activeDocId} />
           </div>
         ) : (
-          <div className="text-center text-gray-500 py-4">
+          <div className="text-center text-black pt-[60px] text-lg">
             Select or create a document to start editing.
           </div>
         )}
