@@ -50,14 +50,14 @@ export default function ShareDocument({
         }}
         extraCss="w-[400px] !m-0"
       >
-        <div className="flex gap-2 border-b justify-between p-5">
-          <h2 className="text-base">
+        <div className="flex gap-2 border-b justify-between p-5 max-sm:p-[15px]">
+          <h2 className="text-base max-sm:text-sm">
             Share Document {documentName}
           </h2>
           <X onClick={() => setShareDocument(null)}  className="text-[#9CA3AF] hover:text-red-500 cursor-pointer" size={22} />
         </div>
 
-        <div className="p-5 w-full">
+        <div className="p-5 w-full max-sm:p-[15px]">
           <div>
             <div className="flex gap-2 border p-3 rounded-lg"> 
               <Mail color="#9CA3AF" size={22} />
@@ -91,7 +91,7 @@ export default function ShareDocument({
             <button
               disabled={processing}
               onClick={() => setShareDocument(null)}
-              className="border rounded-lg py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
+              className="border rounded-lg max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
             >
                 Cancel
               {/* <X size={16} /> */}
@@ -99,7 +99,7 @@ export default function ShareDocument({
             <button
               disabled={processing}
               onClick={() => handleShareDocument(email)}
-              className=" py-3 w-full border text-base rounded-lg text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
+              className="max-sm:text-sm py-3 w-full border text-base rounded-lg text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
             >
               {processing ? "Wait..." : "Share"}
             </button>

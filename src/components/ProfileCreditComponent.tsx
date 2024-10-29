@@ -7,9 +7,9 @@ export default function ProfileCreditComponent() {
   const profile = useProfileStore((state) => state.profile);
 
   return (
-    <div className="flex flex-col p-5 border border-lightGray bg-lightGray mt-[60px] rounded-[10px] shadow-drop-shadow">
+    <div className="flex flex-col p-5 border border-lightGray bg-lightGray mt-[60px] max-sm:mt-[30px] rounded-[10px] shadow-drop-shadow">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex gap-2 w-full items-center">
+        <div className="flex max-sm:flex-col gap-2 w-full items-center">
           <div className="flex-1 text-lg font-medium">
             Credits Available: {Math.round(profile.credits)}
           </div>

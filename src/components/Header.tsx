@@ -18,9 +18,10 @@ import {
 } from "firebase/auth";
 import { serverTimestamp, Timestamp } from "firebase/firestore";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import logo from "@/assets/svg/logo.svg"
 import Image from "next/image";
+import { AlignJustify } from "lucide-react";
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
@@ -28,6 +29,7 @@ export default function Header() {
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const photoUrl = useAuthStore((state) => state.authPhotoUrl);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   useInitializeStores();
 
   useEffect(() => {
@@ -68,11 +70,11 @@ export default function Header() {
 
     syncAuthState();
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
-
+  
   return (
     <>
       <SignedOut>
-        <div className="flex items-center justify-end border px-10 py-4">
+        <div className="max-xs:hidden flex items-center justify-end border px-10 py-4">
           <SignInButton>
             <button className="text-white bg-blue-500 p-3 rounded-lg ">
               Sign In
@@ -81,12 +83,15 @@ export default function Header() {
         </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex items-center justify-between px-10 py-4 shadow-md z-[99]">
-          <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
+        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] max-sm:py-[10 px] shadow-md z-[99]">
+          <Image src={logo} alt="logo" className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]" />
           <div className="flex gap-[10px] items-center">
-            <div className="flex gap-4">
+            <div className="max-sm:hidden flex gap-4">
               <Link href="/dashboard" className="hover:text-blue-700">Dashboard</Link>
               <Link href="/profile" className="hover:text-blue-700">Profile</Link>
+            </div>
+            <div className="sm:hidden w-[26px] h-[26px]">
+              <AlignJustify className="cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             </div>
             {photoUrl && (
               <UserButton />
