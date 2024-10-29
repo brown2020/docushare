@@ -7,7 +7,7 @@ import ProfileCreditComponent from "./ProfileCreditComponent";
 
 export default function Profile() {
   return (
-    <div className="h-full font-sans mx-auto w-[1420px] mt-10 flex gap-[60px] justify-between">
+    <div className="h-full font-sans mx-auto w-full p-5 flex flex-col md:flex-row gap-[60px] justify-between">
       <div className="w-full">
         <AuthDataDisplay />
         <ProfileCreditComponent />
