@@ -94,20 +94,22 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     <Fragment>
       {isReady ? (
         <Fragment>
-          <div className="flex w-full justify-between bg-white rounded-lg">
-            <div className="grow overflow-y-hidden scroll-bar-design">
-              <TextMenu editor={editor} />
+          <div className="m-10 border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
+            <div className="flex w-full justify-between border-b border-gray-300">
+              <div className="grow overflow-y-hidden scroll-bar-design">
+                <TextMenu editor={editor} />
+              </div>
+              <LoaderCircle className={`animate-spin transition self-center mr-2 ${processing ? "opacity-100" : 'opacity-0'}`} />
             </div>
-            <LoaderCircle className={`animate-spin transition self-center mr-2 ${processing ? "opacity-100" : 'opacity-0'}`} />
+            <div ref={menuContainerRef} className="overflow-auto grow overflow-y-auto scroll-bar-design bg-white shadow-md">
+              <EditorContent
+                editor={editor}
+                className="h-full relative prose prose-sm max-w-none p-2 [&>div]:h-full"
+              />
+            </div>
+            <LinkMenu editor={editor} />
+            <ImageBlockMenu editor={editor} appendTo={menuContainerRef} />
           </div>
-          <div ref={menuContainerRef} className="grow overflow-y-auto scroll-bar-design bg-white  border border-gray-200 rounded-md shadow-md">
-            <EditorContent
-              editor={editor}
-              className="h-full relative prose prose-sm max-w-none p-2 [&>div]:h-full"
-            />
-          </div>
-          <LinkMenu editor={editor} />
-          <ImageBlockMenu editor={editor} appendTo={menuContainerRef} />
         </Fragment>
       ) : (
         <Fragment>Loading editor...</Fragment>
