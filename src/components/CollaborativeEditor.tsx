@@ -94,7 +94,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     <Fragment>
       {isReady ? (
         <Fragment>
-          <div className="m-10 border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
+          <div className="m-10 max-sm:my-[30px] max-sm:mx-[15px] border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
             <div className="flex w-full justify-between border-b border-gray-300">
               <div className="grow overflow-y-hidden scroll-bar-design">
                 <TextMenu editor={editor} />
