@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-.ProseMirror{
+html, body{
+    font-family: "GeneralSans-Variable";
+}
+.ProseMirror {
     @apply p-2;
 }

@@ -24,7 +24,7 @@ export default function ShareDocument({
 
   useEffect(() => {
     fetchSearched();
-  });
+  }, []);
 
   const fetchSearched = async () => {
     setFetching(true);
@@ -54,12 +54,12 @@ export default function ShareDocument({
           <h2 className="text-base max-sm:text-sm">
             Share Document {documentName}
           </h2>
-          <X onClick={() => setShareDocument(null)}  className="text-[#9CA3AF] hover:text-red-500 cursor-pointer" size={22} />
+          <X onClick={() => setShareDocument(null)} className="text-[#9CA3AF] hover:text-red-500 cursor-pointer" size={22} />
         </div>
 
         <div className="p-5 w-full max-sm:p-[15px]">
           <div>
-            <div className="flex gap-2 border p-3 rounded-lg"> 
+            <div className="flex gap-2 border p-3 rounded-lg">
               <Mail color="#9CA3AF" size={22} />
               <input
                 value={email}
@@ -70,19 +70,22 @@ export default function ShareDocument({
               />
             </div>
             <div className="py-2 pt-4">
-              <div className="text-sm text-gray-500 flex justify-between">
+              <div className="text-sm text-gray-500 flex justify-between mb-2">
                 Shared With{" "}
                 <LoaderCircle
-                  className={`animate-spin ${
-                    fetching ? "opacity-100" : "opacity-0"
-                  }`}
+                  className={`animate-spin ${fetching ? "opacity-100" : "opacity-0"
+                    }`}
                 />
               </div>
               <ol>
-                {Array.isArray(emailList) ? (
-                  emailList.map((value, index) => <li key={index}>{value}</li>)
-                ) : (
-                  <Fragment></Fragment>
+                {fetching ? <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32 mb-2.5"></div> : (
+                  Array.isArray(emailList) && emailList.length > 0 ? (
+                    emailList.map((value, index) => <li key={index}>{value}</li>)
+                  ) : (
+                    <Fragment>
+                      <p className="text-sm text-gray-600">Not shared with anyone.</p>
+                    </Fragment>
+                  )
                 )}
               </ol>
             </div>
@@ -93,7 +96,7 @@ export default function ShareDocument({
               onClick={() => setShareDocument(null)}
               className="border rounded-lg max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
             >
-                Cancel
+              Cancel
               {/* <X size={16} /> */}
             </button>
             <button
