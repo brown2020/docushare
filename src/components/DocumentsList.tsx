@@ -42,6 +42,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
   const [docName, setDocName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [refreshCode, setRefreshCode] = useState(1);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const fetchDocuments = useCallback(async () => {
@@ -136,6 +137,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
 
       if (data.status) {
         setShareDocument(null);
+        setRefreshCode(prevCount => prevCount + 1);
         toast.success("Document shared successfully");
       } else {
         toast.error(data.message);
@@ -238,93 +240,94 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
 
   return (
     <>
-        {/* Side bar Web view */}
-        <div className="max-sm:hidden min-w-[310px] shadow-lg p-5 flex flex-col">
-          <div>
-            <h2 className="text-[22px] font-semibold mb-5 mt-5 flex justify-between">
-              Documents{" "}
-              <LoaderCircle
-                className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
-              />{" "}
-            </h2>
-            <button
-              onClick={handleCreateNewDocument}
-              className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              New Document
-            </button>
-          </div>
-          <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
-            {documents
-              .filter((doc) => !doc.isShared)
-              .map((doc) => documentObject(doc))}
-            {sharedDocs().length > 0 && (
-              <Fragment>
-                <div className="text-sm text-gray-500 mt-2">Shared with you</div>
-                {documents
-                  .filter((doc) => doc.isShared)
-                  .map((doc) => documentObject(doc))}
-              </Fragment>
-            )}
-          </ul>
+      {/* Side bar Web view */}
+      <div className="max-sm:hidden min-w-[310px] shadow-lg p-5 flex flex-col">
+        <div>
+          <h2 className="text-[22px] font-semibold mb-5 mt-5 flex justify-between">
+            Documents{" "}
+            <LoaderCircle
+              className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
+            />{" "}
+          </h2>
+          <button
+            onClick={handleCreateNewDocument}
+            className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            New Document
+          </button>
         </div>
-        {/* Side bar Mobile view */}
-        <div className={`sm:hidden absolute top-0 z-[100] h-full border overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
-          <div className='bg-mediumGray bg-opacity-30 w-full h-full'>
-            <div className='bg-white w-[70%] h-full flex flex-col'>
-              <div className='px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center'>
-                <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
-                <div>
-                  <X className='w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500' />
-                </div>
+        <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
+          {documents
+            .filter((doc) => !doc.isShared)
+            .map((doc) => documentObject(doc))}
+          {sharedDocs().length > 0 && (
+            <Fragment>
+              <div className="text-sm text-gray-500 mt-2">Shared with you</div>
+              {documents
+                .filter((doc) => doc.isShared)
+                .map((doc) => documentObject(doc))}
+            </Fragment>
+          )}
+        </ul>
+      </div>
+      {/* Side bar Mobile view */}
+      <div className={`sm:hidden absolute top-0 z-[100] h-full border overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
+        <div className='bg-mediumGray bg-opacity-30 w-full h-full'>
+          <div className='bg-white w-[70%] h-full flex flex-col'>
+            <div className='px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center'>
+              <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
+              <div>
+                <X className='w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500' />
               </div>
-              <div className='grow flex flex-col overflow-x-hidden w-full h-full p-5'>
-                <div className='w-full'>
-                  <h2 className="text-[20px] font-semibold flex justify-between">
-                    Documents{" "}
-                    <LoaderCircle
-                      className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
-                    />{" "}
-                  </h2>
-                  <button
-                    onClick={handleCreateNewDocument}
-                    className="w-full mt-[22px] my-4 py-3 text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                  >
-                    New Document
-                  </button>
-                </div>
-                <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
-                  {documents
-                    .filter((doc) => !doc.isShared)
-                    .map((doc) => documentObject(doc))}
-                  {sharedDocs().length > 0 && (
-                    <Fragment>
-                      <div className="text-sm text-gray-500 mt-2">Shared with you</div>
-                      {documents
-                        .filter((doc) => doc.isShared)
-                        .map((doc) => documentObject(doc))}
-                    </Fragment>
-                  )}
-                </ul>
+            </div>
+            <div className='grow flex flex-col overflow-x-hidden w-full h-full p-5'>
+              <div className='w-full'>
+                <h2 className="text-[20px] font-semibold flex justify-between">
+                  Documents{" "}
+                  <LoaderCircle
+                    className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
+                  />{" "}
+                </h2>
+                <button
+                  onClick={handleCreateNewDocument}
+                  className="w-full mt-[22px] my-4 py-3 text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  New Document
+                </button>
               </div>
+              <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
+                {documents
+                  .filter((doc) => !doc.isShared)
+                  .map((doc) => documentObject(doc))}
+                {sharedDocs().length > 0 && (
+                  <Fragment>
+                    <div className="text-sm text-gray-500 mt-2">Shared with you</div>
+                    {documents
+                      .filter((doc) => doc.isShared)
+                      .map((doc) => documentObject(doc))}
+                  </Fragment>
+                )}
+              </ul>
             </div>
           </div>
         </div>
-        {deleteDocument && (
-          <DeleteDocument
-            setDeleteDoc={setDeleteDocument}
-            deleteDocumentHandle={deleteDocumentHandle}
-          />
-        )}
-        {shareDocument && (
-          <ShareDocument
-            documentId={shareDocument}
-            processing={processing}
-            documentName={docName}
-            setShareDocument={setShareDocument}
-            handleShareDocument={handleShareDocument}
-          />
-        )}
+      </div>
+      {deleteDocument && (
+        <DeleteDocument
+          setDeleteDoc={setDeleteDocument}
+          deleteDocumentHandle={deleteDocumentHandle}
+        />
+      )}
+      {shareDocument && (
+        <ShareDocument
+          key={refreshCode}
+          documentId={shareDocument}
+          processing={processing}
+          documentName={docName}
+          setShareDocument={setShareDocument}
+          handleShareDocument={handleShareDocument}
+        />
+      )}
     </>
   );
 };
