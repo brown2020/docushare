@@ -136,7 +136,6 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
       const data = await response.json();
 
       if (data.status) {
-        setShareDocument(null);
         setRefreshCode(prevCount => prevCount + 1);
         toast.success("Document shared successfully");
       } else {
