@@ -10,6 +10,7 @@ import '@/styles/index.css'
 import { LinkMenu } from "./menus/LinkMenu";
 import { LoaderCircle } from "lucide-react";
 import ImageBlockMenu from "@/extensions/ImageBlock/components/ImageBlockMenu";
+import { useActiveDoc } from "./ActiveDocContext";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -23,6 +24,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const [processing, setProcessing] = useState(true);
   const menuContainerRef = useRef(null)
 
+  const {documentName} = useActiveDoc();
 
   const editor = useEditor({
     extensions: [...ExtensionKit({})],
@@ -94,7 +96,10 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     <Fragment>
       {isReady ? (
         <Fragment>
-          <div className="m-10 max-sm:my-[30px] max-sm:mx-[15px] border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
+            <div className=" sm:hidden w-full px-[15px] mt-5">
+              <h2 className="text-lg font-medium">{documentName}</h2>
+            </div>
+          <div className="m-10 max-sm:mb-[30px] max-sm:mt-0 max-sm:mx-[15px] border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
             <div className="flex w-full justify-between border-b border-gray-300">
               <div className="grow overflow-y-hidden scroll-bar-design">
                 <TextMenu editor={editor} />
@@ -112,7 +117,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
           </div>
         </Fragment>
       ) : (
-        <Fragment>Loading editor...</Fragment>
+        <Fragment>
+          <div className="h-full w-full flex justify-center items-center">
+            <LoaderCircle
+              className={`animate-spin transition`}
+            />
+          </div>
+        </Fragment>
       )}
     </Fragment>
   );

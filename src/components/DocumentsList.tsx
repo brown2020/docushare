@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Fragment, useCallback } from "react";
+import { useState, useEffect, useRef, Fragment, useCallback, SetStateAction, Dispatch } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
@@ -30,9 +30,11 @@ interface DocumentsListProps {
   setActiveDocId: (docId: string | null) => void;
   openSidebar: boolean;
   showOnlyDocumentList?: boolean;
+  setIsSidebarOpen?: Dispatch<SetStateAction<boolean>>;
+  setSelectedDocumentName: (value: string) => void;
 }
 
-const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, activeDocId, setActiveDocId, openSidebar }) => {
+const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, setSelectedDocumentName, activeDocId, setActiveDocId, openSidebar, setIsSidebarOpen }) => {
   const { isLoaded } = useAuth();
   const [user] = useAuthState(auth);
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
@@ -44,6 +46,11 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
   const [fetching, setFetching] = useState(false);
   const [refreshCode, setRefreshCode] = useState(1);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+
+  const handleSelectDocumentName = (docName: string) => {
+    setSelectedDocumentName(docName);
+  };
 
   const fetchDocuments = useCallback(async () => {
     if (!isLoaded) return;
@@ -185,8 +192,8 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
         ) : (
           <button
             onDoubleClick={() => handleActiveRename(doc.id)}
-            onClick={() => handleActiveDocument(doc.id)}
-            className={`text-left flex-1 font-semibold text-base max-sm:text-sm  ${doc.id === activeDocId ? "bg-blue-100" : ""
+            onClick={() => { handleActiveDocument(doc.id); handleSelectDocumentName(doc.name || "Untitled") }}
+            className={`text-left flex-1 font-medium text-base max-sm:text-sm  ${doc.id === activeDocId ? "bg-blue-100" : ""
               }`}
           >
             {doc.name || "Untitled"}
@@ -205,13 +212,14 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
               onClick={() => {
                 setShareDocument(doc.id);
                 setDocName(doc.name || "Untitled");
+                setActiveDocId(doc.id);
               }}
               color="#9CA3AF"
               size={22}
             />
             <Trash2
               className="cursor-pointer"
-              onClick={() => setDeleteDocument(doc.id)}
+              onClick={() => { setDeleteDocument(doc.id); setActiveDocId(doc.id); }}
               color="#9CA3AF"
               size={22}
             />
@@ -240,9 +248,9 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
   return (
     <>
       {/* Side bar Web view */}
-      <div className="max-sm:hidden min-w-[310px] shadow-lg p-5 flex flex-col">
+      <div className="max-sm:hidden min-w-[310px] shadow-md p-5 flex flex-col">
         <div>
-          <h2 className="text-[22px] font-semibold mb-5 mt-5 flex justify-between">
+          <h2 className="text-[22px] font-medium mb-5 mt-5 flex justify-between">
             Documents{" "}
             <LoaderCircle
               className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
@@ -270,18 +278,18 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, act
         </ul>
       </div>
       {/* Side bar Mobile view */}
-      <div className={`sm:hidden absolute top-0 z-[100] h-full border overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
+      <div onClick={() => setIsSidebarOpen?.(false)} className={`sm:hidden absolute top-0 z-[10000] h-full border overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
         <div className='bg-mediumGray bg-opacity-30 w-full h-full'>
-          <div className='bg-white w-[70%] h-full flex flex-col'>
+          <div onClick={(e) => e.stopPropagation()} className='bg-white w-[70%]  h-full flex flex-col'>
             <div className='px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center'>
               <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
               <div>
-                <X className='w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500' />
+                <X onClick={() => setIsSidebarOpen?.(!openSidebar)} className='w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500' />
               </div>
             </div>
             <div className='grow flex flex-col overflow-x-hidden w-full h-full p-5'>
               <div className='w-full'>
-                <h2 className="text-[20px] font-semibold flex justify-between">
+                <h2 className="text-[20px] font-medium flex justify-between">
                   Documents{" "}
                   <LoaderCircle
                     className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
