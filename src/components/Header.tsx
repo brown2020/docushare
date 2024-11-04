@@ -22,6 +22,8 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/svg/logo.svg"
 import Image from "next/image";
 import { AlignJustify } from "lucide-react";
+import DocumentsList from "./DocumentsList";
+import { useActiveDoc } from "./ActiveDocContext";
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
@@ -30,7 +32,13 @@ export default function Header() {
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const photoUrl = useAuthStore((state) => state.authPhotoUrl);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { activeDocId, setActiveDocId } = useActiveDoc();
+  const {documentName, setDocumentName} = useActiveDoc();
+  // const [openSidebar, setOpenSidebar] = useState(false);
   useInitializeStores();
+  const handleActiveDocument = (docId: string) => {
+    setActiveDocId(docId);
+  };
 
   useEffect(() => {
     const syncAuthState = async () => {
@@ -70,7 +78,7 @@ export default function Header() {
 
     syncAuthState();
   }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
-  
+
   return (
     <>
       <SignedOut>
@@ -83,7 +91,7 @@ export default function Header() {
         </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] max-sm:py-[10 px] shadow-md z-[99]">
+        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md z-[99]">
           <Image src={logo} alt="logo" className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]" />
           <div className="flex gap-[10px] items-center">
             <div className="max-sm:hidden flex gap-4">
@@ -93,10 +101,13 @@ export default function Header() {
             <div className="sm:hidden w-[26px] h-[26px]">
               <AlignJustify className="cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             </div>
-            {photoUrl && (
+            {photoUrl ? (
               <UserButton />
-            )}
+            ) : <div className="bg-gray-300 animate-pulse h-8 w-8 rounded-full" />}
           </div>
+        </div>
+        <div className="sm:hidden">
+          <DocumentsList setSelectedDocumentName={setDocumentName} openSidebar={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} handleActiveDocument={handleActiveDocument} activeDocId={activeDocId} setActiveDocId={setActiveDocId} />
         </div>
       </SignedIn>
     </>
