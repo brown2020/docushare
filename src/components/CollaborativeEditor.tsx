@@ -96,8 +96,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     <Fragment>
       {isReady ? (
         <Fragment>
-            <div className=" sm:hidden w-full px-[15px] mt-5">
-              <h2 className="text-lg font-medium">{documentName}</h2>
+            <div className=" sm:hidden w-full px-[15px] mt-[30px]">
+              <h2 className="text-lg font-semibold truncate">{documentName}</h2>
             </div>
           <div className="m-10 max-sm:mb-[30px] max-sm:mt-0 max-sm:mx-[15px] border border-gray-300 h-screen overflow-hidden rounded-[10px] flex flex-col">
             <div className="flex w-full justify-between border-b border-gray-300">
