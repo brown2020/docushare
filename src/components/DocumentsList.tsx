@@ -278,9 +278,9 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
         </ul>
       </div>
       {/* Side bar Mobile view */}
-      <div onClick={() => setIsSidebarOpen?.(false)} className={`sm:hidden absolute top-0 z-[10000] h-full border overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
+      <div onClick={() => setIsSidebarOpen?.(false)} className={`sm:hidden absolute top-0 z-[10000] h-full border  overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
         <div className='bg-mediumGray bg-opacity-30 w-full h-full'>
-          <div onClick={(e) => e.stopPropagation()} className='bg-white w-[70%]  h-full flex flex-col'>
+          <div onClick={(e) => e.stopPropagation()} className={`bg-white h-full flex flex-col overflow-x-hidden transition-width duration-300 ${openSidebar === true ? 'w-[70%]' : 'w-0'}`}>
             <div className='px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center'>
               <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
               <div>
