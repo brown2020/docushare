@@ -19,7 +19,7 @@ import {
 import { serverTimestamp, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import logo from "@/assets/svg/logo.svg"
+import logo from "@/assets/svg/logo.svg";
 import Image from "next/image";
 import { AlignJustify } from "lucide-react";
 import DocumentsList from "./DocumentsList";
@@ -33,7 +33,7 @@ export default function Header() {
   const photoUrl = useAuthStore((state) => state.authPhotoUrl);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { activeDocId, setActiveDocId } = useActiveDoc();
-  const {documentName, setDocumentName} = useActiveDoc();
+  const { documentName, setDocumentName } = useActiveDoc();
   // const [openSidebar, setOpenSidebar] = useState(false);
   useInitializeStores();
   const handleActiveDocument = (docId: string) => {
@@ -92,22 +92,43 @@ export default function Header() {
       </SignedOut>
       <SignedIn>
         <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md z-[99]">
-          <Image src={logo} alt="logo" className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]" />
+          <Image
+            src={logo}
+            alt="logo"
+            className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
+          />
           <div className="flex gap-[10px] items-center">
             <div className="max-sm:hidden flex gap-4">
-              <Link href="/dashboard" className="hover:text-blue-700">Dashboard</Link>
-              <Link href="/profile" className="hover:text-blue-700">Profile</Link>
+              <Link href="/dashboard" className="hover:text-blue-700">
+                Dashboard
+              </Link>
+              <Link href="/profile" className="hover:text-blue-700">
+                Profile
+              </Link>
             </div>
             <div className="sm:hidden w-[26px] h-[26px]">
-              <AlignJustify className="cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+              <AlignJustify
+                className="cursor-pointer"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              />
             </div>
             {photoUrl ? (
               <UserButton />
-            ) : <div className="bg-gray-300 animate-pulse h-8 w-8 rounded-full" />}
+            ) : (
+              <div className="bg-gray-300 animate-pulse h-8 w-8 rounded-full" />
+            )}
           </div>
         </div>
         <div className="sm:hidden">
-          <DocumentsList setSelectedDocumentName={setDocumentName} openSidebar={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} handleActiveDocument={handleActiveDocument} activeDocId={activeDocId} setActiveDocId={setActiveDocId} />
+          <DocumentsList
+            setSelectedDocumentName={setDocumentName}
+            documentName={documentName}
+            openSidebar={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+            handleActiveDocument={handleActiveDocument}
+            activeDocId={activeDocId}
+            setActiveDocId={setActiveDocId}
+          />
         </div>
       </SignedIn>
     </>

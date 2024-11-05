@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef, Fragment, useCallback, SetStateAction, Dispatch } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  Fragment,
+  useCallback,
+  SetStateAction,
+  Dispatch,
+} from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
-import {
-  LoaderCircle,
-  Share2,
-  Trash2,
-  X,
-} from "lucide-react";
+import { LoaderCircle, Share2, Trash2, X } from "lucide-react";
 import DeleteDocument from "./Models/DeleteDocument";
 import ShareDocument from "@/components/Models/ShareDocument";
 import { useAuth } from "@clerk/nextjs";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import logo from "@/assets/svg/logo.svg"
+import logo from "@/assets/svg/logo.svg";
 
 interface DocumentSchema {
   id: string;
@@ -32,9 +35,17 @@ interface DocumentsListProps {
   showOnlyDocumentList?: boolean;
   setIsSidebarOpen?: Dispatch<SetStateAction<boolean>>;
   setSelectedDocumentName: (value: string) => void;
+  documentName?: string | null;
 }
 
-const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, setSelectedDocumentName, activeDocId, setActiveDocId, openSidebar, setIsSidebarOpen }) => {
+const DocumentsList: React.FC<DocumentsListProps> = ({
+  handleActiveDocument,
+  setSelectedDocumentName,
+  activeDocId,
+  setActiveDocId,
+  openSidebar,
+  setIsSidebarOpen,
+}) => {
   const { isLoaded } = useAuth();
   const [user] = useAuthState(auth);
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
@@ -46,7 +57,6 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
   const [fetching, setFetching] = useState(false);
   const [refreshCode, setRefreshCode] = useState(1);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-
 
   const handleSelectDocumentName = (docName: string) => {
     setSelectedDocumentName(docName);
@@ -92,11 +102,14 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
       clearTimeout(debounceTimeout.current);
     }
 
-    debounceTimeout.current = setTimeout(async (document_id) => {
-      if (!document_id) return;
-      handleSave(document_id);
-    }, 400, activeRename);
-
+    debounceTimeout.current = setTimeout(
+      async (document_id) => {
+        if (!document_id) return;
+        handleSave(document_id);
+      },
+      400,
+      activeRename
+    );
   };
 
   const handleSave = async (docId: string, close = false) => {
@@ -108,7 +121,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
     const index = _documents.findIndex((doc) => doc.id === docId);
     _documents[index].name = name;
     setDocuments(_documents);
-    if (close) setActiveRename(null)
+    if (close) setActiveRename(null);
   };
 
   const deleteDocumentHandle = () => {
@@ -143,7 +156,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
       const data = await response.json();
 
       if (data.status) {
-        setRefreshCode(prevCount => prevCount + 1);
+        setRefreshCode((prevCount) => prevCount + 1);
         toast.success("Document shared successfully");
       } else {
         toast.error(data.message);
@@ -175,13 +188,19 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
     return (
       <li
         key={doc.id}
-        className={`flex gap-2 p-2 w-full justify-between rounded items-center ${doc.id === activeDocId ? "bg-blue-100" : ""
-          }`}
+        className={`flex gap-2 p-2 w-full justify-between rounded items-center ${
+          doc.id === activeDocId ? "bg-blue-100" : ""
+        }`}
       >
         {activeRename == doc.id ? (
           <input
             type="text"
-            onBlur={() => handleSave(doc.id, true)} onKeyDown={e => { if (e.key === 'Escape' || e.key === 'Enter') { handleSave(doc.id, true) } }}
+            onBlur={() => handleSave(doc.id, true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Enter") {
+                handleSave(doc.id, true);
+              }
+            }}
             onChange={(e) => {
               handleInputChange(e);
             }}
@@ -192,9 +211,13 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
         ) : (
           <button
             onDoubleClick={() => handleActiveRename(doc.id)}
-            onClick={() => { handleActiveDocument(doc.id); handleSelectDocumentName(doc.name || "Untitled") }}
-            className={`text-left flex-1 font-medium text-base max-sm:text-sm  ${doc.id === activeDocId ? "bg-blue-100" : ""
-              }`}
+            onClick={() => {
+              handleActiveDocument(doc.id);
+              handleSelectDocumentName(doc.name || "Untitled");
+            }}
+            className={`text-left flex-1 font-medium text-base max-sm:text-sm  ${
+              doc.id === activeDocId ? "bg-blue-100" : ""
+            }`}
           >
             {doc.name || "Untitled"}
           </button>
@@ -219,7 +242,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
             />
             <Trash2
               className="cursor-pointer"
-              onClick={() => { setDeleteDocument(doc.id); setActiveDocId(doc.id); }}
+              onClick={() => {
+                setDeleteDocument(doc.id);
+                setActiveDocId(doc.id);
+              }}
               color="#9CA3AF"
               size={22}
             />
@@ -253,7 +279,9 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
           <h2 className="text-[22px] font-medium mb-5 mt-5 flex justify-between">
             Documents{" "}
             <LoaderCircle
-              className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
+              className={`animate-spin transition ${
+                fetching ? "opacity-100" : "opacity-0"
+              }`}
             />{" "}
           </h2>
           <button
@@ -278,21 +306,36 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
         </ul>
       </div>
       {/* Side bar Mobile view */}
-      <div onClick={() => setIsSidebarOpen?.(false)} className={`sm:hidden absolute top-0 z-[10000] h-full border  overflow-x-hidden ${openSidebar === true ? 'w-full' : 'w-0'}`}>
-        <div className='bg-mediumGray bg-opacity-30 w-full h-full'>
-          <div onClick={(e) => e.stopPropagation()} className={`bg-white h-full flex flex-col overflow-x-hidden transition-width duration-300 ${openSidebar === true ? 'w-[70%]' : 'w-0'}`}>
-            <div className='px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center'>
+      <div
+        onClick={() => setIsSidebarOpen?.(false)}
+        className={`sm:hidden absolute top-0 z-[10000] h-full border  overflow-x-hidden ${
+          openSidebar === true ? "w-full" : "w-0"
+        }`}
+      >
+        <div className="bg-mediumGray bg-opacity-30 w-full h-full">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-white h-full flex flex-col overflow-x-hidden transition-width duration-300 ${
+              openSidebar === true ? "w-[70%]" : "w-0"
+            }`}
+          >
+            <div className="px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center">
               <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
               <div>
-                <X onClick={() => setIsSidebarOpen?.(!openSidebar)} className='w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500' />
+                <X
+                  onClick={() => setIsSidebarOpen?.(!openSidebar)}
+                  className="w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500"
+                />
               </div>
             </div>
-            <div className='grow flex flex-col overflow-x-hidden w-full h-full p-5'>
-              <div className='w-full'>
+            <div className="grow flex flex-col overflow-x-hidden w-full h-full p-5">
+              <div className="w-full">
                 <h2 className="text-[20px] font-medium flex justify-between">
                   Documents{" "}
                   <LoaderCircle
-                    className={`animate-spin transition ${fetching ? "opacity-100" : "opacity-0"}`}
+                    className={`animate-spin transition ${
+                      fetching ? "opacity-100" : "opacity-0"
+                    }`}
                   />{" "}
                 </h2>
                 <button
@@ -308,7 +351,9 @@ const DocumentsList: React.FC<DocumentsListProps> = ({ handleActiveDocument, set
                   .map((doc) => documentObject(doc))}
                 {sharedDocs().length > 0 && (
                   <Fragment>
-                    <div className="text-sm text-gray-500 mt-2">Shared with you</div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Shared with you
+                    </div>
                     {documents
                       .filter((doc) => doc.isShared)
                       .map((doc) => documentObject(doc))}
