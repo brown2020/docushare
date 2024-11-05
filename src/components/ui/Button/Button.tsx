@@ -9,13 +9,9 @@ export type ButtonProps = {
   active?: boolean
   activeClassname?: string
   buttonSize?: ButtonSize
-} & React.ButtonHTMLAttributes<HTMLButtonElement>
+} & React.ButtonHTMLAttributes<HTMLButtonElement> & React.HTMLProps<HTMLHRElement>
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { active, buttonSize = 'medium', children, disabled, variant = 'primary', className, activeClassname, ...rest },
-    ref,
-  ) => {
+export const Button = ({ active, buttonSize = 'medium', children, disabled, variant = 'primary', ref, className, activeClassname, ...rest }: ButtonProps ) => {
     const buttonClassName = cn(
       'flex group items-center justify-center border border-transparent gap-2 text-sm font-semibold rounded-md disabled:opacity-50 whitespace-nowrap',
 
@@ -67,8 +63,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button ref={ref} disabled={disabled} className={buttonClassName} {...rest}>
         {children}
       </button>
-    )
-  },
-)
+    ) 
+  }
 
 Button.displayName = 'Button'

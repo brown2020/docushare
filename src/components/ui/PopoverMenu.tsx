@@ -1,7 +1,6 @@
 import * as Popover from '@radix-ui/react-popover'
 import { cn } from '@/lib/utils'
 import { icons } from 'lucide-react'
-import { forwardRef } from 'react'
 import { Surface } from './Surface'
 import { Toolbar } from './Toolbar'
 
@@ -113,8 +112,8 @@ export const CategoryTitle = ({ children }: CategoryTitle) => {
   )
 }
 
-export const Divider = forwardRef<HTMLHRElement>((props, ref) => {
-  return <hr {...props} ref={ref} className="my-1 border-neutral-200 dark:border-neutral-800" />
-})
+export const Divider = ({ ref, ...props }: React.HTMLProps<HTMLHRElement>) => {
+  return <hr ref={ref} {...props} className="my-1 border-neutral-200 dark:border-neutral-800" />;
+};
 
 Divider.displayName = 'Divider'
