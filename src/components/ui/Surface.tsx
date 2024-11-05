@@ -1,13 +1,12 @@
 import { cn } from '@/lib/utils'
-import { HTMLProps, forwardRef } from 'react'
+import { HTMLProps } from 'react'
 
 export type SurfaceProps = HTMLProps<HTMLDivElement> & {
   withShadow?: boolean
   withBorder?: boolean
 }
 
-export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
-  ({ children, className, withShadow = true, withBorder = true, ...props }, ref) => {
+export const Surface = ({ children, className, withShadow = true, ref, withBorder = true, ...props }: SurfaceProps) => {
     const surfaceClass = cn(
       className,
       'bg-white rounded-lg dark:bg-black',
@@ -20,7 +19,6 @@ export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
         {children}
       </div>
     )
-  },
-)
+  }
 
 Surface.displayName = 'Surface'
