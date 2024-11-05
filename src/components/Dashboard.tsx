@@ -3,18 +3,23 @@
 import CollaborativeEditor from "./CollaborativeEditor";
 import DocumentsList from "./DocumentsList";
 import { useActiveDoc } from "./ActiveDocContext";
-import { useState } from "react";
 
 const Dashboard = () => {
   const { activeDocId, setActiveDocId } = useActiveDoc();
-  const {setDocumentName} = useActiveDoc();
+  const { setDocumentName } = useActiveDoc();
   const handleActiveDocument = (docId: string) => {
     setActiveDocId(docId);
   };
 
   return (
     <div className="flex h-full w-full">
-      <DocumentsList setSelectedDocumentName={setDocumentName} openSidebar={false} handleActiveDocument={handleActiveDocument} activeDocId={activeDocId} setActiveDocId={setActiveDocId} />
+      <DocumentsList
+        setSelectedDocumentName={setDocumentName}
+        openSidebar={false}
+        handleActiveDocument={handleActiveDocument}
+        activeDocId={activeDocId}
+        setActiveDocId={setActiveDocId}
+      />
       <div className="grow overflow-hidden">
         <div className="h-full w-full">
           {activeDocId ? (
