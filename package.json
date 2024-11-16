@@ -42,7 +42,7 @@
     "firebase": "^11.0.1",
     "firebase-admin": "^12.5.0",
     "formidable": "^3.5.1",
-    "lucide-react": "^0.454.0",
+    "lucide-react": "^0.460.0",
     "mv": "^2.1.1",
     "next": "^14.2.16",
     "openai": "^4.63.0",
