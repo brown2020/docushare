@@ -3,7 +3,7 @@ import React, { ButtonHTMLAttributes, forwardRef, HTMLProps } from "react";
 import { cn } from "@/lib/utils";
 import { Surface } from "./Surface";
 import { Button, ButtonProps } from "./Button";
-import Tooltip from "./Tooltip";
+import { Tooltip, TooltipContentTitle, TooltipTrigger } from "./Tooltip/Tooltip";
 
 export type ToolbarWrapperProps = {
   shouldShowContent?: boolean;
@@ -68,45 +68,45 @@ export type ToolbarButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonProps["variant"];
 };
 
-const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
-  (
-    {
-      children,
-      buttonSize = "icon",
-      variant = "ghost",
-      className,
-      tooltip,
-      tooltipShortcut,
-      activeClassname,
-      ...rest
-    },
-    ref
-  ) => {
-    const buttonClass = cn("gap-1 min-w-[2rem] px-2 w-auto", className);
-    const content = (
-      <Button
-        activeClassname={activeClassname}
-        className={buttonClass}
-        variant={variant}
-        buttonSize={buttonSize}
-        ref={ref}
-        {...rest}
-      >
-        {children}
-      </Button>
-    );
+const ToolbarButton = (
+  {
+    children,
+    buttonSize = "icon",
+    variant = "ghost",
+    className,
+    tooltip,
+    tooltipShortcut,
+    activeClassname,
+    ...rest
+  }: ToolbarButtonProps
+) => {
 
-    if (tooltip) {
-      return (
-        <Tooltip title={tooltip} shortcut={tooltipShortcut}>
+  const buttonClass = cn("gap-1 min-w-[2rem] px-2 w-auto", className);
+  const content = (
+    <Button
+      activeClassname={activeClassname}
+      className={buttonClass}
+      variant={variant}
+      buttonSize={buttonSize}
+      {...rest}
+    >
+      {children}
+    </Button>
+  );
+
+  if (tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger>
           {content}
-        </Tooltip>
-      );
-    }
-
-    return content;
+        </TooltipTrigger>
+        <TooltipContentTitle title={tooltip} shortcut={tooltipShortcut} />
+      </Tooltip>
+    );
   }
-);
+
+  return content;
+};
 
 ToolbarButton.displayName = "ToolbarButton";
 
