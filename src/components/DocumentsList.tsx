@@ -284,6 +284,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
               }`}
             />{" "}
           </h2>
+          
           <button
             onClick={handleCreateNewDocument}
             className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
