@@ -11,7 +11,7 @@ import {
   useRole,
   useInteractions,
   useMergeRefs,
-  FloatingPortal
+  FloatingPortal,
 } from "@floating-ui/react";
 import type { Placement } from "@floating-ui/react";
 import { ShortcutKey } from ".";
@@ -27,7 +27,7 @@ export function useTooltip({
   initialOpen = false,
   placement = "top",
   open: controlledOpen,
-  onOpenChange: setControlledOpen
+  onOpenChange: setControlledOpen,
 }: TooltipOptions = {}) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(initialOpen);
 
@@ -44,20 +44,20 @@ export function useTooltip({
       flip({
         crossAxis: placement.includes("-"),
         fallbackAxisSideDirection: "start",
-        padding: 5
+        padding: 5,
       }),
-      shift({ padding: 5 })
-    ]
+      shift({ padding: 5 }),
+    ],
   });
 
   const context = data.context;
 
   const hover = useHover(context, {
     move: false,
-    enabled: controlledOpen == null
+    enabled: controlledOpen == null,
   });
   const focus = useFocus(context, {
-    enabled: controlledOpen == null
+    enabled: controlledOpen == null,
   });
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "tooltip" });
@@ -69,7 +69,7 @@ export function useTooltip({
       open,
       setOpen,
       ...interactions,
-      ...data
+      ...data,
     }),
     [open, setOpen, interactions, data]
   );
@@ -93,8 +93,6 @@ export function Tooltip({
   children,
   ...options
 }: { children: React.ReactNode } & TooltipOptions) {
-  // This can accept any props as options, e.g. `placement`,
-  // or other positioning options.
   const tooltip = useTooltip(options);
   return (
     <TooltipContext.Provider value={tooltip}>
@@ -108,30 +106,31 @@ export const TooltipTrigger = React.forwardRef<
   React.HTMLProps<HTMLElement> & { asChild?: boolean }
 >(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
   const context = useTooltipContext();
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const childrenRef = (children as any).ref;
-  const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const otherProps: any = React.isValidElement(children) ? children.props : {};
-  
-  // `asChild` allows the user to pass any element as the anchor
-  if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(
-      children,
-      context.getReferenceProps({
-        ref,
-        ...props,
-        ...otherProps,
-        "data-state": context.open ? "open" : "closed"
-      })
+  if (!React.isValidElement(children)) {
+    throw new Error(
+      "TooltipTrigger must have a valid React element as a child."
     );
+  }
+
+  // ✅ Do not access children.ref directly in React 19
+  const mergedRef = useMergeRefs([context.refs.setReference, propRef]);
+
+  if (asChild) {
+    return React.cloneElement(
+      children as React.ReactElement,
+      {
+        ref: mergedRef,
+        ...(typeof children.props === "object" ? children.props : {}), // Safe spreading
+        ...props,
+        "data-state": context.open ? "open" : "closed",
+      } as React.HTMLProps<HTMLElement>
+    ); // ✅ TypeScript-safe
   }
 
   return (
     <div
-      ref={ref}
-      // The user can style the trigger based on the state
+      ref={mergedRef}
       data-state={context.open ? "open" : "closed"}
       {...context.getReferenceProps(props)}
     >
@@ -142,7 +141,7 @@ export const TooltipTrigger = React.forwardRef<
 
 export const TooltipContentTitle = React.forwardRef<
   HTMLDivElement,
-  React.HTMLProps<HTMLDivElement> & { title?: string, shortcut?: string[] }
+  React.HTMLProps<HTMLDivElement> & { title?: string; shortcut?: string[] }
 >(function TooltipContent({ style, title, shortcut }, propRef) {
   const context = useTooltipContext();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
@@ -155,43 +154,25 @@ export const TooltipContentTitle = React.forwardRef<
         ref={ref}
         style={{
           ...context.floatingStyles,
-          ...style
+          ...style,
         }}
         className="z-[99999]"
       >
-        <span className='flex items-center gap-2 px-2.5 py-1 bg-white border border-neutral-100 rounded-lg shadow-sm z-[999]'>
-        {title && <span className="text-xs font-medium text-neutral-500">{title}</span>}
-        {shortcut && (
-          <span className="flex items-center gap-0.5">
-            {shortcut.map(shortcutKey => (
-              <ShortcutKey key={shortcutKey}>{shortcutKey}</ShortcutKey>
-            ))}
-          </span>
-        )}
+        <span className="flex items-center gap-2 px-2.5 py-1 bg-white border border-neutral-100 rounded-lg shadow-sm z-[999]">
+          {title && (
+            <span className="text-xs font-medium text-neutral-500">
+              {title}
+            </span>
+          )}
+          {shortcut && (
+            <span className="flex items-center gap-0.5">
+              {shortcut.map((shortcutKey) => (
+                <ShortcutKey key={shortcutKey}>{shortcutKey}</ShortcutKey>
+              ))}
+            </span>
+          )}
         </span>
       </div>
     </FloatingPortal>
   );
 });
-// export const TooltipContent = React.forwardRef<
-//   HTMLDivElement,
-//   React.HTMLProps<HTMLDivElement>
-// >(function TooltipContent({ style, ...props }, propRef) {
-//   const context = useTooltipContext();
-//   const ref = useMergeRefs([context.refs.setFloating, propRef]);
-
-//   if (!context.open) return null;
-
-//   return (
-//     <FloatingPortal>
-//       <div
-//         ref={ref}
-//         style={{
-//           ...context.floatingStyles,
-//           ...style
-//         }}
-//         {...context.getFloatingProps(props)}
-//       />
-//     </FloatingPortal>
-//   );
-// });
