@@ -48,44 +48,51 @@ export default function ShareDocument({
         onClose={() => {
           if (!processing) setShareDocument(null);
         }}
-        extraCss="w-[400px] !m-0"
+        extraCss="w-[400px]"
       >
         <div className="flex gap-2 border-b justify-between p-5 max-sm:p-[15px]">
           <h2 className="text-base max-sm:text-sm">
             Share Document {documentName}
           </h2>
-          <X onClick={() => setShareDocument(null)} className="text-[#9CA3AF] hover:text-red-500 cursor-pointer" size={22} />
+          <X
+            onClick={() => setShareDocument(null)}
+            className="text-[#9CA3AF] hover:text-red-500 cursor-pointer"
+            size={22}
+          />
         </div>
 
         <div className="p-5 w-full max-sm:p-[15px]">
           <div>
-            <div className="flex gap-2 border p-3 rounded-lg">
+            <div className="flex gap-2 border p-3 rounded-sm">
               <Mail color="#9CA3AF" size={22} />
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="Email"
-                className="outline-none border-none w-full"
+                className="outline-hidden border-none w-full"
               />
             </div>
             <div className="py-2 pt-4">
               <div className="text-sm text-gray-500 flex justify-between mb-2">
                 Shared With{" "}
                 <LoaderCircle
-                  className={`animate-spin ${fetching ? "opacity-100" : "opacity-0"
-                    }`}
+                  className={`animate-spin ${
+                    fetching ? "opacity-100" : "opacity-0"
+                  }`}
                 />
               </div>
               <ol>
-                {fetching ? <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32 mb-2.5"></div> : (
-                  Array.isArray(emailList) && emailList.length > 0 ? (
-                    emailList.map((value, index) => <li key={index}>{value}</li>)
-                  ) : (
-                    <Fragment>
-                      <p className="text-sm text-gray-600">Not shared with anyone.</p>
-                    </Fragment>
-                  )
+                {fetching ? (
+                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32 mb-2.5"></div>
+                ) : Array.isArray(emailList) && emailList.length > 0 ? (
+                  emailList.map((value, index) => <li key={index}>{value}</li>)
+                ) : (
+                  <Fragment>
+                    <p className="text-sm text-gray-600">
+                      Not shared with anyone.
+                    </p>
+                  </Fragment>
                 )}
               </ol>
             </div>
@@ -94,7 +101,7 @@ export default function ShareDocument({
             <button
               disabled={processing}
               onClick={() => setShareDocument(null)}
-              className="border rounded-lg max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
+              className="border rounded-sm max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
             >
               Cancel
               {/* <X size={16} /> */}
@@ -102,7 +109,7 @@ export default function ShareDocument({
             <button
               disabled={processing}
               onClick={() => handleShareDocument(email)}
-              className="max-sm:text-sm py-3 w-full border text-base rounded-lg text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
+              className="max-sm:text-sm py-3 w-full border text-base rounded-sm text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
             >
               {processing ? "Wait..." : "Share"}
             </button>

@@ -95,14 +95,14 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
   }, [payment_intent, addPayment, checkIfPaymentProcessed, addCredits, uid]);
 
   return (
-    <main className="max-w-6xl flex flex-col gap-2.5 mx-auto p-10 text-black text-center border m-10 rounded-md border-black">
+    <main className="max-w-6xl flex flex-col gap-2.5 mx-auto p-10 text-black text-center border m-10 rounded-sm border-black">
       {loading ? (
         <div>validating...</div>
       ) : id ? (
         <div className="mb-10">
           <h1 className="text-4xl font-extrabold mb-2">Thank you!</h1>
           <h2 className="text-2xl">You successfully purchased credits</h2>
-          <div className="bg-white p-2 rounded-md my-5 text-4xl font-bold mx-auto">
+          <div className="bg-white p-2 rounded-sm my-5 text-4xl font-bold mx-auto">
             ${amount / 100}
           </div>
           <div>Uid: {uid}</div>
@@ -116,7 +116,7 @@ export default function PaymentSuccessPage({ payment_intent }: Props) {
 
       <Link
         href="/profile"
-        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:opacity-50"
+        className="px-4 py-2 bg-blue-500 text-white rounded-sm hover:opacity-50"
       >
         View Profile
       </Link>

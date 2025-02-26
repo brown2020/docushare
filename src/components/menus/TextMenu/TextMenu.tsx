@@ -30,7 +30,7 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
   const blockOptions = useTextmenuContentTypes(editor)
 
   return (
-    <Toolbar.Wrapper className='relative z-[2] !border-none !outline-none !py-3'>
+    <Toolbar.Wrapper className='relative z-2 border-none! outline-hidden! py-3!'>
       <AIDropdown
        onFixSpelling={commands.onFixSpelling}
        onMakeLonger={commands.onMakeLonger}

@@ -27,7 +27,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         if (secret) setClientSecret(secret);
       } catch (error) {
         console.log("Error initializing payment:", error);
-        
+
         setErrorMessage("Failed to initialize payment. Please try again.");
       }
     }
@@ -96,14 +96,14 @@ export default function PaymentCheckoutPage({ amount }: Props) {
           Purchase amount: <span className="font-bold">${amount}</span>
         </h2>
       </div>
-      <form onSubmit={handleSubmit} className="bg-white p-2 rounded-md w-full">
+      <form onSubmit={handleSubmit} className="bg-white p-2 rounded-sm w-full">
         {clientSecret && <PaymentElement />}
 
         {errorMessage && <p className="text-red-500">{errorMessage}</p>}
 
         <button
           disabled={!stripe || loading}
-          className="text-white w-full p-5 bg-black mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse"
+          className="text-white w-full p-5 bg-black mt-2 rounded-sm font-bold disabled:opacity-50 disabled:animate-pulse"
         >
           {!loading ? `Pay $${amount}` : "Processing..."}
         </button>

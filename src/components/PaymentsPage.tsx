@@ -26,7 +26,7 @@ export default function PaymentsPage() {
           {payments.map((payment) => (
             <div
               key={payment.id}
-              className="border p-4 rounded-md bg-white shadow-md"
+              className="border p-4 rounded-sm bg-white shadow-md"
             >
               <div>ID: {payment.id}</div>
               <div>Amount: ${payment.amount / 100}</div>

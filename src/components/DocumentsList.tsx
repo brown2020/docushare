@@ -188,7 +188,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
     return (
       <li
         key={doc.id}
-        className={`flex gap-2 p-2 w-full justify-between rounded items-center ${
+        className={`flex gap-2 p-2 w-full justify-between rounded-sm items-center ${
           doc.id === activeDocId ? "bg-blue-100" : ""
         }`}
       >
@@ -206,7 +206,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
             }}
             value={docName}
             ref={inputRef}
-            className="w-full h-full bg-transparent max-sm:text-sm outline-none border-b border-neutral-400"
+            className="w-full h-full bg-transparent max-sm:text-sm outline-hidden border-b border-neutral-400"
           />
         ) : (
           <button
@@ -284,10 +284,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
               }`}
             />{" "}
           </h2>
-          
+
           <button
             onClick={handleCreateNewDocument}
-            className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-sm hover:bg-blue-600"
           >
             New Document
           </button>
@@ -309,7 +309,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       {/* Side bar Mobile view */}
       <div
         onClick={() => setIsSidebarOpen?.(false)}
-        className={`sm:hidden absolute top-0 z-[10000] h-full border  overflow-x-hidden ${
+        className={`sm:hidden absolute top-0 z-10000 h-full border  overflow-x-hidden ${
           openSidebar === true ? "w-full" : "w-0"
         }`}
       >
@@ -320,7 +320,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
               openSidebar === true ? "w-[70%]" : "w-0"
             }`}
           >
-            <div className="px-[15px] py-[10px] border-b-2 z-[99] flex justify-between items-center">
+            <div className="px-[15px] py-[10px] border-b-2 z-99 flex justify-between items-center">
               <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
               <div>
                 <X
@@ -341,7 +341,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
                 </h2>
                 <button
                   onClick={handleCreateNewDocument}
-                  className="w-full mt-[22px] my-4 py-3 text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  className="w-full mt-[22px] my-4 py-3 text-base bg-blue-500 text-white rounded-sm hover:bg-blue-600"
                 >
                   New Document
                 </button>

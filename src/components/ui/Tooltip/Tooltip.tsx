@@ -156,9 +156,9 @@ export const TooltipContentTitle = React.forwardRef<
           ...context.floatingStyles,
           ...style,
         }}
-        className="z-[99999]"
+        className="z-99999"
       >
-        <span className="flex items-center gap-2 px-2.5 py-1 bg-white border border-neutral-100 rounded-lg shadow-sm z-[999]">
+        <span className="flex items-center gap-2 px-2.5 py-1 bg-white border border-neutral-100 rounded-sm shadow-xs z-999">
           {title && (
             <span className="text-xs font-medium text-neutral-500">
               {title}

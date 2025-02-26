@@ -58,7 +58,7 @@ const ApiKeyInput = ({
       id={field.id}
       value={value}
       onChange={(e) => onChange(field.id, e.target.value)}
-      className="border bg-ghostWhite text-mediumGray rounded-md py-[10px] px-[15px] h-10 text-sm"
+      className="border bg-ghostWhite text-mediumGray rounded-sm py-[10px] px-[15px] h-10 text-sm"
       placeholder={field.placeholder}
     />
   </div>
@@ -109,13 +109,13 @@ export default function ProfileComponent() {
 
   return (
     <div className="flex flex-col p-5 border rounded-[10px] shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]">
-      {/* <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-md">
+      {/* <div className="flex flex-col sm:flex-row px-5 py-3 gap-3 border border-gray-500 rounded-sm">
         <div className="flex gap-2 w-full items-center">
           <div className="flex-1">
             Credits Available: {Math.round(profile.credits)}
           </div>
           <Link
-            className="bg-blue-500 text-white px-3 py-2 rounded-md hover:opacity-50 flex-1 text-center"
+            className="bg-blue-500 text-white px-3 py-2 rounded-sm hover:opacity-50 flex-1 text-center"
             href={"/payment-attempt"}
           >
             Buy 10,000 Credits
@@ -140,7 +140,7 @@ export default function ProfileComponent() {
               ([key, value]) => value !== profile[key as keyof ProfileType]
             )
           }
-          className="bg-blue-500 text-white px-3 py-3 rounded-lg hover:opacity-50 disabled:opacity-50 w-full"
+          className="bg-blue-500 text-white px-3 py-3 rounded-sm hover:opacity-50 disabled:opacity-50 w-full"
         >
           Update API Keys
         </button>
