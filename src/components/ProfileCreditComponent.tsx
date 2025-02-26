@@ -14,7 +14,7 @@ export default function ProfileCreditComponent() {
             Credits Available: {Math.round(profile.credits)}
           </div>
           <Link
-            className="bg-blue-500 text-white px-[60px] py-3 rounded-md hover:opacity-50 text-center"
+            className="bg-blue-500 text-white px-[60px] py-3 rounded-sm hover:opacity-50 text-center"
             href={"/payment-attempt"}
           >
             Buy 10,000 Credits

@@ -1,10 +1,617 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-html, body{
-    font-family: "GeneralSans-Variable";
+@custom-variant dark (&:is(.dark *));
+
+.ProseMirror {
+  /* Image Block */
+  figure[data-type="imageBlock"] {
+    img {
+      @apply rounded-sm block w-full;
+    }
+  }
+
+  /* Block Quote */
+  figure[data-type="blockquoteFigure"] {
+    @apply my-14 text-black dark:text-white;
+  }
+
+  & > blockquote,
+  [data-type="blockquoteFigure"] {
+    blockquote {
+      @apply first:mt-0 last:mb-0;
+    }
+  }
+
+  /* Columns */
+  [data-type="columns"] {
+    @apply grid gap-4 mt-14 mb-12;
+
+    &.layout-sidebar-left {
+      grid-template-columns: 40fr 60fr;
+    }
+
+    &.layout-sidebar-right {
+      grid-template-columns: 60fr 40fr;
+    }
+
+    &.layout-two-column {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  [data-type="column"] {
+    @apply overflow-auto;
+  }
+
+  /* Details */
+  [data-type="details"] {
+    @apply flex gap-1 my-6 mx-auto p-2 border border-gray-300 rounded;
+
+    summary {
+      @apply font-bold block;
+    }
+
+    > button {
+      @apply bg-transparent border-none cursor-pointer flex items-center justify-center rounded text-xs h-5 w-5;
+
+      &:hover {
+        @apply bg-gray-800;
+      }
+
+      &::before {
+        content: "\25B6";
+      }
+    }
+
+    &.is-open > button::before {
+      @apply rotate-90;
+    }
+
+    > div {
+      @apply flex flex-col gap-4 w-full;
+
+      > [data-type="detailsContent"] > :last-child {
+        @apply mb-2;
+      }
+    }
+
+    [data-type="details"] {
+      @apply my-2 mx-0;
+    }
+  }
+}
+
+.ProseMirror {
+  code {
+    @apply caret-white text-white bg-neutral-900 rounded-xs shadow-lg font-mono;
+
+    &::selection {
+      @apply bg-white/30;
+    }
+  }
+
+  pre {
+    @apply caret-white bg-neutral-700 text-white rounded my-12 p-4 border border-black dark:bg-neutral-900 dark:border-neutral-800;
+
+    *::selection {
+      @apply bg-white/20;
+    }
+
+    code {
+      @apply bg-inherit text-inherit p-0 shadow-none;
+    }
+
+    .hljs-comment,
+    .hljs-quote {
+      @apply text-neutral-400;
+    }
+
+    .hljs-variable,
+    .hljs-template-variable,
+    .hljs-attribute,
+    .hljs-tag,
+    .hljs-name,
+    .hljs-regexp,
+    .hljs-link,
+    .hljs-name,
+    .hljs-selector-id,
+    .hljs-selector-class {
+      @apply text-red-300;
+    }
+
+    .hljs-number,
+    .hljs-meta,
+    .hljs-built_in,
+    .hljs-builtin-name,
+    .hljs-literal,
+    .hljs-type,
+    .hljs-params {
+      @apply text-orange-300;
+    }
+
+    .hljs-string,
+    .hljs-symbol,
+    .hljs-bullet {
+      @apply text-lime-300;
+    }
+
+    .hljs-title,
+    .hljs-section {
+      @apply text-yellow-300;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag {
+      @apply text-teal-300;
+    }
+
+    .hljs-emphasis {
+      font-style: italic;
+    }
+
+    .hljs-strong {
+      font-weight: 700;
+    }
+  }
+}
+
+.ProseMirror {
+  .collaboration-cursor {
+    &__caret {
+      @apply border-r border-l border-black pointer-events-none -ml-[1px] -mr-[1px] relative break-normal;
+    }
+
+    &__label {
+      @apply rounded rounded-tl-none text-black text-xs font-semibold -left-[1px] leading-none py-0.5 px-1.5 absolute -top-[1.4em] select-none whitespace-nowrap;
+    }
+  }
+}
+
+.ProseMirror {
+  ol {
+    @apply list-decimal;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ul,
+  ol {
+    @apply py-0 px-8 my-6 first:mt-0 last:mb-0;
+
+    ul,
+    ol,
+    li {
+      @apply my-1;
+    }
+
+    p {
+      @apply mt-0 mb-1;
+    }
+  }
+
+  & > ul,
+  & > ol {
+    @apply my-8 first:mt-0 last:mb-0;
+  }
+
+  ul[data-type="taskList"] {
+    @apply list-none p-0;
+
+    p {
+    }
+
+    li {
+      @apply flex;
+
+      > label {
+        @apply grow-0 shrink-0 flex-auto mt-1 mr-2 select-none;
+      }
+
+      > div {
+        @apply flex-auto;
+      }
+
+      &[data-checked="true"] {
+        @apply line-through;
+      }
+    }
+  }
+}
+
+.ProseMirror {
+  /* Placeholder Styles */
+  .is-empty::before {
+    @apply text-black/40 dark:text-white/40 float-left h-0 pointer-events-none w-full;
+  }
+
+  &.ProseMirror-focused {
+    /* Slashmenu Placeholder */
+    > p.has-focus.is-empty::before {
+      content: "Type  /  to browse options";
+    }
+
+    > [data-type="columns"]
+      > [data-type="column"]
+      > p.is-empty.has-focus::before {
+      content: "Type  /  to browse options";
+    }
+  }
+
+  /* Default Placeholder */
+  & > .is-editor-empty::before {
+    content: "Click here to start writing …";
+  }
+
+  /* Blockquote Placeholder */
+  blockquote .is-empty:not(.is-editor-empty):first-child:last-child::before {
+    content: "Enter a quote";
+  }
+
+  blockquote + figcaption.is-empty:not(.is-editor-empty)::before {
+    content: "Author";
+  }
+
+  [data-placeholder][data-suggestion]::before,
+  [data-placeholder][data-suggestion] *::before {
+    content: none !important;
+  }
+}
+
+.ProseMirror {
+  .tableWrapper {
+    @apply my-12;
+  }
+
+  table {
+    @apply border-collapse border-black/10 rounded-sm box-border w-full;
+    @apply dark:border-white/20;
+
+    td,
+    th {
+      @apply border border-black/10 min-w-[100px] p-2 relative text-left align-top;
+      @apply dark:border-white/20;
+
+      &:first-of-type:not(a) {
+        @apply mt-0;
+      }
+
+      p {
+        @apply mt-3;
+      }
+    }
+
+    th {
+      @apply font-bold;
+    }
+
+    .column-resize-handle {
+      @apply -bottom-[2px] flex pointer-events-none absolute -right-1 top-0 w-2;
+
+      &::before {
+        @apply bg-black/20 h-full w-[1px] ml-2;
+        @apply dark:bg-white/20;
+        content: "";
+      }
+    }
+
+    .selectedCell {
+      @apply bg-black/5 border-black/20 border-double;
+      @apply dark:bg-white/10 dark:border-white/20;
+    }
+
+    .grip-column,
+    .grip-row {
+      @apply items-center bg-black/5 cursor-pointer flex justify-center absolute z-10;
+      @apply dark:bg-white/10;
+    }
+
+    .grip-column {
+      @apply w-[calc(100%+1px)] border-l border-black/20 h-3 left-0 -ml-[1px] -top-3;
+      @apply dark:border-white/20;
+
+      &:hover,
+      &.selected {
+        &::before {
+          content: "";
+          @apply w-2.5;
+        }
+      }
+
+      &:hover {
+        @apply bg-black/10;
+        @apply dark:bg-white/20;
+
+        &::before {
+          @apply border-b-2 border-dotted border-black/60;
+          @apply dark:border-white/60;
+        }
+      }
+
+      &.first {
+        @apply border-transparent rounded-tl-sm;
+      }
+
+      &.last {
+        @apply rounded-tr-sm;
+      }
+
+      &.selected {
+        @apply bg-black/30 border-black/30 shadow-sm;
+        @apply dark:bg-white/30 dark:border-white/30;
+
+        &::before {
+          @apply border-b-2 border-dotted;
+        }
+      }
+    }
+
+    .grip-row {
+      @apply h-[calc(100%+1px)] border-t border-black/20 -left-3 w-3 top-0 -mt-[1px];
+      @apply dark:border-white/20;
+
+      &:hover,
+      &.selected {
+        &::before {
+          @apply h-2.5;
+          content: "";
+        }
+      }
+      &:hover {
+        @apply bg-black/10;
+        @apply dark:bg-white/20;
+
+        &::before {
+          @apply border-l-2 border-dotted border-black/60;
+          @apply dark:border-white/60;
+        }
+      }
+
+      &.first {
+        @apply border-transparent rounded-tl-sm;
+      }
+
+      &.last {
+        @apply rounded-bl-sm;
+      }
+
+      &.selected {
+        @apply bg-black/30 border-black/30 shadow-sm;
+        @apply dark:bg-white/30 dark:border-white/30;
+
+        &::before {
+          @apply border-l-2 border-dotted;
+        }
+      }
+    }
+  }
+}
+
+.ProseMirror {
+  p {
+    @apply leading-relaxed my-3 first:mt-0 last:mb-0;
+  }
+
+  & > p {
+    @apply my-6 first:mt-0 last:mb-0;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  h5 {
+    @apply text-base;
+  }
+
+  h6 {
+    @apply text-sm;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold first:mt-0 last:mb-0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply mt-12;
+  }
+
+  h4,
+  h5,
+  h6 {
+    @apply mt-8;
+  }
+
+  a.link {
+    @apply text-blue-500 font-extrabold dark:text-blue-400;
+  }
+
+  mark {
+    @apply bg-red-500 rounded-xs decoration-clone text-inherit py-1 px-0 dark:bg-red-400;
+  }
+
+  & img {
+    @apply h-auto w-full max-w-full;
+  }
+
+  [data-type="horizontalRule"] {
+    @apply my-8 py-4 transition-all duration-100 ease-in-out cursor-pointer;
+
+    &.ProseMirror-selectednode {
+      @apply bg-black/5 dark:bg-white/10;
+
+      hr {
+        @apply border-t-black/30 dark:border-t-white/30;
+      }
+    }
+
+    &:hover:not(&.ProseMirror-selectednode) {
+      @apply bg-black/5;
+      @apply dark:bg-white/10;
+    }
+
+    hr {
+      @apply border-0 border-t border-black/20 bg-black/80;
+      @apply dark:border-white/20 dark:bg-white/80;
+    }
+  }
+}
+
+@theme {
+  --font-sans: "General Sans", sans-serif;
+
+  --breakpoint-2xl: 1600px;
+  --breakpoint-between-lg-and-2xl: 1300px;
+  --breakpoint-lg: 1201px;
+  --breakpoint-md: 997px;
+  --breakpoint-between-md-and-sm: 800px;
+  --breakpoint-sm: 769px;
+  --breakpoint-xs: 583px;
+  --breakpoint-xxs: 361px;
+
+  --shadow-pop-up-shadow: 0px 5px 20px rgba(0, 0, 0, 0.2);
+  --shadow-left: -4px 0 10px rgba(0, 0, 0, 0.5);
+  --shadow-right: rgba(0, 0, 0, 0.2) 20px 0px 10px -20px;
+  --shadow-bottom: rgba(0, 0, 0, 0.2) 0px 20px 10px -20px;
+  --shadow-drop-shadow: rgba(0, 0, 0, 0.2) 0px 4px 8px 0px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-light-gray: #efefef;
+  --color-ghost-white: #fcfcfc;
+  --color-medium-gray: #ababab;
+  --color-rich-black: #1e1e1e;
+  --color-slate-gray: #9ca3af;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+html,
+body {
+  font-family: "GeneralSans-Variable";
 }
 .ProseMirror {
-    @apply p-2;
+  @apply p-2;
+}
+
+.ProseMirror {
+  @apply caret-black dark:caret-white outline-0 pr-2 pl-2 py-4 z-0 lg:pl-2 lg:py-4 lg:pr-2;
+
+  & > * {
+    @apply mx-auto;
+  }
+
+  .selection {
+    @apply inline bg-gray-300 dark:bg-gray-700 text-white;
+  }
+
+  .selection,
+  *::selection {
+    @apply bg-black/10 dark:bg-white/20;
+  }
+
+  & > .react-renderer {
+    @apply my-12 first:mt-0 last:mb-0;
+  }
+
+  &.resize-cursor {
+    @apply cursor-col-resize;
+  }
+
+  .ProseMirror-gapcursor {
+    @apply relative w-full max-w-2xl mx-auto;
+
+    &:after {
+      @apply border-t-black/40 dark:border-t-white/40 w-full -top-[1.5em] max-w-2xl mx-auto left-0 right-0;
+    }
+  }
+  .node-imageUpload {
+    @apply rounded-sm border-2 border-dotted border-black border-black/10 p-2 dark:border-neutral-500;
+    transition: border 160ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
+    &:hover {
+      @apply border-black/30;
+    }
+
+    &:has(.is-active),
+    &.has-focus {
+      @apply border-black/40;
+    }
+  }
+  .node-imageBlock {
+    & img {
+      @apply border-2 border-transparent rounded-xl overflow-hidden;
+    }
+
+    &:hover img {
+      @apply border-2 border-neutral-100 dark:border-neutral-900;
+    }
+
+    &:has(.is-active) img,
+    &.has-focus img {
+      @apply border-2 border-neutral-800 dark:border-neutral-200;
+    }
+  }
+  .ProseMirror-gapcursor + .node-imageBlock,
+  .ProseMirror-gapcursor + .node-imageUpload {
+    @apply outline-neutral-700 hover:outline-neutral-600 dark:outline-neutral-300 dark:hover:outline-neutral-400;
+  }
+}
+
+[data-theme="slash-command"] {
+  width: 1000vw;
+}
+
+.scroll-bar-design::-webkit-scrollbar {
+  width: 4px;
+  height: 5px;
+}
+
+.scroll-bar-design::-webkit-scrollbar-track {
+  /* -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);  */
+  border-radius: 10px;
+}
+
+.scroll-bar-design::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 0 6px rgb(78 78 78 / 44%);
+}
+.scroll-bar-design::-webkit-scrollbar-corner {
+  background: transparent;
 }

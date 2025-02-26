@@ -84,14 +84,14 @@ export default function Header() {
       <SignedOut>
         <div className="max-xs:hidden flex items-center justify-end border px-10 py-4">
           <SignInButton>
-            <button className="text-white bg-blue-500 p-3 rounded-lg ">
+            <button className="text-white bg-blue-500 p-3 rounded-sm ">
               Sign In
             </button>
           </SignInButton>
         </div>
       </SignedOut>
       <SignedIn>
-        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md z-[99]">
+        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md z-99">
           <Image
             src={logo}
             alt="logo"

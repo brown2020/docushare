@@ -130,7 +130,7 @@ export const AIDropdown = ({
           <Surface className="p-2 min-w-[10rem]">
             {aiProcessing ? (
               <div
-                className="outline-none"
+                className="outline-hidden"
                 onClick={(event) => event.preventDefault()}
               >
                 <DropdownButton>
@@ -146,7 +146,7 @@ export const AIDropdown = ({
             ) : aiContent ? (
               <Fragment>
                 <div
-                  className="outline-none px-2 py-1 max-h-[60vh] overflow-y-auto"
+                  className="outline-hidden px-2 py-1 max-h-[60vh] overflow-y-auto"
                   onClick={(event) => event.preventDefault()}
                 >
                   <div className="max-w-[70vw] prose prose-sm prose-neutral">
@@ -189,7 +189,7 @@ export const AIDropdown = ({
                       setAiContinue(event.target.value);
                     }}
                     value={aiContinue}
-                    className="p-0 outline-none border-0 focus:ring-0"
+                    className="p-0 outline-hidden border-0 focus:ring-0"
                     placeholder="Ask AI to edit or generate..."
                   />
                   <Button
