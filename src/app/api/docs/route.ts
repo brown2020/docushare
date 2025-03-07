@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,42 @@ export const GET = async () => {
 
     return NextResponse.json(
       { error: "Failed to fetch documents" },
+      { status: 500 }
+    );
+  }
+};
+
+export const POST = async (req: NextRequest) => {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { name = "Untitled Document" } = body;
+
+    const docData = {
+      name,
+      content: {},
+      owner: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      share: [],
+    };
+
+    const docRef = await db.collection(DOCUMENT_COLLECTION).add(docData);
+
+    return NextResponse.json({
+      id: docRef.id,
+      name,
+      owner: userId,
+    });
+  } catch (error) {
+    console.error("Error creating document:", error);
+    return NextResponse.json(
+      { error: "Failed to create document" },
       { status: 500 }
     );
   }
