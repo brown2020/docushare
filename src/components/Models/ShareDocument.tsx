@@ -1,6 +1,6 @@
 import { LoaderCircle, Mail, X } from "lucide-react";
 import PopupModel from "./PopupModel";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 
 interface ShareDocumentProps {
@@ -22,24 +22,23 @@ export default function ShareDocument({
   const [fetching, setFetching] = useState(false);
   const [emailList, setEmailList] = useState([]);
 
-  useEffect(() => {
-    fetchSearched();
-  }, []);
-
-  const fetchSearched = async () => {
+  const fetchSearched = useCallback(async () => {
     setFetching(true);
     try {
       const response = await fetch(`/api/share?documentId=${documentId}`);
       const data = await response.json();
       setFetching(false);
       setEmailList(data.emails);
-      console.log("emailList", emailList);
     } catch (error) {
       console.log("Error fetching documents:", error);
       setFetching(false);
       toast.error("Something went wrong.");
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    fetchSearched();
+  }, [fetchSearched]);
 
   return (
     <div>
@@ -104,7 +103,6 @@ export default function ShareDocument({
               className="border rounded-sm max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
             >
               Cancel
-              {/* <X size={16} /> */}
             </button>
             <button
               disabled={processing}

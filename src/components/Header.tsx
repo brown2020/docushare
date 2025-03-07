@@ -18,12 +18,13 @@ import {
 } from "firebase/auth";
 import { serverTimestamp, Timestamp } from "firebase/firestore";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import logo from "@/assets/svg/logo.svg";
 import Image from "next/image";
 import { AlignJustify } from "lucide-react";
 import DocumentsList from "./DocumentsList";
 import { useActiveDoc } from "./ActiveDocContext";
+import toast from "react-hot-toast";
 
 export default function Header() {
   const { getToken, isSignedIn } = useAuth();
@@ -34,11 +35,53 @@ export default function Header() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { activeDocId, setActiveDocId } = useActiveDoc();
   const { documentName, setDocumentName } = useActiveDoc();
-  // const [openSidebar, setOpenSidebar] = useState(false);
+  const [isCreatingDocument, setIsCreatingDocument] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   useInitializeStores();
+
   const handleActiveDocument = (docId: string) => {
     setActiveDocId(docId);
   };
+
+  const refreshDocuments = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
+  const handleCreateNewDocument = useCallback(async () => {
+    if (isCreatingDocument) return; // Prevent multiple simultaneous requests
+
+    setIsCreatingDocument(true);
+    try {
+      const response = await fetch("/api/docs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: "Untitled Document" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data || !data.id) {
+        throw new Error("Invalid response data");
+      }
+
+      setActiveDocId(data.id);
+      setDocumentName(data.name || "Untitled Document");
+      toast.success("Document created successfully");
+      refreshDocuments();
+    } catch (error) {
+      console.error("Error creating document:", error);
+      toast.error("Failed to create document. Please try again.");
+    } finally {
+      setIsCreatingDocument(false);
+    }
+  }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments]);
 
   useEffect(() => {
     const syncAuthState = async () => {
@@ -128,6 +171,10 @@ export default function Header() {
             handleActiveDocument={handleActiveDocument}
             activeDocId={activeDocId}
             setActiveDocId={setActiveDocId}
+            onCreateDocument={handleCreateNewDocument}
+            isCreatingDocument={isCreatingDocument}
+            searchQuery=""
+            key={`header-documents-list-${refreshTrigger}`}
           />
         </div>
       </SignedIn>

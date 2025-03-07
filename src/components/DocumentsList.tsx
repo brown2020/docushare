@@ -4,22 +4,19 @@ import {
   useState,
   useEffect,
   useRef,
-  Fragment,
   useCallback,
   SetStateAction,
   Dispatch,
 } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
-import { LoaderCircle, Share2, Trash2, X } from "lucide-react";
+import { LoaderCircle, Share2, Trash2, Plus } from "lucide-react";
 import DeleteDocument from "./Models/DeleteDocument";
 import ShareDocument from "@/components/Models/ShareDocument";
 import { useAuth } from "@clerk/nextjs";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import toast from "react-hot-toast";
-import Image from "next/image";
-import logo from "@/assets/svg/logo.svg";
 
 interface DocumentSchema {
   id: string;
@@ -36,15 +33,18 @@ interface DocumentsListProps {
   setIsSidebarOpen?: Dispatch<SetStateAction<boolean>>;
   setSelectedDocumentName: (value: string) => void;
   documentName?: string | null;
+  searchQuery?: string;
+  onCreateDocument: () => Promise<void>;
+  isCreatingDocument: boolean;
 }
 
 const DocumentsList: React.FC<DocumentsListProps> = ({
   handleActiveDocument,
   setSelectedDocumentName,
   activeDocId,
-  setActiveDocId,
-  openSidebar,
-  setIsSidebarOpen,
+  searchQuery = "",
+  onCreateDocument,
+  isCreatingDocument,
 }) => {
   const { isLoaded } = useAuth();
   const [user] = useAuthState(auth);
@@ -89,11 +89,6 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   }, [activeRename]);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const handleActiveRename = (docId: string) => {
-    setActiveRename(docId);
-    const doc = documents.find((doc) => doc.id === docId);
-    setDocName(doc?.name || "Untitled");
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDocName(e.target.value);
@@ -102,44 +97,47 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       clearTimeout(debounceTimeout.current);
     }
 
-    debounceTimeout.current = setTimeout(
-      async (document_id) => {
-        if (!document_id) return;
-        handleSave(document_id);
-      },
-      400,
-      activeRename
-    );
+    debounceTimeout.current = setTimeout(() => {
+      if (activeRename) {
+        handleSave(activeRename);
+      }
+    }, 1000);
   };
 
   const handleSave = async (docId: string, close = false) => {
-    const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
-    const name = docName;
-    setDoc(docRef, { name }, { merge: true });
-
-    const _documents = [...documents];
-    const index = _documents.findIndex((doc) => doc.id === docId);
-    _documents[index].name = name;
-    setDocuments(_documents);
-    if (close) setActiveRename(null);
+    if (docName.trim() === "") return;
+    setProcessing(true);
+    try {
+      const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
+      await setDoc(docRef, { name: docName }, { merge: true });
+      if (close) setActiveRename(null);
+      fetchDocuments();
+    } catch (error) {
+      console.log("Error updating document name:", error);
+      toast.error("Something went wrong.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const deleteDocumentHandle = () => {
-    deleteDoc(
-      doc(
-        collection(db, DOCUMENT_COLLECTION),
-        deleteDocument ? deleteDocument : ""
-      )
-    );
-    fetchDocuments();
-    setDeleteDocument(null);
+    if (!deleteDocument) return;
+    setProcessing(true);
+    try {
+      const docRef = doc(collection(db, DOCUMENT_COLLECTION), deleteDocument);
+      deleteDoc(docRef);
+      setDeleteDocument(null);
+      fetchDocuments();
+    } catch (error) {
+      console.log("Error deleting document:", error);
+      toast.error("Something went wrong.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleShareDocument = async (email: string) => {
-    if (!email) {
-      toast.error("Email address is required.");
-      return;
-    }
+    if (!shareDocument) return;
     setProcessing(true);
     try {
       const response = await fetch("/api/share", {
@@ -148,229 +146,138 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
           documentId: shareDocument,
+          email,
         }),
       });
-      setProcessing(false);
       const data = await response.json();
-
-      if (data.status) {
-        setRefreshCode((prevCount) => prevCount + 1);
-        toast.success("Document shared successfully");
+      if (data.error) {
+        toast.error(data.error);
       } else {
-        toast.error(data.message);
+        toast.success("Document shared successfully!");
+        setShareDocument(null);
+        setRefreshCode((prev) => prev + 1);
       }
     } catch (error) {
       console.log("Error sharing document:", error);
       toast.error("Something went wrong.");
+    } finally {
       setProcessing(false);
     }
   };
 
-  const handleCreateNewDocument = async () => {
-    setFetching(true);
-    const docRef = await addDoc(collection(db, DOCUMENT_COLLECTION), {
-      name: "Untitled Document",
-      content: "",
-      owner: user?.uid,
-    });
-
-    setDocuments((prevDocs) => [
-      ...prevDocs,
-      { id: docRef.id, name: "Untitled Document" },
-    ]);
-    setActiveDocId(docRef.id);
-    setFetching(false);
-  };
-
   const documentObject = (doc: DocumentSchema) => {
     return (
-      <li
+      <div
         key={doc.id}
-        className={`flex gap-2 p-2 w-full justify-between rounded-sm items-center ${
-          doc.id === activeDocId ? "bg-blue-100" : ""
+        className={`p-2 rounded-md flex items-center justify-between ${
+          activeDocId === doc.id ? "bg-blue-50" : "hover:bg-gray-50"
         }`}
       >
-        {activeRename == doc.id ? (
-          <input
-            type="text"
-            onBlur={() => handleSave(doc.id, true)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape" || e.key === "Enter") {
-                handleSave(doc.id, true);
-              }
-            }}
-            onChange={(e) => {
-              handleInputChange(e);
-            }}
-            value={docName}
-            ref={inputRef}
-            className="w-full h-full bg-transparent max-sm:text-sm outline-hidden border-b border-neutral-400"
-          />
-        ) : (
+        <div
+          className="flex-1 cursor-pointer truncate"
+          onClick={() => {
+            handleActiveDocument(doc.id);
+            handleSelectDocumentName(doc.name || "Untitled");
+          }}
+        >
+          {activeRename === doc.id ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={docName}
+              onChange={handleInputChange}
+              onBlur={() => handleSave(doc.id, true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSave(doc.id, true);
+                }
+              }}
+              className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          ) : (
+            <span className="text-gray-700">{doc.name || "Untitled"}</span>
+          )}
+        </div>
+        <div className="flex items-center space-x-1 ml-2">
           <button
-            onDoubleClick={() => handleActiveRename(doc.id)}
             onClick={() => {
-              handleActiveDocument(doc.id);
-              handleSelectDocumentName(doc.name || "Untitled");
+              setShareDocument(doc.id);
+              setDocName(doc.name || "Untitled");
             }}
-            className={`text-left flex-1 font-medium text-base max-sm:text-sm  ${
-              doc.id === activeDocId ? "bg-blue-100" : ""
-            }`}
+            className="p-1 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded"
+            title="Share document"
           >
-            {doc.name || "Untitled"}
+            <Share2 size={16} />
           </button>
-        )}
-        {activeRename != doc.id && (
-          <div className="flex gap-2">
-            {/* <Pencil
-              className="cursor-pointer"
-              onClick={() => handleActiveRename(doc.id)}
-              color="#9CA3AF"
-              size={22}
-            /> */}
-            <Share2
-              className="cursor-pointer"
-              onClick={() => {
-                setShareDocument(doc.id);
-                setDocName(doc.name || "Untitled");
-                setActiveDocId(doc.id);
-              }}
-              color="#9CA3AF"
-              size={22}
-            />
-            <Trash2
-              className="cursor-pointer"
-              onClick={() => {
-                setDeleteDocument(doc.id);
-                setActiveDocId(doc.id);
-              }}
-              color="#9CA3AF"
-              size={22}
-            />
-          </div>
-        )}
-        {activeRename == doc.id && (
-          <div className="flex gap-2">
-            {/* <CircleX
-              onClick={() => setActiveRename(null)}
-              color="#9CA3AF"
-              size={22}
-            /> */}
-            {/* <Save
-              onClick={() => handleSave(doc.id)}
-              color="#9CA3AF"
-              size={22}
-            /> */}
-          </div>
-        )}
-      </li>
+          <button
+            onClick={() => setDeleteDocument(doc.id)}
+            className="p-1 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded"
+            title="Delete document"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
     );
   };
 
-  const sharedDocs = () => documents.filter((doc) => doc.isShared);
+  // Filter documents based on search query
+  const filteredDocuments = documents.filter((doc) => {
+    if (!searchQuery) return true;
+    return doc.name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
-    <>
-      {/* Side bar Web view */}
-      <div className="max-sm:hidden min-w-[310px] shadow-md p-5 flex flex-col">
-        <div>
-          <h2 className="text-[22px] font-medium mb-5 mt-5 flex justify-between">
-            Documents{" "}
-            <LoaderCircle
-              className={`animate-spin transition ${
-                fetching ? "opacity-100" : "opacity-0"
-              }`}
-            />{" "}
-          </h2>
-
-          <button
-            onClick={handleCreateNewDocument}
-            className="w-full px-[62px] py-3 mb-4 bg-blue-500 text-white rounded-sm hover:bg-blue-600"
-          >
-            New Document
-          </button>
-        </div>
-        <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
-          {documents
-            .filter((doc) => !doc.isShared)
-            .map((doc) => documentObject(doc))}
-          {sharedDocs().length > 0 && (
-            <Fragment>
-              <div className="text-sm text-gray-500 mt-2">Shared with you</div>
-              {documents
-                .filter((doc) => doc.isShared)
-                .map((doc) => documentObject(doc))}
-            </Fragment>
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <h2 className="font-semibold text-gray-800">My Documents</h2>
+        <button
+          onClick={onCreateDocument}
+          disabled={isCreatingDocument || processing}
+          className="p-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+          title="Create New Document"
+        >
+          {isCreatingDocument ? (
+            <LoaderCircle size={16} className="animate-spin" />
+          ) : (
+            <Plus size={16} />
           )}
-        </ul>
+        </button>
       </div>
-      {/* Side bar Mobile view */}
-      <div
-        onClick={() => setIsSidebarOpen?.(false)}
-        className={`sm:hidden absolute top-0 z-10000 h-full border  overflow-x-hidden ${
-          openSidebar === true ? "w-full" : "w-0"
-        }`}
-      >
-        <div className="bg-mediumGray bg-opacity-30 w-full h-full">
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className={`bg-white h-full flex flex-col overflow-x-hidden transition-width duration-300 ${
-              openSidebar === true ? "w-[70%]" : "w-0"
-            }`}
-          >
-            <div className="px-[15px] py-[10px] border-b-2 z-99 flex justify-between items-center">
-              <Image src={logo} alt="logo" className="w-[115.13px] h-[60px]" />
-              <div>
-                <X
-                  onClick={() => setIsSidebarOpen?.(!openSidebar)}
-                  className="w-[22px] h-[22px] text-slateGray cursor-pointer hover:text-red-500"
-                />
-              </div>
-            </div>
-            <div className="grow flex flex-col overflow-x-hidden w-full h-full p-5">
-              <div className="w-full">
-                <h2 className="text-[20px] font-medium flex justify-between">
-                  Documents{" "}
-                  <LoaderCircle
-                    className={`animate-spin transition ${
-                      fetching ? "opacity-100" : "opacity-0"
-                    }`}
-                  />{" "}
-                </h2>
-                <button
-                  onClick={handleCreateNewDocument}
-                  className="w-full mt-[22px] my-4 py-3 text-base bg-blue-500 text-white rounded-sm hover:bg-blue-600"
-                >
-                  New Document
-                </button>
-              </div>
-              <ul className="z-9 grow overflow-y-auto scroll-bar-design pr-2 flex flex-col gap-2">
-                {documents
-                  .filter((doc) => !doc.isShared)
-                  .map((doc) => documentObject(doc))}
-                {sharedDocs().length > 0 && (
-                  <Fragment>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Shared with you
-                    </div>
-                    {documents
-                      .filter((doc) => doc.isShared)
-                      .map((doc) => documentObject(doc))}
-                  </Fragment>
-                )}
-              </ul>
-            </div>
+
+      <div className="flex-1 overflow-y-auto p-2">
+        {fetching ? (
+          <div className="flex justify-center items-center h-full">
+            <LoaderCircle className="animate-spin text-gray-400" />
           </div>
-        </div>
+        ) : filteredDocuments.length > 0 ? (
+          <div className="space-y-1">
+            {filteredDocuments.map((doc) => documentObject(doc))}
+          </div>
+        ) : searchQuery ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No documents match your search</p>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No documents yet</p>
+            <p className="text-sm mt-1">
+              Create your first document to get started
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Delete Document Modal */}
       {deleteDocument && (
         <DeleteDocument
           setDeleteDoc={setDeleteDocument}
           deleteDocumentHandle={deleteDocumentHandle}
         />
       )}
+
+      {/* Share Document Modal */}
       {shareDocument && (
         <ShareDocument
           key={refreshCode}
@@ -381,7 +288,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
           handleShareDocument={handleShareDocument}
         />
       )}
-    </>
+    </div>
   );
 };
 
