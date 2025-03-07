@@ -32,11 +32,11 @@ export default function PopupModel({
   return (
     <div
       onClick={onClose}
-      className="absolute h-full w-full flex justify-center items-center z-20000 top-0 max-sm:px-[30px] right-0 bg-black bg-opacity-40"
+      className="fixed inset-0 backdrop-blur-sm bg-white/70 flex items-center justify-center z-50"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`relative bg-white rounded-sm shadow-lg mx-4 overflow-auto transform transition-transform duration-300 scale-95 ${extraCss}`}
+        className={`relative bg-white rounded-lg shadow-lg border border-gray-200 overflow-auto transform transition-transform duration-300 scale-95 ${extraCss}`}
       >
         {children}
       </div>

@@ -7,6 +7,7 @@ import {
   DocumentSnapshot,
   onSnapshot,
   setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
@@ -17,6 +18,7 @@ import { LinkMenu } from "./menus/LinkMenu";
 import { LoaderCircle } from "lucide-react";
 import ImageBlockMenu from "@/extensions/ImageBlock/components/ImageBlockMenu";
 import { useActiveDoc } from "./ActiveDocContext";
+import { auth } from "@/firebase/firebaseClient";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -88,6 +90,36 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   useEffect(() => {
     if (!editor) return;
     const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
+
+    // First, check if the document exists and has the necessary fields
+    const checkAndInitializeDoc = async () => {
+      try {
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists() || !docSnap.data().content) {
+          // Initialize the document with required fields if it doesn't exist or is missing content
+          await setDoc(
+            docRef,
+            {
+              content: editor.getJSON(),
+              updatedAt: new Date(),
+              // Only set these fields if the document doesn't exist
+              ...(!docSnap.exists() && {
+                owner: auth.currentUser?.uid,
+                share: [],
+                createdAt: new Date(),
+              }),
+            },
+            { merge: true }
+          );
+        }
+      } catch (error) {
+        console.error("Error checking/initializing document:", error);
+        setProcessing(false);
+      }
+    };
+
+    checkAndInitializeDoc();
 
     const unsubscribe = onSnapshot(docRef, updateContent);
 

@@ -1,4 +1,4 @@
-import { LoaderCircle, Mail, X } from "lucide-react";
+import { LoaderCircle, Mail, X, Share2 } from "lucide-react";
 import PopupModel from "./PopupModel";
 import { Fragment, useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -47,69 +47,93 @@ export default function ShareDocument({
         onClose={() => {
           if (!processing) setShareDocument(null);
         }}
-        extraCss="w-[400px]"
+        extraCss="sm:w-[450px]"
       >
-        <div className="flex gap-2 border-b justify-between p-5 max-sm:p-[15px]">
-          <h2 className="text-base max-sm:text-sm">
-            Share Document {documentName}
-          </h2>
-          <X
-            onClick={() => setShareDocument(null)}
-            className="text-[#9CA3AF] hover:text-red-500 cursor-pointer"
-            size={22}
-          />
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <div className="flex items-center space-x-2">
+            <Share2 className="text-blue-500" size={20} />
+            <h2 className="text-xl font-semibold text-gray-800">
+              Share Document: {documentName}
+            </h2>
+          </div>
+          <button
+            onClick={() => !processing && setShareDocument(null)}
+            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+            disabled={processing}
+          >
+            <X
+              size={20}
+              className={processing ? "text-gray-400" : "text-gray-600"}
+            />
+          </button>
         </div>
 
-        <div className="p-5 w-full max-sm:p-[15px]">
-          <div>
-            <div className="flex gap-2 border p-3 rounded-sm">
-              <Mail color="#9CA3AF" size={22} />
+        <div className="p-6">
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+              <Mail className="text-gray-400" size={18} />
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                placeholder="Email"
-                className="outline-hidden border-none w-full"
+                placeholder="Enter email address"
+                className="flex-1 outline-none border-none"
               />
             </div>
-            <div className="py-2 pt-4">
-              <div className="text-sm text-gray-500 flex justify-between mb-2">
-                Shared With{" "}
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-700">Shared With</h3>
+              {fetching && (
                 <LoaderCircle
-                  className={`animate-spin ${
-                    fetching ? "opacity-100" : "opacity-0"
-                  }`}
+                  size={16}
+                  className="animate-spin text-gray-400"
                 />
-              </div>
-              <ol>
-                {fetching ? (
-                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32 mb-2.5"></div>
-                ) : Array.isArray(emailList) && emailList.length > 0 ? (
-                  emailList.map((value, index) => <li key={index}>{value}</li>)
-                ) : (
-                  <Fragment>
-                    <p className="text-sm text-gray-600">
-                      Not shared with anyone.
-                    </p>
-                  </Fragment>
-                )}
-              </ol>
+              )}
+            </div>
+
+            <div className="bg-gray-50 rounded-md p-2 min-h-[100px] max-h-[150px] overflow-y-auto">
+              {!fetching && Array.isArray(emailList) && emailList.length > 0 ? (
+                <ul className="space-y-1">
+                  {emailList.map((value, index) => (
+                    <li
+                      key={index}
+                      className="text-gray-700 py-1 px-2 rounded hover:bg-gray-100"
+                    >
+                      {value}
+                    </li>
+                  ))}
+                </ul>
+              ) : !fetching ? (
+                <p className="text-gray-500 text-center py-4">
+                  Not shared with anyone yet
+                </p>
+              ) : null}
             </div>
           </div>
-          <div className="flex gap-[10px] w-full mt-2">
+
+          <div className="flex gap-3">
             <button
               disabled={processing}
-              onClick={() => setShareDocument(null)}
-              className="border rounded-sm max-sm:text-sm py-3 justify-center items-center w-full hover:bg-slate-300 hover:border-slate-300 "
+              onClick={() => !processing && setShareDocument(null)}
+              className="flex-1 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-medium disabled:opacity-50"
             >
               Cancel
             </button>
             <button
-              disabled={processing}
+              disabled={processing || !email.trim()}
               onClick={() => handleShareDocument(email)}
-              className="max-sm:text-sm py-3 w-full border text-base rounded-sm text-white bg-blue-500 border-blue-500 hover:bg-blue-700 hover:border-blue-700"
+              className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 flex items-center justify-center"
             >
-              {processing ? "Wait..." : "Share"}
+              {processing ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin mr-2" />
+                  <span>Sharing...</span>
+                </>
+              ) : (
+                <span>Share</span>
+              )}
             </button>
           </div>
         </div>
