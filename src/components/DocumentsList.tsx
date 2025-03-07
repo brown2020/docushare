@@ -11,7 +11,7 @@ import {
 import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseClient";
-import { LoaderCircle, Share2, Trash2, Plus } from "lucide-react";
+import { LoaderCircle, Share2, Trash2, Plus, Edit2 } from "lucide-react";
 import DeleteDocument from "./Models/DeleteDocument";
 import ShareDocument from "@/components/Models/ShareDocument";
 import { useAuth } from "@clerk/nextjs";
@@ -57,6 +57,8 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   const [fetching, setFetching] = useState(false);
   const [refreshCode, setRefreshCode] = useState(1);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const editContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSelectDocumentName = (docName: string) => {
     setSelectedDocumentName(docName);
@@ -82,13 +84,19 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
     fetchDocuments();
   }, [user, fetchDocuments]);
 
-  useEffect(() => {
-    if (activeRename && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [activeRename]);
+  const handleActiveRename = (docId: string) => {
+    setActiveRename(docId);
+    const doc = documents.find((doc) => doc.id === docId);
+    setDocName(doc?.name || "Untitled");
 
-  const inputRef = useRef<HTMLInputElement>(null);
+    // Focus the input after a short delay to ensure the DOM has updated
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
+    }, 50);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDocName(e.target.value);
@@ -99,26 +107,74 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
 
     debounceTimeout.current = setTimeout(() => {
       if (activeRename) {
-        handleSave(activeRename);
+        handleSave(activeRename, false);
       }
     }, 1000);
   };
 
-  const handleSave = async (docId: string, close = false) => {
-    if (docName.trim() === "") return;
-    setProcessing(true);
-    try {
-      const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
-      await setDoc(docRef, { name: docName }, { merge: true });
-      if (close) setActiveRename(null);
-      fetchDocuments();
-    } catch (error) {
-      console.log("Error updating document name:", error);
-      toast.error("Something went wrong.");
-    } finally {
-      setProcessing(false);
+  const handleSave = useCallback(
+    async (docId: string, close = false) => {
+      if (docName.trim() === "") {
+        setDocName("Untitled");
+      }
+
+      setProcessing(true);
+      try {
+        const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
+        await setDoc(
+          docRef,
+          { name: docName || "Untitled", updatedAt: new Date() },
+          { merge: true }
+        );
+        if (close) {
+          setActiveRename(null);
+        }
+        fetchDocuments();
+
+        // Update the selected document name if this is the active document
+        if (docId === activeDocId) {
+          setSelectedDocumentName(docName || "Untitled");
+        }
+      } catch (error) {
+        console.log("Error updating document name:", error);
+        toast.error("Failed to update document name.");
+      } finally {
+        setProcessing(false);
+      }
+    },
+    [
+      docName,
+      activeDocId,
+      fetchDocuments,
+      setSelectedDocumentName,
+      setActiveRename,
+      setProcessing,
+      setDocName,
+    ]
+  );
+
+  // Handle clicks outside the edit container
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        activeRename &&
+        editContainerRef.current &&
+        !editContainerRef.current.contains(event.target as Node)
+      ) {
+        handleSave(activeRename, true);
+      }
+    };
+
+    // Add event listener when in edit mode
+    if (activeRename) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  };
+
+    // Clean up
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activeRename, handleSave]);
 
   const deleteDocumentHandle = () => {
     if (!deleteDocument) return;
@@ -167,6 +223,8 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   };
 
   const documentObject = (doc: DocumentSchema) => {
+    const isRenaming = activeRename === doc.id;
+
     return (
       <div
         key={doc.id}
@@ -175,33 +233,60 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
         }`}
       >
         <div
-          className="flex-1 cursor-pointer truncate"
+          className="flex-1 cursor-pointer truncate group"
           onClick={() => {
-            handleActiveDocument(doc.id);
-            handleSelectDocumentName(doc.name || "Untitled");
+            // Only select the document if we're not in rename mode
+            if (!isRenaming) {
+              handleActiveDocument(doc.id);
+              handleSelectDocumentName(doc.name || "Untitled");
+            }
           }}
         >
-          {activeRename === doc.id ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={docName}
-              onChange={handleInputChange}
-              onBlur={() => handleSave(doc.id, true)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSave(doc.id, true);
-                }
-              }}
-              className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+          {isRenaming ? (
+            <div ref={editContainerRef} className="w-full">
+              <input
+                ref={inputRef}
+                type="text"
+                value={docName}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSave(doc.id, true);
+                  } else if (e.key === "Escape") {
+                    setActiveRename(null);
+                    setDocName(doc.name || "Untitled");
+                  }
+                }}
+                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           ) : (
-            <span className="text-gray-700">{doc.name || "Untitled"}</span>
+            <div
+              className="flex items-center"
+              onDoubleClick={() => {
+                handleActiveRename(doc.id);
+              }}
+            >
+              <span className="text-gray-700 flex-1 truncate">
+                {doc.name || "Untitled"}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleActiveRename(doc.id);
+                }}
+                className="p-1 text-gray-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Rename document"
+              >
+                <Edit2 size={14} />
+              </button>
+            </div>
           )}
         </div>
         <div className="flex items-center space-x-1 ml-2">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setShareDocument(doc.id);
               setDocName(doc.name || "Untitled");
             }}
@@ -211,7 +296,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
             <Share2 size={16} />
           </button>
           <button
-            onClick={() => setDeleteDocument(doc.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteDocument(doc.id);
+            }}
             className="p-1 text-gray-500 hover:text-red-500 hover:bg-gray-100 rounded"
             title="Delete document"
           >
