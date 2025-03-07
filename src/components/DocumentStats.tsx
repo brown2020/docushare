@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { FileText, Share2, Clock } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { FileText, Share2, Clock, RefreshCw } from "lucide-react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/firebase/firebaseClient";
 
@@ -18,6 +18,7 @@ interface Stats {
     lastEdited: string;
   }[];
   isLoading: boolean;
+  error: boolean;
 }
 
 const DocumentStats: React.FC<DocumentStatsProps> = ({ className = "" }) => {
@@ -27,30 +28,43 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ className = "" }) => {
     sharedDocuments: 0,
     recentlyEdited: [],
     isLoading: true,
+    error: false,
   });
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user) return;
+  const fetchStats = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        const response = await fetch("/api/docs/stats");
-        const data = await response.json();
+    setStats((prev) => ({ ...prev, isLoading: true, error: false }));
 
-        setStats({
-          totalDocuments: data.totalDocuments || 0,
-          sharedDocuments: data.sharedDocuments || 0,
-          recentlyEdited: data.recentlyEdited || [],
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error("Error fetching document stats:", error);
-        setStats((prev) => ({ ...prev, isLoading: false }));
+    try {
+      const response = await fetch("/api/docs/stats");
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
       }
-    };
 
-    fetchStats();
+      const data = await response.json();
+
+      setStats({
+        totalDocuments: data.totalDocuments || 0,
+        sharedDocuments: data.sharedDocuments || 0,
+        recentlyEdited: data.recentlyEdited || [],
+        isLoading: false,
+        error: false,
+      });
+    } catch (error) {
+      console.error("Error fetching document stats:", error);
+      setStats((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: true,
+      }));
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   if (stats.isLoading) {
     return (
@@ -71,11 +85,39 @@ const DocumentStats: React.FC<DocumentStatsProps> = ({ className = "" }) => {
     );
   }
 
+  if (stats.error) {
+    return (
+      <div className={`bg-white rounded-lg shadow-sm p-4 ${className}`}>
+        <div className="text-center py-6">
+          <div className="text-red-500 mb-3">
+            Failed to load document statistics
+          </div>
+          <button
+            onClick={fetchStats}
+            className="flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-800"
+          >
+            <RefreshCw size={16} />
+            <span>Retry</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`bg-white rounded-lg shadow-sm p-4 ${className}`}>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        Document Statistics
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Document Statistics
+        </h2>
+        <button
+          onClick={fetchStats}
+          className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+          title="Refresh statistics"
+        >
+          <RefreshCw size={16} />
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-lg">

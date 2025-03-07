@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/firebase/firebaseClient";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-} from "firebase/firestore";
+import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 
 export async function GET() {
@@ -20,35 +12,33 @@ export async function GET() {
     }
 
     // Get all documents for the user
-    const docsRef = collection(db, DOCUMENT_COLLECTION);
-    const userDocsQuery = query(docsRef, where("userId", "==", userId));
-    const userDocsSnapshot = await getDocs(userDocsQuery);
+    const docsRef = db.collection(DOCUMENT_COLLECTION);
+
+    // Get documents owned by the user
+    const userDocsSnapshot = await docsRef.where("owner", "==", userId).get();
 
     // Get shared documents
-    const sharedDocsQuery = query(
-      docsRef,
-      where("userId", "==", userId),
-      where("isShared", "==", true)
-    );
-    const sharedDocsSnapshot = await getDocs(sharedDocsQuery);
+    const sharedDocsSnapshot = await docsRef
+      .where("share", "array-contains", userId)
+      .get();
 
-    // Get recently edited documents
-    const recentDocsQuery = query(
-      docsRef,
-      where("userId", "==", userId),
-      orderBy("updatedAt", "desc"),
-      limit(5)
-    );
-    const recentDocsSnapshot = await getDocs(recentDocsQuery);
-
-    const recentlyEdited = recentDocsSnapshot.docs.map((doc) => {
+    // Get all user documents and sort them client-side
+    // This avoids needing a composite index
+    const allUserDocs = userDocsSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
-        name: data.name || "Untitled Document",
+        name: typeof data.name === "string" ? data.name : "Untitled Document",
+        updatedAt: data.updatedAt?.toDate() || new Date(),
         lastEdited: formatLastEdited(data.updatedAt?.toDate() || new Date()),
       };
     });
+
+    // Sort by updatedAt (most recent first) and take the first 5
+    const recentlyEdited = allUserDocs
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, 5)
+      .map(({ id, name, lastEdited }) => ({ id, name, lastEdited }));
 
     return NextResponse.json({
       totalDocuments: userDocsSnapshot.size,
