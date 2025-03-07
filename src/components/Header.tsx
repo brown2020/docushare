@@ -138,6 +138,7 @@ export default function Header() {
           <Image
             src={logo}
             alt="logo"
+            priority
             className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
           />
           <div className="flex gap-[10px] items-center">

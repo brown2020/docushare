@@ -92,6 +92,7 @@ export default function Home() {
             <Image
               src={logo}
               alt="logo"
+              priority
               className="max-xs:w-[117.7px] max-xs:h-[70px] w-[254px] h-[130px]"
             />
           </div>
