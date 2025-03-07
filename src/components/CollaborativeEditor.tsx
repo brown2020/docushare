@@ -37,6 +37,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const editor = useEditor({
     extensions: [...ExtensionKit({})],
     autofocus: true,
+    immediatelyRender: false,
     onSelectionUpdate: ({ editor }) => {
       if (isUpdating.current) return;
       const { from, to } = editor.state.selection;
