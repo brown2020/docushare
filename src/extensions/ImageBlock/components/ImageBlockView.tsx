@@ -20,6 +20,41 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   const [imageUrl, setImageUrl] = useState(node.attrs.src);
   const isUploading = useState(false);
 
+  // Convert width to numeric value for Next.js Image component
+  const getNumericWidth = () => {
+    if (!node.attrs.width) return 500;
+
+    // If width is already a number, return it
+    if (typeof node.attrs.width === "number") return node.attrs.width;
+
+    // If width is a string with px, remove px and convert to number
+    if (
+      typeof node.attrs.width === "string" &&
+      node.attrs.width.endsWith("px")
+    ) {
+      return parseInt(node.attrs.width, 10) || 500;
+    }
+
+    // If width is a percentage or other non-numeric format, use a default value
+    return 500;
+  };
+
+  // Get numeric height (maintain aspect ratio if possible)
+  const getNumericHeight = () => {
+    if (!node.attrs.height) return 300;
+
+    if (typeof node.attrs.height === "number") return node.attrs.height;
+
+    if (
+      typeof node.attrs.height === "string" &&
+      node.attrs.height.endsWith("px")
+    ) {
+      return parseInt(node.attrs.height, 10) || 300;
+    }
+
+    return 300;
+  };
+
   useEffect(() => {
     try {
       const _imgUrl = new URL(node.attrs.src);
@@ -50,6 +85,10 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
     }
   }, [node.attrs.src, editor]);
 
+  // Get numeric width and height values
+  const imageWidth = getNumericWidth();
+  const imageHeight = getNumericHeight();
+
   return (
     <NodeViewWrapper>
       <div className={wrapperClassName} style={{ width: node.attrs.width }}>
@@ -64,8 +103,8 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
             src={imageUrl}
             alt=""
             onClick={onClick}
-            width={node.attrs.width || 500}
-            height={node.attrs.height || 300}
+            width={imageWidth}
+            height={imageHeight}
             style={{ width: "100%", height: "auto" }}
           />
           <div
