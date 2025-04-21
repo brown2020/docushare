@@ -3,7 +3,7 @@ import { db } from "@/firebase/firebaseAdminConfig";
 import { FieldValue } from "firebase-admin/firestore";
 import { auth } from "@clerk/nextjs/server";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { clerkClient } from "@clerk/express";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -24,14 +24,15 @@ export const POST = async (req: NextRequest) => {
     }
 
     // Fetch user by email address from Clerk
-    const userList = await clerkClient.users.getUserList({
+    const users = await clerkClient.users.getUserList({
       emailAddress: [email],
     });
-    if (userList.data.length === 0 || userList.data[0].id == userId) {
+
+    if (users.data.length === 0 || users.data[0].id === userId) {
       return NextResponse.json({ status: false, message: "User not found." });
     }
 
-    const user = userList.data[0];
+    const user = users.data[0];
 
     // Fetch the document to update
     const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
