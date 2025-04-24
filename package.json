@@ -55,7 +55,7 @@
     "react-firebase-hooks": "^5.1.1",
     "react-hot-toast": "^2.4.1",
     "react-markdown": "^10.0.0",
-    "react-spinners": "^0.16.1",
+    "react-spinners": "^0.17.0",
     "stripe": "^18.0.0",
     "tailwind-merge": "^3.0.2",
     "tiptap-markdown": "^0.8.10",
