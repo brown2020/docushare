@@ -49,6 +49,9 @@ export const ImageBlock = Image.extend<ImageOptions>({
 
   addOptions() {
     return {
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: {},
         ...this.parent?.(),
         imageBaseUrl: undefined, // default value
     }

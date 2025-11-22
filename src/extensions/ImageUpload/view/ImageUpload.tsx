@@ -6,12 +6,13 @@ import { ImageUploader } from "./ImageUploader";
 export const ImageUpload: React.FC<NodeViewProps> = ({ getPos, editor }) => {
   const onUpload = useCallback(
     (url: string) => {
-      if (url) {
+      const pos = getPos();
+      if (url && typeof pos === 'number') {
         editor
           .chain()
           .setImageBlockAt({
             src: url,
-            pos: { from: getPos(), to: getPos() + 1 },
+            pos: { from: pos, to: pos + 1 },
           })
           .focus()
           .run();

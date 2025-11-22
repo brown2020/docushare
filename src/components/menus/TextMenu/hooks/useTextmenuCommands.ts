@@ -13,7 +13,7 @@ export const useTextmenuCommands = (editor: Editor) => {
     setAiContent("");
 
     const slice: Slice = editor.state.selection.content();
-    const text:string = editor.storage.markdown.serializer.serialize(slice.content);
+    const text:string = (editor.storage as any).markdown.serializer.serialize(slice.content);
     
     setAiProcessing(true);
     try {
