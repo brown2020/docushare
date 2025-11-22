@@ -31,7 +31,7 @@ Collaborative document authoring and automation platform built with the latest *
 DocuShare provides real-time document editing with AI-assisted authoring, robust formatting, sharing, and billing flows. Core capabilities include:
 
 - 🔐 **Clerk authentication** with protected application routes (`dashboard`, `profile`, payment flows).
-- 📝 **Collaborative editor** powered by Tiptap 3 (`@tiptap/* 3.11.0`) with custom blocks (image blocks, AI menus, etc.).
+- 📝 **Collaborative editor** powered by Tiptap 3 (`@tiptap/* 3.11.0`) with custom blocks, real-time carets (`@tiptap/extension-collaboration-caret@3.11.0`), and AI menus.
 - 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the `ai@5.0.98` SDK layer.
 - ☁️ **Firebase persistence** plus Firestore-triggered stats and document sharing endpoints.
 - 💳 **Stripe payments** (`stripe@20.0.0`, `@stripe/react-stripe-js@5.4.0`, `@stripe/stripe-js@8.5.2`) for upgrade and billing scenarios.
@@ -44,7 +44,7 @@ DocuShare provides real-time document editing with AI-assisted authoring, robust
 | Category              | Libraries / Versions (from `package-lock.json`) |
 |-----------------------|--------------------------------------------------|
 | Framework             | `next@16.0.3`, `react@19.1.0`, `react-dom@19.1.0` |
-| Editor / Collab       | `@tiptap/core@3.11.0`, `@tiptap/react@3.11.0`, `yjs@13.6.19`, `y-webrtc@10.3.0` |
+| Editor / Collab       | `@tiptap/core@3.11.0`, `@tiptap/react@3.11.0`, `@tiptap/extension-collaboration@3.11.0`, `@tiptap/extension-collaboration-caret@3.11.0`, `yjs@13.6.19`, `y-webrtc@10.3.0` |
 | Authentication        | `@clerk/nextjs@6.0.2`, `@clerk/express@1.4.7` |
 | Persistence           | `firebase@12.6.0`, `firebase-admin@13.0.2` |
 | AI + LLMs             | `ai@5.0.98`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
@@ -75,7 +75,7 @@ cd docushare
 npm install
 ```
 
-> **Note:** Because Tiptap v3 and some ecosystem packages have evolving peer-dependency graphs, you may need to run installs with `--legacy-peer-deps` in CI/CD environments.
+> **Note:** Standard `npm install` works across local and CI builds because all Tiptap 3 peer dependencies are aligned.
 
 ### Environment Variables
 
