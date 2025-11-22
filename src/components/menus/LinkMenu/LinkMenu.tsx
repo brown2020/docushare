@@ -1,4 +1,4 @@
-import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react'
+import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react/menus'
 import React, { useCallback, useState, type JSX } from 'react';
 
 import { MenuProps } from '../types'
@@ -44,11 +44,9 @@ export const LinkMenu = ({ editor }: MenuProps): JSX.Element => {
       pluginKey="textMenu"
       shouldShow={shouldShow}
       updateDelay={0}
-      tippyOptions={{
-        popperOptions: {
-          modifiers: [{ name: 'flip', enabled: false }],
-        },
-        onHidden: () => {
+      options={{
+        flip: false,
+        onHide: () => {
           setShowEdit(false)
         },
       }}

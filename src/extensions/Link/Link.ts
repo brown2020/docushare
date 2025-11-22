@@ -10,7 +10,7 @@ export const Link = TiptapLink.extend({
     return [{ tag: 'a[href]:not([data-type="button"]):not([href *= "javascript:" i])' }]
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
     return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: 'link' }), 0]
   },
 
@@ -18,7 +18,7 @@ export const Link = TiptapLink.extend({
     const { editor } = this
 
     return [
-      ...(this.parent?.() || []),
+      ...((this as any).parent?.() || []),
       new Plugin({
         props: {
           handleKeyDown: (view: EditorView, event: KeyboardEvent) => {

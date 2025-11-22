@@ -10,7 +10,7 @@ import {
   AI_MODEL_GEMINI,
   AI_MODEL_GPT,
   AI_MODEL_MISTRAL,
-  MAX_OUTPUT_TOKEN,
+  // MAX_OUTPUT_TOKEN,
 } from "@/lib/constants";
 
 async function getModel(modelName: string, api_key: string | null = null) {
@@ -116,7 +116,7 @@ Gandhi Jayanti is not only a day to honor the memory of Mahatma Gandhi but also 
       model,
       system: systemPrompt,
       prompt: userPrompt,
-      maxTokens: MAX_OUTPUT_TOKEN,
+      // maxTokens: MAX_OUTPUT_TOKEN,
       temperature: 0.7,
       topP: 1,
       frequencyPenalty: 0,

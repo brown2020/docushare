@@ -75,7 +75,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         JSON.stringify(data.content) !== JSON.stringify(editor.getJSON())
       ) {
         isUpdating.current = true;
-        editor.commands.setContent(data.content, false);
+        editor.commands.setContent(data.content, { emitUpdate: false });
         setTimeout(() => {
           editor.commands.setTextSelection(userPosition.current);
           isUpdating.current = false;

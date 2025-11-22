@@ -14,7 +14,10 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   );
 
   const onClick = useCallback(() => {
-    editor.commands.setNodeSelection(getPos());
+    const pos = getPos();
+    if (typeof pos === 'number') {
+      editor.commands.setNodeSelection(pos);
+    }
   }, [getPos, editor.commands]);
 
   const [imageUrl, setImageUrl] = useState(node.attrs.src);

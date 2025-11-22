@@ -1,4 +1,4 @@
-import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react'
+import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react/menus'
 import React, { useCallback, useRef, type JSX } from 'react';
 import { v4 as uuid } from 'uuid'
 
@@ -41,10 +41,8 @@ export const ImageBlockMenu = ({ editor }: MenuProps): JSX.Element => {
       pluginKey={`imageBlockMenu-${uuid()}`}
       shouldShow={shouldShow}
       updateDelay={0}
-      tippyOptions={{
-        popperOptions: {
-          modifiers: [{ name: 'flip', enabled: false }],
-        },
+      options={{
+        flip: false,
       }}
     >
       <Toolbar.Wrapper shouldShowContent={shouldShow()} ref={menuRef}>
