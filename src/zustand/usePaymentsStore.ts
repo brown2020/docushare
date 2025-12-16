@@ -18,6 +18,14 @@ export type PaymentType = {
   status: string;
 };
 
+function sortPaymentsByCreatedAtDesc(payments: PaymentType[]) {
+  payments.sort((a, b) => {
+    const aMillis = a.createdAt?.toMillis() ?? 0;
+    const bMillis = b.createdAt?.toMillis() ?? 0;
+    return bMillis - aMillis;
+  });
+}
+
 interface PaymentsStoreState {
   payments: PaymentType[];
   paymentsLoading: boolean;
@@ -51,8 +59,8 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
         status: doc.data().status,
       }));
 
-      // Sort payments by createdAt with newest at the top
-      payments.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      // Sort payments by createdAt with newest at the top (handle missing timestamps safely)
+      sortPaymentsByCreatedAtDesc(payments);
 
       set({ payments, paymentsLoading: false });
     } catch (error: unknown) {
@@ -106,10 +114,7 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
       set((state) => {
         const updatedPayments = [...state.payments, newPayment];
 
-        // Sort payments by createdAt with newest at the top
-        updatedPayments.sort(
-          (a, b) => b.createdAt!.toMillis() - a.createdAt!.toMillis()
-        );
+        sortPaymentsByCreatedAtDesc(updatedPayments);
 
         return { payments: updatedPayments, paymentsLoading: false };
       });

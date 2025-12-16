@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
-import "./../assets/GeneralSans/WEB/css/general-sans.css"
+import "./../assets/GeneralSans/WEB/css/general-sans.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider dynamic>
-       <ActiveDocProvider>
+      <ActiveDocProvider>
         <html lang="en" className="h-full">
           <body className="flex flex-col h-full">
             <Header />
@@ -30,7 +30,7 @@ export default function RootLayout({
             <Toaster position="top-right" />
           </body>
         </html>
-       </ActiveDocProvider>
+      </ActiveDocProvider>
     </ClerkProvider>
   );
 }

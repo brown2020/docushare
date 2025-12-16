@@ -31,6 +31,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const isUpdating = useRef(false);
   const [processing, setProcessing] = useState(true);
   const menuContainerRef = useRef(null);
+  const scheduleProcessing = useCallback(
+    (value: boolean) => {
+      Promise.resolve().then(() => setProcessing(value));
+    },
+    [setProcessing]
+  );
 
   const { documentName } = useActiveDoc();
 
@@ -53,9 +59,9 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       debounceTimeout.current = setTimeout(async () => {
         const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
         const content = editor.getJSON();
-        setProcessing(true);
+        scheduleProcessing(true);
         await setDoc(docRef, { content }, { merge: true });
-        setProcessing(false);
+        scheduleProcessing(false);
       }, 500);
     },
   });
@@ -79,13 +85,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         setTimeout(() => {
           editor.commands.setTextSelection(userPosition.current);
           isUpdating.current = false;
-          setProcessing(false);
+          scheduleProcessing(false);
         }, 0);
       } else {
-        setProcessing(false);
+        scheduleProcessing(false);
       }
     },
-    [isUpdating, editor]
+    [isUpdating, editor, scheduleProcessing]
   );
 
   useEffect(() => {
@@ -116,7 +122,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         }
       } catch (error) {
         console.error("Error checking/initializing document:", error);
-        setProcessing(false);
+        scheduleProcessing(false);
       }
     };
 
