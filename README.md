@@ -2,7 +2,7 @@
 
 # DocuShare
 
-Collaborative document authoring and automation platform built with the latest **Next.js 16** runtime, **React 19**, **Tiptap 3**, **Firebase**, **Clerk**, and integrated AI tooling.
+Collaborative document authoring and automation platform built with **Next.js 16**, **React 19**, **Tiptap 3**, **Firebase**, **Clerk**, and integrated AI tooling.
 
 </div>
 
@@ -31,10 +31,10 @@ Collaborative document authoring and automation platform built with the latest *
 DocuShare provides real-time document editing with AI-assisted authoring, robust formatting, sharing, and billing flows. Core capabilities include:
 
 - 🔐 **Clerk authentication** with protected application routes (`dashboard`, `profile`, payment flows).
-- 📝 **Collaborative editor** powered by Tiptap 3 (`@tiptap/* 3.11.0`) with custom blocks, real-time carets (`@tiptap/extension-collaboration-caret@3.11.0`), and AI menus.
-- 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the `ai@5.0.98` SDK layer.
+- 📝 **Collaborative editor** powered by Tiptap 3 (`@tiptap/* 3.14.0`) with custom blocks, real-time carets (`@tiptap/extension-collaboration-caret@3.14.0`), and AI menus.
+- 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the `ai@6.0.3` SDK layer.
 - ☁️ **Firebase persistence** plus Firestore-triggered stats and document sharing endpoints.
-- 💳 **Stripe payments** (`stripe@20.0.0`, `@stripe/react-stripe-js@5.4.0`, `@stripe/stripe-js@8.5.2`) for upgrade and billing scenarios.
+- 💳 **Stripe payments** (`stripe@20.1.0`, `@stripe/react-stripe-js@5.4.1`, `@stripe/stripe-js@8.6.0`) for upgrade and billing scenarios.
 - 📊 **Document statistics + activity feeds** backed by Firestore queries.
 
 ---
@@ -43,20 +43,20 @@ DocuShare provides real-time document editing with AI-assisted authoring, robust
 
 | Category              | Libraries / Versions (from `package-lock.json`) |
 |-----------------------|--------------------------------------------------|
-| Framework             | `next@16.0.3`, `react@19.1.0`, `react-dom@19.1.0` |
-| Editor / Collab       | `@tiptap/core@3.11.0`, `@tiptap/react@3.11.0`, `@tiptap/extension-collaboration@3.11.0`, `@tiptap/extension-collaboration-caret@3.11.0`, `yjs@13.6.19`, `y-webrtc@10.3.0` |
-| Authentication        | `@clerk/nextjs@6.0.2`, `@clerk/express@1.4.7` |
-| Persistence           | `firebase@12.6.0`, `firebase-admin@13.0.2` |
-| AI + LLMs             | `ai@5.0.98`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
-| Payments              | `stripe@20.0.0`, `@stripe/react-stripe-js@5.4.0`, `@stripe/stripe-js@8.5.2` |
-| UI / Styling          | `tailwindcss@4.0.9`, `@floating-ui/react@0.27.2`, `lucide-react@0.554.0` |
+| Framework             | `next@16.1.1`, `react@19.2.3`, `react-dom@19.2.3` |
+| Editor / Collab       | `@tiptap/core@3.14.0`, `@tiptap/react@3.14.0`, `@tiptap/extension-collaboration@3.14.0`, `@tiptap/extension-collaboration-caret@3.14.0`, `yjs@13.6.28`, `y-webrtc@10.3.0` |
+| Authentication        | `@clerk/nextjs@6.36.5`, `@clerk/express@1.7.60` |
+| Persistence           | `firebase@12.7.0`, `firebase-admin@13.6.0` |
+| AI + LLMs             | `ai@6.0.3`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
+| Payments              | `stripe@20.1.0`, `@stripe/react-stripe-js@5.4.1`, `@stripe/stripe-js@8.6.0` |
+| UI / Styling          | `tailwindcss@4.1.18`, `@floating-ui/react@0.27.16`, `lucide-react@0.562.0` |
 
 ---
 
 ## Prerequisites
 
-- **Node.js**: >= 18.18 (recommended for Next.js 16)
-- **npm**: >= 9 (bundled with Node 18+)
+- **Node.js**: >= 20.9.0 (required by `next@16.1.1`)
+- **npm**: >= 10 (bundled with Node 20+)
 - Accounts / credentials for:
   - [Firebase](https://firebase.google.com/) project (Firestore + Auth)
   - [Clerk](https://clerk.dev/) application
@@ -110,7 +110,7 @@ npm run build
 npm run start
 ```
 
-Visit <http://localhost:3000> to access the app once `npm run dev` is running.
+Visit `http://localhost:3000` to access the app once `npm run dev` is running.
 
 ---
 
@@ -178,7 +178,7 @@ For substantial changes, consider opening an issue to discuss the proposal first
 
 ## License
 
-This project is distributed under the MIT License. See [`LICENSE`](LICENSE) for details (add one if not yet present).
+This project is distributed under the GNU Affero General Public License v3.0 (**AGPL-3.0-only**). See [`LICENSE.md`](LICENSE.md) for details.
 
 ---
 
