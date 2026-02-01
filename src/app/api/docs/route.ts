@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { NextRequest } from "next/server";
@@ -8,11 +8,13 @@ export const dynamic = "force-dynamic";
 
 export const GET = async () => {
   try {
-    const { userId } = await auth();
+    const authUser = await getAuthenticatedUser();
 
-    if (!userId) {
+    if (!authUser) {
       return new Response("User is not signed in.", { status: 401 });
     }
+
+    const userId = authUser.uid;
 
     const docsRef = db.collection(DOCUMENT_COLLECTION);
     const docsSnapshot = await docsRef
@@ -55,11 +57,13 @@ export const GET = async () => {
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = await auth();
+    const authUser = await getAuthenticatedUser();
 
-    if (!userId) {
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const userId = authUser.uid;
 
     const body = await req.json();
     const { name = "Untitled Document" } = body;

@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/firebase/firebaseAdminConfig";
+import { admin, db } from "@/firebase/firebaseAdminConfig";
 import { FieldValue } from "firebase-admin/firestore";
-import { auth } from "@clerk/nextjs/server";
-import { DOCUMENT_COLLECTION } from "@/lib/constants";
-import { clerkClient } from "@clerk/express";
+import { getAuthenticatedUser } from "@/lib/auth/session";
+import { DOCUMENT_COLLECTION, USER_COLLECTION } from "@/lib/constants";
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = await auth();
+    const authUser = await getAuthenticatedUser();
 
-    if (!userId) {
+    if (!authUser) {
       return new Response("User is not signed in.", { status: 401 });
     }
+
+    const userId = authUser.uid;
 
     const body = await req.json();
     const email = body.email as string;
@@ -23,16 +24,20 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
-    // Fetch user by email address from Clerk
-    const users = await clerkClient.users.getUserList({
-      emailAddress: [email],
-    });
-
-    if (users.data.length === 0 || users.data[0].id === userId) {
+    // Look up user by email in Firebase Auth
+    let targetUser;
+    try {
+      targetUser = await admin.auth().getUserByEmail(email);
+    } catch {
       return NextResponse.json({ status: false, message: "User not found." });
     }
 
-    const user = users.data[0];
+    if (targetUser.uid === userId) {
+      return NextResponse.json({
+        status: false,
+        message: "Cannot share with yourself.",
+      });
+    }
 
     // Fetch the document to update
     const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
@@ -44,16 +49,16 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
-    // Update the document with the fetched user details
+    // Update the document with the target user's UID
     await docRef.update({
-      share: FieldValue.arrayUnion(user.id),
+      share: FieldValue.arrayUnion(targetUser.uid),
     });
 
     return NextResponse.json({ status: true });
   } catch (error) {
     console.log("Error sharing document:", error);
     return NextResponse.json(
-      { error: "Failed to fetch documents" },
+      { error: "Failed to share document" },
       { status: 500 }
     );
   }
@@ -61,9 +66,9 @@ export const POST = async (req: NextRequest) => {
 
 export const GET = async (req: NextRequest) => {
   try {
-    const { userId } = await auth();
+    const authUser = await getAuthenticatedUser();
 
-    if (!userId) {
+    if (!authUser) {
       return new Response("User is not signed in.", { status: 401 });
     }
 
@@ -80,17 +85,25 @@ export const GET = async (req: NextRequest) => {
     }
 
     const documentData = docSnapshot.data();
-    const userIds = documentData?.share || [];
+    const userIds: string[] = documentData?.share || [];
 
     if (userIds.length === 0) {
       return NextResponse.json({ emails: [] });
     }
 
-    // Fetch email addresses for the user IDs from Clerk
-    const userList = await clerkClient.users.getUserList({ userId: userIds });
-    const emails = userList.data.map(
-      (user) => user.emailAddresses[0].emailAddress
-    );
+    // Fetch email addresses for the user IDs from Firebase Auth
+    const emails: string[] = [];
+    for (const uid of userIds) {
+      try {
+        const user = await admin.auth().getUser(uid);
+        if (user.email) {
+          emails.push(user.email);
+        }
+      } catch {
+        // User may have been deleted, skip
+        continue;
+      }
+    }
 
     return NextResponse.json({ emails });
   } catch (error) {

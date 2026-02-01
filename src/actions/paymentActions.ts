@@ -1,13 +1,17 @@
 // paymentActions.ts
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function createPaymentIntent(amount: number) {
-  auth.protect();
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error("User is not signed in.");
+  }
+
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
 
   try {
@@ -16,7 +20,7 @@ export async function createPaymentIntent(amount: number) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
-      metadata: { product },
+      metadata: { product, userId: authUser.uid },
       description: `Payment for product ${process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME}`,
     });
 
@@ -28,7 +32,11 @@ export async function createPaymentIntent(amount: number) {
 }
 
 export async function validatePaymentIntent(paymentIntentId: string) {
-  auth.protect();
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error("User is not signed in.");
+  }
+
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 

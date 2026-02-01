@@ -18,8 +18,9 @@ export type PaymentType = {
   status: string;
 };
 
-function sortPaymentsByCreatedAtDesc(payments: PaymentType[]) {
-  payments.sort((a, b) => {
+// FIXED: Return a new sorted array instead of mutating in place
+function sortPaymentsByCreatedAtDesc(payments: PaymentType[]): PaymentType[] {
+  return [...payments].sort((a, b) => {
     const aMillis = a.createdAt?.toMillis() ?? 0;
     const bMillis = b.createdAt?.toMillis() ?? 0;
     return bMillis - aMillis;
@@ -59,10 +60,10 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
         status: doc.data().status,
       }));
 
-      // Sort payments by createdAt with newest at the top (handle missing timestamps safely)
-      sortPaymentsByCreatedAtDesc(payments);
+      // Sort payments by createdAt with newest at the top
+      const sortedPayments = sortPaymentsByCreatedAtDesc(payments);
 
-      set({ payments, paymentsLoading: false });
+      set({ payments: sortedPayments, paymentsLoading: false });
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
@@ -112,10 +113,10 @@ export const usePaymentsStore = create<PaymentsStoreState>((set) => ({
       };
 
       set((state) => {
-        const updatedPayments = [...state.payments, newPayment];
-
-        sortPaymentsByCreatedAtDesc(updatedPayments);
-
+        const updatedPayments = sortPaymentsByCreatedAtDesc([
+          ...state.payments,
+          newPayment,
+        ]);
         return { payments: updatedPayments, paymentsLoading: false };
       });
 

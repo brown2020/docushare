@@ -1,21 +1,8 @@
 "use client";
 
-import { auth } from "@/firebase/firebaseClient";
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  useAuth,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
-import {
-  signInWithCustomToken,
-  signOut as firebaseSignOut,
-  updateProfile,
-} from "firebase/auth";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
@@ -24,19 +11,20 @@ import Image from "next/image";
 import { AlignJustify } from "lucide-react";
 import DocumentsList from "./DocumentsList";
 import { useActiveDoc } from "./ActiveDocContext";
+import { UserMenu } from "./auth/UserMenu";
 import toast from "react-hot-toast";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
-  const { getToken, isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { user, isSignedIn, loading } = useFirebaseAuth();
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
-  const photoUrl = useAuthStore((state) => state.authPhotoUrl);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { activeDocId, setActiveDocId } = useActiveDoc();
-  const { documentName, setDocumentName } = useActiveDoc();
+  const { activeDocId, setActiveDocId, documentName, setDocumentName } =
+    useActiveDoc();
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const pathname = usePathname();
 
   useInitializeStores();
 
@@ -49,7 +37,7 @@ export default function Header() {
   }, []);
 
   const handleCreateNewDocument = useCallback(async () => {
-    if (isCreatingDocument) return; // Prevent multiple simultaneous requests
+    if (isCreatingDocument) return;
 
     setIsCreatingDocument(true);
     try {
@@ -83,101 +71,127 @@ export default function Header() {
     }
   }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments]);
 
+  // Sync Firebase auth state to Zustand store
   useEffect(() => {
-    const syncAuthState = async () => {
-      if (isSignedIn && user) {
-        try {
-          const token = await getToken({ template: "integration_firebase" });
-          const userCredentials = await signInWithCustomToken(
-            auth,
-            token || ""
-          );
+    if (isSignedIn && user) {
+      setAuthDetails({
+        uid: user.uid,
+        authEmail: user.email || "",
+        authDisplayName: user.displayName || "",
+        authPhotoUrl: user.photoURL || "",
+        authEmailVerified: user.emailVerified,
+        authReady: true,
+        lastSignIn: Timestamp.now(),
+      });
+    } else if (!loading) {
+      clearAuthDetails();
+    }
+  }, [isSignedIn, user, loading, setAuthDetails, clearAuthDetails]);
 
-          // Update Firebase user profile
-          await updateProfile(userCredentials.user, {
-            displayName: user.fullName,
-            photoURL: user.imageUrl,
-          });
-          setAuthDetails({
-            uid: user.id,
-            firebaseUid: userCredentials.user.uid,
-            authEmail: user.emailAddresses[0].emailAddress,
-            authDisplayName: user.fullName || "",
-            authPhotoUrl: user.imageUrl,
-            authReady: true,
-            // Keep client state as a real Timestamp; Firestore write uses serverTimestamp.
-            lastSignIn: Timestamp.now(),
-          });
-        } catch (error) {
-          console.error("Error signing in with custom token:", error);
-          clearAuthDetails();
-        }
-      } else {
-        await firebaseSignOut(auth);
-        clearAuthDetails();
-      }
-    };
+  // Don't render header on auth pages
+  if (pathname === "/signin" || pathname === "/signup") {
+    return null;
+  }
 
-    syncAuthState();
-  }, [clearAuthDetails, getToken, isSignedIn, setAuthDetails, user]);
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md">
+        <Image
+          src={logo}
+          alt="logo"
+          priority
+          className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
+        />
+        <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
+      </div>
+    );
+  }
 
-  return (
-    <>
-      <SignedOut>
-        <div className="max-xs:hidden flex items-center justify-end border px-10 py-4">
-          <SignInButton>
-            <button className="text-white bg-blue-500 p-3 rounded-sm ">
-              Sign In
-            </button>
-          </SignInButton>
-        </div>
-      </SignedOut>
-      <SignedIn>
-        <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-md z-99">
+  // Signed out view
+  if (!isSignedIn) {
+    return (
+      <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] border-b border-neutral-200 dark:border-neutral-800">
+        <Link href="/">
           <Image
             src={logo}
             alt="logo"
             priority
             className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
           />
-          <div className="flex gap-[10px] items-center">
-            <div className="max-sm:hidden flex gap-4">
-              <Link href="/dashboard" className="hover:text-blue-700">
-                Dashboard
-              </Link>
-              <Link href="/profile" className="hover:text-blue-700">
-                Profile
-              </Link>
-            </div>
-            <div className="sm:hidden w-[26px] h-[26px]">
-              <AlignJustify
-                className="cursor-pointer"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              />
-            </div>
-            {photoUrl ? (
-              <UserButton />
-            ) : (
-              <div className="bg-gray-300 animate-pulse h-8 w-8 rounded-full" />
-            )}
-          </div>
-        </div>
-        <div className="sm:hidden">
-          <DocumentsList
-            setSelectedDocumentName={setDocumentName}
-            documentName={documentName}
-            openSidebar={isSidebarOpen}
-            setIsSidebarOpen={setIsSidebarOpen}
-            handleActiveDocument={handleActiveDocument}
-            activeDocId={activeDocId}
-            setActiveDocId={setActiveDocId}
-            onCreateDocument={handleCreateNewDocument}
-            isCreatingDocument={isCreatingDocument}
-            searchQuery=""
-            key={`header-documents-list-${refreshTrigger}`}
+        </Link>
+        <Link
+          href="/signin"
+          className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
+  // Signed in view
+  return (
+    <>
+      <div className="flex items-center justify-between px-10 py-4 max-sm:px-[15px] shadow-sm border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+        <Link href="/dashboard">
+          <Image
+            src={logo}
+            alt="logo"
+            priority
+            className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
           />
+        </Link>
+        <div className="flex gap-3 items-center">
+          <nav className="max-sm:hidden flex gap-1">
+            <Link
+              href="/dashboard"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === "/dashboard"
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800"
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/profile"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === "/profile"
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                  : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800"
+              }`}
+            >
+              Profile
+            </Link>
+          </nav>
+          <div className="sm:hidden">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <AlignJustify className="w-5 h-5" />
+            </button>
+          </div>
+          <UserMenu />
         </div>
-      </SignedIn>
+      </div>
+      <div className="sm:hidden">
+        <DocumentsList
+          setSelectedDocumentName={setDocumentName}
+          documentName={documentName}
+          openSidebar={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          handleActiveDocument={handleActiveDocument}
+          activeDocId={activeDocId}
+          setActiveDocId={setActiveDocId}
+          onCreateDocument={handleCreateNewDocument}
+          isCreatingDocument={isCreatingDocument}
+          searchQuery=""
+          key={`header-documents-list-${refreshTrigger}`}
+        />
+      </div>
     </>
   );
 }

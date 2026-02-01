@@ -1,9 +1,8 @@
-
 import type { Metadata } from "next";
 
 import "./globals.css";
 import "./../assets/GeneralSans/WEB/css/general-sans.css";
-import { ClerkProvider } from "@clerk/nextjs";
+import { AuthProvider } from "@/providers/AuthProvider";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
 import { ActiveDocProvider } from "@/components/ActiveDocContext";
@@ -19,18 +18,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider dynamic>
-      <ActiveDocProvider>
-        <html lang="en" className="h-full">
-          <body className="flex flex-col h-full">
+    <html lang="en" className="h-full">
+      <body className="flex flex-col h-full">
+        <AuthProvider>
+          <ActiveDocProvider>
             <Header />
-            <div className="flex flex-col h-full flex-1 bg-white overflow-y-auto">
+            <div className="flex flex-col h-full flex-1 bg-white dark:bg-neutral-950 overflow-y-auto">
               {children}
             </div>
             <Toaster position="top-right" />
-          </body>
-        </html>
-      </ActiveDocProvider>
-    </ClerkProvider>
+          </ActiveDocProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

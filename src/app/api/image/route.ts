@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/firebase/firebaseAdminConfig";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import fs from "fs";
 import path from "path";
 import { File } from "buffer";
@@ -55,9 +55,9 @@ async function downloadFile(bucketPath: string, filePath: string) {
 export const POST = async (req: NextRequest) => {
   return new Promise<void | Response>(async (resolve, reject) => {
     try {
-      const { userId } = await auth();
+      const authUser = await getAuthenticatedUser();
 
-      if (!userId) {
+      if (!authUser) {
         reject(new Response("User is not signed in.", { status: 401 }));
         return;
       }

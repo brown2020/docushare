@@ -16,7 +16,7 @@ import {
   USER_COLLECTION,
 } from "@/lib/constants";
 import { AIOptions } from "@/interfaces/general";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 
 class User {
   userRef: FirebaseFirestore.DocumentReference;
@@ -44,30 +44,25 @@ class User {
 
   async getAIModel() {
     const data = await this.getUserData();
+    // FIXED: correct key-to-model mapping
     const availableModelKeys = [];
     if (data && data.openai_api_key) availableModelKeys.push(AI_MODEL_GPT);
-    if (data && data.anthropic_api_key)
-      availableModelKeys.push(AI_MODEL_GEMINI);
-    if (data && data.google_gen_ai_api_key)
-      availableModelKeys.push(AI_MODEL_MISTRAL);
-    if (data && data.mistral_api_key) availableModelKeys.push(AI_MODEL_CLAUDE);
+    if (data && data.anthropic_api_key) availableModelKeys.push(AI_MODEL_CLAUDE);
+    if (data && data.google_gen_ai_api_key) availableModelKeys.push(AI_MODEL_GEMINI);
+    if (data && data.mistral_api_key) availableModelKeys.push(AI_MODEL_MISTRAL);
     if (data && data.fireworks_api_key) availableModelKeys.push(AI_MODEL_LLAMA);
 
     if (availableModelKeys.length == 0) {
-      // throw new Error("API key not set.", { cause: { code: RESPONSE_CODE.api_key_not_set } });
       return { status: false, code: RESPONSE_CODE.api_key_not_set };
     }
 
+    // FIXED: correct key-to-model mapping
     const aiModelKeys: Record<string, string> = {
       [AI_MODEL_GPT]: data && data.openai_api_key ? data.openai_api_key : "",
-      [AI_MODEL_GEMINI]:
-        data && data.anthropic_api_key ? data.anthropic_api_key : "",
-      [AI_MODEL_MISTRAL]:
-        data && data.google_gen_ai_api_key ? data.google_gen_ai_api_key : "",
-      [AI_MODEL_CLAUDE]:
-        data && data.mistral_api_key ? data.mistral_api_key : "",
-      [AI_MODEL_LLAMA]:
-        data && data.fireworks_api_key ? data.fireworks_api_key : "",
+      [AI_MODEL_CLAUDE]: data && data.anthropic_api_key ? data.anthropic_api_key : "",
+      [AI_MODEL_GEMINI]: data && data.google_gen_ai_api_key ? data.google_gen_ai_api_key : "",
+      [AI_MODEL_MISTRAL]: data && data.mistral_api_key ? data.mistral_api_key : "",
+      [AI_MODEL_LLAMA]: data && data.fireworks_api_key ? data.fireworks_api_key : "",
     };
 
     if (typeof data != "object") {
@@ -198,12 +193,12 @@ export async function generateText(
   option: AIOptions,
   command: string
 ) {
-  const { userId } = await auth();
-  if (!userId) {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
     throw new Error("User is not signed in.", { cause: { status: 401 } });
   }
 
-  const user = new User(userId);
+  const user = new User(authUser.uid);
 
   const modelOfUser = await user.getAIModel();
   console.log("modelOfUser", modelOfUser);
@@ -247,7 +242,9 @@ export async function generateText(
     modelName,
     api_key
   );
-  user.deductPoint(userPrompt, response);
+
+  // FIXED: await the deductPoint call to ensure credits are deducted
+  await user.deductPoint(userPrompt, response);
 
   return response;
 }
