@@ -15,10 +15,11 @@ import {
 } from "lucide-react";
 import DocumentStats from "./DocumentStats";
 import toast from "react-hot-toast";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 const Dashboard = () => {
-  const { activeDocId, setActiveDocId } = useActiveDoc();
-  const { documentName, setDocumentName } = useActiveDoc();
+  const { activeDocId, setActiveDocId, documentName, setDocumentName } = useActiveDoc();
+  const { sessionReady, loading } = useFirebaseAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +36,12 @@ const Dashboard = () => {
 
   const handleCreateNewDocument = useCallback(async () => {
     if (isLoading) return; // Prevent multiple simultaneous requests
+
+    // Wait for session to be ready
+    if (!sessionReady) {
+      toast.error("Please wait, session is being established...");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -66,7 +73,7 @@ const Dashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [setActiveDocId, setDocumentName, isLoading, refreshDocuments]);
+  }, [setActiveDocId, setDocumentName, isLoading, refreshDocuments, sessionReady]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -98,6 +105,16 @@ const Dashboard = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showKeyboardShortcuts, handleCreateNewDocument]);
+
+  // Show loading while session is being established
+  if (loading || !sessionReady) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center">
+        <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+        <p className="text-gray-600">Loading your workspace...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-50">

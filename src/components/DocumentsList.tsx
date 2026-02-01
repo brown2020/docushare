@@ -14,7 +14,7 @@ import { auth, db } from "@/firebase/firebaseClient";
 import { LoaderCircle, Share2, Trash2, Plus, Edit2 } from "lucide-react";
 import DeleteDocument from "./Models/DeleteDocument";
 import ShareDocument from "@/components/Models/ShareDocument";
-import { useAuth } from "@clerk/nextjs";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import toast from "react-hot-toast";
 
@@ -46,8 +46,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   onCreateDocument,
   isCreatingDocument,
 }) => {
-  const { isLoaded } = useAuth();
-  const [user] = useAuthState(auth);
+  const { isLoaded, user } = useFirebaseAuth();
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
   const [activeRename, setActiveRename] = useState<string | null>(null);
   const [deleteDocument, setDeleteDocument] = useState<string | null>(null);
@@ -176,17 +175,19 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
     };
   }, [activeRename, handleSave]);
 
-  const deleteDocumentHandle = () => {
+  // FIXED: Made async and await deleteDoc
+  const deleteDocumentHandle = async () => {
     if (!deleteDocument) return;
     setProcessing(true);
     try {
       const docRef = doc(collection(db, DOCUMENT_COLLECTION), deleteDocument);
-      deleteDoc(docRef);
+      await deleteDoc(docRef);
       setDeleteDocument(null);
-      fetchDocuments();
+      await fetchDocuments();
+      toast.success("Document deleted successfully.");
     } catch (error) {
       console.log("Error deleting document:", error);
-      toast.error("Something went wrong.");
+      toast.error("Failed to delete document.");
     } finally {
       setProcessing(false);
     }

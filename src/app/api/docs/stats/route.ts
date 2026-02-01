@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const authUser = await getAuthenticatedUser();
 
-    if (!userId) {
+    if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const userId = authUser.uid;
 
     // Get all documents for the user
     const docsRef = db.collection(DOCUMENT_COLLECTION);

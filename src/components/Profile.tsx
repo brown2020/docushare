@@ -14,7 +14,7 @@ export default function Profile() {
       </div>
       <div className="w-full">
         <ProfileComponent />
-        <PaymentsDisplay />
+        <PaymentsDisplay className="mt-6" />
       </div>
     </div>
   );

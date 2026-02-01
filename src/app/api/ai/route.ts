@@ -14,7 +14,7 @@ import {
   RESPONSE_CODE,
   USER_COLLECTION,
 } from "@/lib/constants";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createMistral } from "@ai-sdk/mistral";
 import { createAnthropic } from "@ai-sdk/anthropic";
@@ -52,26 +52,24 @@ async function getModelForUser(user_id: string) {
     .doc("userData");
   const userSnapshot = await userRef.get();
   const data = userSnapshot.data();
+  // Build available models list - FIXED: correct key-to-model mapping
   const availableModelKeys = [];
   if (data && data.openai_api_key) availableModelKeys.push(AI_MODEL_GPT);
-  if (data && data.anthropic_api_key) availableModelKeys.push(AI_MODEL_GEMINI);
-  if (data && data.google_gen_ai_api_key)
-    availableModelKeys.push(AI_MODEL_MISTRAL);
-  if (data && data.mistral_api_key) availableModelKeys.push(AI_MODEL_CLAUDE);
+  if (data && data.anthropic_api_key) availableModelKeys.push(AI_MODEL_CLAUDE);
+  if (data && data.google_gen_ai_api_key) availableModelKeys.push(AI_MODEL_GEMINI);
+  if (data && data.mistral_api_key) availableModelKeys.push(AI_MODEL_MISTRAL);
   if (data && data.fireworks_api_key) availableModelKeys.push(AI_MODEL_LLAMA);
 
   if (availableModelKeys.length == 0)
     return { status: false, code: RESPONSE_CODE.api_key_not_set };
 
+  // FIXED: correct key-to-model mapping
   const aiModelKeys: Record<string, string> = {
     [AI_MODEL_GPT]: data && data.openai_api_key ? data.openai_api_key : "",
-    [AI_MODEL_GEMINI]:
-      data && data.anthropic_api_key ? data.anthropic_api_key : "",
-    [AI_MODEL_MISTRAL]:
-      data && data.google_gen_ai_api_key ? data.google_gen_ai_api_key : "",
-    [AI_MODEL_CLAUDE]: data && data.mistral_api_key ? data.mistral_api_key : "",
-    [AI_MODEL_LLAMA]:
-      data && data.fireworks_api_key ? data.fireworks_api_key : "",
+    [AI_MODEL_CLAUDE]: data && data.anthropic_api_key ? data.anthropic_api_key : "",
+    [AI_MODEL_GEMINI]: data && data.google_gen_ai_api_key ? data.google_gen_ai_api_key : "",
+    [AI_MODEL_MISTRAL]: data && data.mistral_api_key ? data.mistral_api_key : "",
+    [AI_MODEL_LLAMA]: data && data.fireworks_api_key ? data.fireworks_api_key : "",
   };
 
   if (typeof data != "object") {
@@ -114,10 +112,11 @@ export const POST = async (req: NextRequest) => {
     );
   }
   // return new Response(JSON.stringify({ response: demotext }))
-  const { userId } = await auth();
-  if (!userId) {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
     return new Response("User is not signed in.", { status: 401 });
   }
+  const userId = authUser.uid;
 
   const modelOfUser = await getModelForUser(userId);
 
