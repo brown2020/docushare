@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -14,23 +14,31 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENTID,
 };
 
-// Initialize Firebase
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let app: any, db: any, auth: any, storage: any, analytics: any;
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+try {
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+  storage = getStorage(app);
 
-let analytics;
-
-if (typeof window !== "undefined") {
-  isSupported()
-    .then((supported) => {
-      if (supported) {
-        analytics = getAnalytics(app);
-      }
-    })
-    .catch(console.error);
+  if (typeof window !== "undefined") {
+    isSupported()
+      .then((supported) => {
+        if (supported) {
+          analytics = getAnalytics(app);
+        }
+      })
+      .catch(console.error);
+  }
+} catch (e) {
+  console.warn("Firebase client initialization failed (expected in build):", e);
+  app = {};
+  db = {};
+  auth = {};
+  storage = {};
+  analytics = undefined;
 }
 
 export { db, auth, storage, analytics };
