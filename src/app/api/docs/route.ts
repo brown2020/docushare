@@ -21,7 +21,7 @@ export const GET = async () => {
       .where("owner", "==", userId)
       .select("name", "owner")
       .get();
-    const documents = docsSnapshot.docs.map((doc) => ({
+    const documents = docsSnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       name:
@@ -34,7 +34,7 @@ export const GET = async () => {
       .where("share", "array-contains", userId)
       .select("name", "owner")
       .get();
-    const sharedDocuments = sharedDocsSnapshot.docs.map((doc) => ({
+    const sharedDocuments = sharedDocsSnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       name:
