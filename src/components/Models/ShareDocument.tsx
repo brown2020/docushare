@@ -30,14 +30,17 @@ export default function ShareDocument({
       setFetching(false);
       setEmailList(data.emails);
     } catch (error) {
-      console.log("Error fetching documents:", error);
+      void error;
       setFetching(false);
       toast.error("Something went wrong.");
     }
   }, [documentId]);
 
   useEffect(() => {
-    fetchSearched();
+    const load = async () => {
+      await fetchSearched();
+    };
+    load();
   }, [fetchSearched]);
 
   return (

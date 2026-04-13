@@ -1,7 +1,7 @@
 "use client";
 
 import useProfileStore, { ProfileType } from "@/zustand/useProfileStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Define the API key field types and configuration
 type ApiKeyField = {
@@ -77,15 +77,21 @@ export default function ProfileComponent() {
     fireworks_api_key: profile.fireworks_api_key,
   }));
 
-  // Sync state variables with profile data
+  // Sync state variables with profile data when profile changes externally
+  const prevProfileRef = useRef(profile);
   useEffect(() => {
-    setApiKeys({
-      openai_api_key: profile.openai_api_key,
-      anthropic_api_key: profile.anthropic_api_key,
-      google_gen_ai_api_key: profile.google_gen_ai_api_key,
-      mistral_api_key: profile.mistral_api_key,
-      fireworks_api_key: profile.fireworks_api_key,
+    if (prevProfileRef.current === profile) return;
+    prevProfileRef.current = profile;
+    const id = requestAnimationFrame(() => {
+      setApiKeys({
+        openai_api_key: profile.openai_api_key,
+        anthropic_api_key: profile.anthropic_api_key,
+        google_gen_ai_api_key: profile.google_gen_ai_api_key,
+        mistral_api_key: profile.mistral_api_key,
+        fireworks_api_key: profile.fireworks_api_key,
+      });
     });
+    return () => cancelAnimationFrame(id);
   }, [profile]);
 
   const handleApiKeyChange = async () => {

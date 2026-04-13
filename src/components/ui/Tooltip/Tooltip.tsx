@@ -103,36 +103,18 @@ export function Tooltip({
 
 export const TooltipTrigger = React.forwardRef<
   HTMLElement,
-  React.HTMLProps<HTMLElement> & { asChild?: boolean }
->(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
+  React.HTMLProps<HTMLElement>
+>(function TooltipTrigger({ children, ...props }, propRef) {
   const context = useTooltipContext();
-
-  if (!React.isValidElement(children)) {
-    throw new Error(
-      "TooltipTrigger must have a valid React element as a child."
-    );
-  }
-
-  // ✅ Do not access children.ref directly in React 19
-  const mergedRef = useMergeRefs([context.refs.setReference, propRef]);
-
-  if (asChild) {
-    return React.cloneElement(
-      children as React.ReactElement,
-      {
-        ref: mergedRef,
-        ...(typeof children.props === "object" ? children.props : {}), // Safe spreading
-        ...props,
-        "data-state": context.open ? "open" : "closed",
-      } as React.HTMLProps<HTMLElement>
-    ); // ✅ TypeScript-safe
-  }
+  const setReference = context.refs.setReference;
+  const mergedRef = useMergeRefs([setReference, propRef]);
 
   return (
     <div
       ref={mergedRef}
       data-state={context.open ? "open" : "closed"}
       {...context.getReferenceProps(props)}
+      style={{ display: "contents" }}
     >
       {children}
     </div>

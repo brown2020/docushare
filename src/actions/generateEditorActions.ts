@@ -31,9 +31,7 @@ class User {
   }
 
   async loadUserSnapshot() {
-    if (!this.userSnapshot) {
-      this.userSnapshot = await this.userRef.get();
-    }
+    this.userSnapshot = await this.userRef.get();
     return this.userSnapshot;
   }
 
@@ -79,6 +77,10 @@ class User {
         throw new Error("AI key not found.", {
           cause: { code: RESPONSE_CODE.api_key_not_found },
         });
+      return {
+        status: true,
+        data: { model: data.ai_model, key: aiModelKeys[data.ai_model] },
+      };
     }
 
     // If not selected then use first default model
@@ -177,8 +179,6 @@ const aiCommandPrompts: Record<
     userPrompt: `For this text: ${text}. You have to respect the command: ${command}`,
   }),
 };
-// const costPerToken = 0.1; // Example point cost per token
-
 function countTokens(text: string) {
   // Rough estimate by considering each word as a token
   return text.split(/\s+/).length;
@@ -201,13 +201,10 @@ export async function generateText(
   const user = new User(authUser.uid);
 
   const modelOfUser = await user.getAIModel();
-  console.log("modelOfUser", modelOfUser);
-
   const { systemPrompt, userPrompt } = aiCommandPrompts[option](
     prompt,
     command
   );
-  // let deductUserPoints = false;
   let modelName = DEFAULT_AI_MODEL;
   let api_key = process.env.OPENAI_API_KEY ?? "";
   if (modelOfUser.status === false) {
@@ -215,7 +212,6 @@ export async function generateText(
       const hasExpectedPoint = await user.checkExpectedPointForPrompt(
         userPrompt
       );
-      // deductUserPoints = true;
       if (!hasExpectedPoint) {
         throw new Error("You don't have enough points to run this command.", {
           cause: { code: RESPONSE_CODE.insufficient_points },

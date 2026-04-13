@@ -1,9 +1,17 @@
 import { Editor } from '@tiptap/react'
 import { useCallback, useState } from 'react'
 import toast from 'react-hot-toast';
-import { Slice } from '@tiptap/pm/model';
+import { Fragment, Slice } from '@tiptap/pm/model';
 import { AIOptions } from '@/interfaces/general';
 import { generateText } from '@/actions/generateEditorActions';
+
+interface MarkdownEditorStorage {
+  markdown: {
+    serializer: {
+      serialize(content: Fragment): string;
+    };
+  };
+}
 
 export const useTextmenuCommands = (editor: Editor) => {
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -13,36 +21,20 @@ export const useTextmenuCommands = (editor: Editor) => {
     setAiContent("");
 
     const slice: Slice = editor.state.selection.content();
-    const text:string = (editor.storage as any).markdown.serializer.serialize(slice.content);
+    const text:string = (editor.storage as unknown as MarkdownEditorStorage).markdown.serializer.serialize(slice.content);
     
     setAiProcessing(true);
     try {
       const response = await generateText(text, option, command)
-      console.log("response", response);
-      
 
-      if(response !== undefined) {  
+      if(response !== undefined) {
         setAiContent(response.trim())
-        // for await (const content of readStreamableValue(response)) {
-        //   console.log("content", content);
-          
-        //   if (typeof content == 'string') {
-        //     // setSummary(content.trim());
-        //     setAiContent(content.trim());
-        //   }
-        // }
       }
       setAiProcessing(false);
-      // if (response.status) {
-      //   console.log("response.status 2", response.status);
-      // } else {
-      //   toast.error(`Something went wrong. Please try again later.`);
-      // }
     } catch (error: Error| unknown) {
-      setAiProcessing(false);      
+      setAiProcessing(false);
       if(error instanceof Error) {
         toast.error(error.message);
-        console.log("error", error);
       }else{
         toast.error("Something went wrong.");
       }
@@ -80,27 +72,10 @@ export const useTextmenuCommands = (editor: Editor) => {
   const onTldr = useCallback(() => editor.chain().focus().run(), [editor])
   const onTone = useCallback(() => editor.chain().focus().run(), [editor])
   const onTranslate = useCallback(() => editor.chain().focus().run(), [editor])
-  // const onCitation = useCallback((details:string) => editor.chain().focus().setCitation(details).run(), [editor])
   const onImprove = useCallback(() => aiCommand('improve'), [aiCommand])
   const onContinue = useCallback(() => aiCommand('continue'), [aiCommand])
-  // const onChangeColor = useCallback((color: string) => editor.chain().setColor(color).run(), [editor])
-  // const onClearColor = useCallback(() => editor.chain().focus().unsetColor().run(), [editor])
 
-  // const onChangeHighlight = useCallback((color: string) => editor.chain().setHighlight({ color }).run(), [editor])
-  // const onClearHighlight = useCallback(() => editor.chain().focus().unsetHighlight().run(), [editor])
-
-  // const onSimplify = useCallback(() => editor.chain().focus().aiSimplify().run(), [editor])
-  // const onEmojify = useCallback(() => editor.chain().focus().aiEmojify().run(), [editor])
-  // const onCompleteSentence = useCallback(() => editor.chain().focus().aiComplete().run(), [editor])
-  // const onFixSpelling = useCallback(() => editor.chain().focus().aiFixSpellingAndGrammar().run(), [editor])
-  // const onMakeLonger = useCallback(() => editor.chain().focus().aiExtend().run(), [editor])
-  // const onMakeShorter = useCallback(() => editor.chain().focus().aiShorten().run(), [editor])
-  // const onTldr = useCallback(() => editor.chain().focus().aiTldr().run(), [editor])
-  // const onTone = useCallback((tone: string) => editor.chain().focus().aiAdjustTone(tone).run(), [editor])
-  // const onTranslate = useCallback((language: Language) => editor.chain().focus().aiTranslate(language).run(), [editor])
-  
   const onCustomAiInput = useCallback((input?: string) => {
-    // editor.chain().focus().aiTranslate(language).run()
     aiCommand('zap', input)
   }, [aiCommand])
 

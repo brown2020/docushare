@@ -25,14 +25,18 @@ function SignInContent() {
       typeof window !== "undefined" &&
       isSignInWithEmailLink(auth, window.location.href)
     ) {
-      setIsProcessingLink(true);
       const storedEmail = window.localStorage.getItem("emailForSignIn");
       if (storedEmail) {
-        completeMagicLinkSignIn(storedEmail)
-          .then(() => router.push("/dashboard"))
-          .catch(() => setIsProcessingLink(false));
-      } else {
-        setIsProcessingLink(false);
+        const handleMagicLink = async () => {
+          setIsProcessingLink(true);
+          try {
+            await completeMagicLinkSignIn(storedEmail);
+            router.push("/dashboard");
+          } catch {
+            setIsProcessingLink(false);
+          }
+        };
+        handleMagicLink();
       }
     }
   }, [searchParams, completeMagicLinkSignIn, router]);

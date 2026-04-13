@@ -8,17 +8,11 @@ import { useCallback, useState, Fragment } from "react";
 import Markdown from "react-markdown";
 
 interface AIDropdownProps {
-  // onCompleteSentence: () => void
-  // onEmojify: () => void
   onFixSpelling: () => void;
   onMakeLonger: () => void;
   onMakeShorter: () => void;
   onContinue: () => void;
-  // onSimplify: boolean
   onImprove: () => void;
-  // onTldr: () => void
-  // onTone: (tone: string) => void
-  // onTranslate: () => void
   onCustomAiInput: () => void;
   aiProcessing: boolean;
   aiContent: string;
@@ -34,17 +28,11 @@ interface AiCommandsType {
 }
 
 export const AIDropdown = ({
-  // onCompleteSentence,
-  // onEmojify,
   onFixSpelling,
   onMakeLonger,
   onMakeShorter,
   onContinue,
-  // onSimplify,
   onImprove,
-  // onTldr,
-  // onTone,
-  // onTranslate,
   onCustomAiInput,
   aiProcessing,
   aiContent,
@@ -154,25 +142,19 @@ export const AIDropdown = ({
                   </div>
                 </div>
                 <hr className="my-2" />
-                <div onClick={onReplaceAiContent}>
-                  <DropdownButton>
-                    <Icon name="Check" />
-                    Replace selection
-                  </DropdownButton>
-                </div>
-                <div onClick={onAppendAiContent}>
-                  <DropdownButton>
-                    <Icon name="ListPlus" />
-                    Insert below
-                  </DropdownButton>
-                </div>
+                <DropdownButton onClick={onReplaceAiContent}>
+                  <Icon name="Check" />
+                  Replace selection
+                </DropdownButton>
+                <DropdownButton onClick={onAppendAiContent}>
+                  <Icon name="ListPlus" />
+                  Insert below
+                </DropdownButton>
                 <hr className="my-2" />
-                <div onClick={onDiscardAiContent}>
-                  <DropdownButton>
-                    <Icon name="Trash" />
-                    Discard
-                  </DropdownButton>
-                </div>
+                <DropdownButton onClick={onDiscardAiContent}>
+                  <Icon name="Trash" />
+                  Discard
+                </DropdownButton>
               </Fragment>
             ) : (
               <Fragment>
@@ -219,107 +201,6 @@ export const AIDropdown = ({
                       </DropdownButton>
                     </div>
                   ))}
-                {/* <div onClick={handleCitation({
-      title: 'This project can be a good starting point for your own implementation of a block editor. This project can be a good starting point for your own implementation of a block editor.This project can be a good starting point for your own implementation of a block editor.',
-      year: '2024',
-      venue: 'Heading',
-      link: 'https://www.google.com',
-    })}>
-                <DropdownButton>
-                  <Icon name='Continue' />
-                  Test
-                </DropdownButton>
-              </div> */}
-                {/* <Item onClick={performAiCommand(onImprove)}>
-                <DropdownButton>
-                  <Icon name="RefreshCcw" />
-                  Improve writing
-                </DropdownButton>
-              </Item> */}
-                {/* <Item onClick={onSimplify}>
-                <DropdownButton>
-                  <Icon name="CircleSlash" />
-                  Simplify
-                </DropdownButton>
-              </Item> */}
-                {/* <Item onClick={performAiCommand(onFixSpelling)}>
-                <DropdownButton>
-                  <Icon name="Eraser" />
-                  Fix spelling & grammar
-                </DropdownButton>
-              </Item>
-              <Item onClick={performAiCommand(onMakeShorter)}>
-                <DropdownButton>
-                  <Icon name="ArrowLeftToLine" />
-                  Make shorter
-                </DropdownButton>
-              </Item>
-              <Item onClick={performAiCommand(onMakeLonger)}>
-                <DropdownButton>
-                  <Icon name="ArrowRightToLine" />
-                  Make longer
-                </DropdownButton>
-              </Item> */}
-                {/* <Sub>
-                <SubTrigger>
-                  <DropdownButton>
-                    <Icon name="Mic" />
-                    Change tone
-                    <Icon name="ChevronRight" className="w-4 h-4 ml-auto" />
-                  </DropdownButton>
-                </SubTrigger>
-                <SubContent>
-                  <Surface className="flex flex-col min-w-[15rem] p-2 max-h-[20rem] overflow-auto">
-                    {tones.map(tone => (
-                      <Item onClick={handleTone(tone.value)} key={tone.value}>
-                        <DropdownButton>{tone.label}</DropdownButton>
-                      </Item>
-                    ))}
-                  </Surface>
-                </SubContent>
-              </Sub> */}
-                {/* <Item onClick={onTldr}>
-                <DropdownButton>
-                  <Icon name="MoreHorizontal" />
-                  Tl;dr:
-                </DropdownButton>
-              </Item> */}
-                {/* <Item onClick={onEmojify}>
-                <DropdownButton>
-                  <Icon name="SmilePlus" />
-                  Emojify
-                </DropdownButton>
-              </Item> */}
-                {/* <Sub>
-                <SubTrigger>
-                  <DropdownButton>
-                    <Icon name="Languages" />
-                    Translate
-                    <Icon name="ChevronRight" className="w-4 h-4 ml-auto" />
-                  </DropdownButton>
-                </SubTrigger>
-                <SubContent>
-                  <Surface className="flex flex-col min-w-[15rem] p-2 max-h-[20rem] overflow-auto">
-                    {languages.map(lang => (
-                      <Item onClick={performAiCommand(handleTranslate(lang.value))} key={lang.value}>
-                        <DropdownButton>{lang.label}</DropdownButton>
-                      </Item>
-                    ))}
-                  </Surface>
-                </SubContent>
-              </Sub> */}
-                {/* <Item onClick={onCompleteSentence}>
-                <DropdownButton>
-                  <Icon name="PenLine" />
-                  Complete sentence
-                </DropdownButton>
-              </Item> */}
-                {/* <Item onClick={performAiCommand(onContinue)}>
-                <DropdownButton>
-                  <Icon name="Play" />
-                  Continue
-                </DropdownButton>
-              </Item> */}
               </Fragment>
             )}
           </Surface>

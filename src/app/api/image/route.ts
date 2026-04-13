@@ -9,24 +9,12 @@ async function uploadFile(fileBuffer: Buffer, bucketPath: string) {
     const bucket = admin.storage().bucket();
     const file = bucket.file(bucketPath);
 
-    // const stream = file.createWriteStream({
-    //     metadata: {
-    //         contentType: 'image/jpeg' // Adjust content type as needed
-    //     }
-    // });
-
     await file.save(Buffer.from(fileBuffer));
     const [url] = await file.getSignedUrl({
       action: "read",
       expires: "03-17-2125",
     });
     return url;
-    // return new Promise((resolve, reject) => {
-    //     stream.on('error', reject);
-    //     stream.on('finish', resolve);
-
-    //     fs.createReadStream(filePath).pipe(stream);
-    // });
   } catch (error) {
     console.error("Error uploading file:", error);
     throw error;
@@ -73,15 +61,10 @@ export const POST = async (req: NextRequest) => {
         return;
       }
 
-      // You can now handle the file upload here
-      // const directoryPath = path.join(__dirname, '../../public');
       const filename = `${parseInt((Math.random() * 100000000).toString())}_${
         file.name
       }`;
-      // const filePath = path.join(directoryPath, filename);
-      // await fs.mkdirSync(directoryPath, { recursive: true });
       const buffer = Buffer.from(await file.arrayBuffer());
-      // await fs.promises.writeFile(filePath, buffer);
       const bucketPath = `uploads/${filename}`;
       const url = await uploadFile(buffer, bucketPath);
 
@@ -96,7 +79,7 @@ export const POST = async (req: NextRequest) => {
         )
       );
     } catch (error) {
-      console.log("Error sharing document:", error);
+      void error;
       reject(
         NextResponse.json(
           { error: "Failed to fetch documents" },
@@ -137,7 +120,7 @@ export const GET = async (req: NextRequest) => {
     response.headers.set("content-type", "image/png");
     return response;
   } catch (error) {
-    console.log("Error fetching user emails:", error);
+    void error;
     return NextResponse.json(
       { error: "Failed to fetch user emails" },
       { status: 500 }

@@ -26,8 +26,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         const secret = await createPaymentIntent(convertToSubcurrency(amount));
         if (secret) setClientSecret(secret);
       } catch (error) {
-        console.log("Error initializing payment:", error);
-
+        void error;
         setErrorMessage("Failed to initialize payment. Please try again.");
       }
     }
@@ -66,9 +65,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
         // confirming the payment. Show the error to the user
         // For example, the card was declined
         setErrorMessage(error.message || "Payment failed");
-        console.log("Payment failed:", error.message);
       } else {
-        console.log("Payment successful!!!!!!!!!");
         // The payment UI automatically closes with a success animation
         // User is redirected to the return_url
       }

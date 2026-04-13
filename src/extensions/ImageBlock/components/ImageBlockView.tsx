@@ -59,33 +59,31 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   };
 
   useEffect(() => {
-    try {
-      const _imgUrl = new URL(node.attrs.src);
-      const imageBlockExt = editor.extensionManager.extensions.find(
-        (ext) => ext.name == "imageBlock"
-      );
-
-      if (
-        _imgUrl.searchParams.has("image_key") &&
-        imageBlockExt !== undefined &&
-        imageBlockExt.options.imageBaseUrl
-      ) {
-        setImageUrl(
-          encodeURI(
-            `${
-              imageBlockExt.options.imageBaseUrl
-            }?image_key=${_imgUrl.searchParams.get("image_key")}`
-          )
+    const resolveImageUrl = async () => {
+      try {
+        const _imgUrl = new URL(node.attrs.src);
+        const imageBlockExt = editor.extensionManager.extensions.find(
+          (ext) => ext.name == "imageBlock"
         );
-      } else if (
-        !_imgUrl.searchParams.has("image_key") &&
-        imageBlockExt !== undefined
-      ) {
-        // checkNeedToUpload()
+
+        if (
+          _imgUrl.searchParams.has("image_key") &&
+          imageBlockExt !== undefined &&
+          imageBlockExt.options.imageBaseUrl
+        ) {
+          setImageUrl(
+            encodeURI(
+              `${
+                imageBlockExt.options.imageBaseUrl
+              }?image_key=${_imgUrl.searchParams.get("image_key")}`
+            )
+          );
+        }
+      } catch {
+        // Invalid URL, keep default image
       }
-    } catch (error) {
-      console.log(error);
-    }
+    };
+    resolveImageUrl();
   }, [node.attrs.src, editor]);
 
   // Get numeric width and height values

@@ -8,9 +8,8 @@ import {
   SetStateAction,
   Dispatch,
 } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase/firebaseClient";
+import { db } from "@/firebase/firebaseClient";
 import { LoaderCircle, Share2, Trash2, Plus, Edit2 } from "lucide-react";
 import DeleteDocument from "./Models/DeleteDocument";
 import ShareDocument from "@/components/Models/ShareDocument";
@@ -72,7 +71,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       setFetching(false);
       setDocuments(data);
     } catch (error) {
-      console.log("Error fetching documents:", error);
+      void error;
       setFetching(false);
       toast.error("Something went wrong.");
     }
@@ -135,7 +134,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
           setSelectedDocumentName(docName || "Untitled");
         }
       } catch (error) {
-        console.log("Error updating document name:", error);
+        void error;
         toast.error("Failed to update document name.");
       } finally {
         setProcessing(false);
@@ -186,7 +185,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       await fetchDocuments();
       toast.success("Document deleted successfully.");
     } catch (error) {
-      console.log("Error deleting document:", error);
+      void error;
       toast.error("Failed to delete document.");
     } finally {
       setProcessing(false);
@@ -216,7 +215,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
         setRefreshCode((prev) => prev + 1);
       }
     } catch (error) {
-      console.log("Error sharing document:", error);
+      void error;
       toast.error("Something went wrong.");
     } finally {
       setProcessing(false);

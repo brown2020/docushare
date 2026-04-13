@@ -181,8 +181,6 @@ export const POST = async (req: NextRequest) => {
     }))
     .run();
 
-  console.log("Asking for response....");
-
   const aiModel = await getModel(modelOfUser.data.model, modelOfUser.data.key);
 
   const { text } = await generateText({

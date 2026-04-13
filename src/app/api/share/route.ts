@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { admin, db } from "@/firebase/firebaseAdminConfig";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import { DOCUMENT_COLLECTION, USER_COLLECTION } from "@/lib/constants";
+import { DOCUMENT_COLLECTION } from "@/lib/constants";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -49,6 +49,14 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
+    const docData = docSnapshot.data();
+    if (docData?.owner !== userId) {
+      return NextResponse.json({
+        status: false,
+        message: "Only the document owner can share.",
+      });
+    }
+
     // Update the document with the target user's UID
     await docRef.update({
       share: FieldValue.arrayUnion(targetUser.uid),
@@ -56,7 +64,7 @@ export const POST = async (req: NextRequest) => {
 
     return NextResponse.json({ status: true });
   } catch (error) {
-    console.log("Error sharing document:", error);
+    void error;
     return NextResponse.json(
       { error: "Failed to share document" },
       { status: 500 }
@@ -107,7 +115,7 @@ export const GET = async (req: NextRequest) => {
 
     return NextResponse.json({ emails });
   } catch (error) {
-    console.log("Error fetching user emails:", error);
+    void error;
     return NextResponse.json(
       { error: "Failed to fetch user emails" },
       { status: 500 }
