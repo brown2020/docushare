@@ -232,14 +232,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setError(null);
     try {
-      // Clear session cookie first
+      // 1. Delete server session cookie BEFORE Firebase sign-out.
       await fetch("/api/auth/session", { method: "DELETE" });
       setSessionReady(false);
+
+      // 2. Sign out of Firebase.
       await firebaseSignOut(auth);
+
+      // 3. Clear browser storage to prevent stale data leaking to next user.
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to sign out";
       setError(message);
+      // Best-effort cleanup even on error
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
       throw err;
     }
   }, []);
