@@ -4,9 +4,7 @@ import { useTextmenuCommands } from './hooks/useTextmenuCommands'
 import { useTextmenuStates } from './hooks/useTextmenuStates'
 import { Editor } from '@tiptap/react'
 import { memo } from 'react'
-// import * as Popover from '@radix-ui/react-popover'
 import { FontFamilyPicker } from './components/FontFamilyPicker'
-// import { FontSizePicker } from './components/FontSizePicker'
 import { useTextmenuContentTypes } from './hooks/useTextmenuContentTypes'
 import { ContentTypePicker } from './components/ContentTypePicker'
 import { EditLinkPopover } from './components/EditLinkPopover'
@@ -15,9 +13,7 @@ import { AIDropdown } from './components/AIDropdown'
 // We memorize the button so each button is not rerendered
 // on every editor state change
 const MemoButton = memo(Toolbar.Button)
-// const MemoColorPicker = memo(ColorPicker)
 const MemoFontFamilyPicker = memo(FontFamilyPicker)
-// const MemoFontSizePicker = memo(FontSizePicker)
 const MemoContentTypePicker = memo(ContentTypePicker)
 
 export type TextMenuProps = {
@@ -47,7 +43,6 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       <Toolbar.Divider />
       <MemoContentTypePicker options={blockOptions} />
       <MemoFontFamilyPicker onChange={commands.onSetFont} value={states.currentFont || ''} />
-      {/* <MemoFontSizePicker onChange={commands.onSetFontSize} value={states.currentSize || ''} /> */}
       <Toolbar.Divider />
       <MemoButton tooltip="Image" onClick={commands.onImageUpload} active={states.isBold}>
         <Icon name="Image" />
@@ -84,39 +79,6 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
         <Icon name="Code" />
       </MemoButton>
       <EditLinkPopover onSetLink={commands.onLink} />
-      {/* <Popover.Root>
-          <Popover.Trigger asChild>
-            <MemoButton active={!!states.currentHighlight} tooltip="Highlight text">
-              <Icon name="Highlighter" />
-            </MemoButton>
-          </Popover.Trigger>
-          <Popover.Content side="top" sideOffset={8} asChild>
-            <Surface className="p-1">
-              <MemoColorPicker
-                color={states.currentHighlight}
-                onChange={commands.onChangeHighlight}
-                onClear={commands.onClearHighlight}
-              />
-            </Surface>
-          </Popover.Content>
-        </Popover.Root> */}
-      {/* <Popover.Root>
-          <Popover.Trigger asChild>
-            <MemoButton active={!!states.currentColor} tooltip="Text color">
-              <Icon name="Palette" />
-            </MemoButton>
-          </Popover.Trigger>
-          <Popover.Content side="top" sideOffset={8} asChild>
-            <Surface className="p-1">
-              <MemoColorPicker
-                color={states.currentColor}
-                onChange={commands.onChangeColor}
-                onClear={commands.onClearColor}
-              />
-            </Surface>
-          </Popover.Content>
-        </Popover.Root> */}
-
       <MemoButton
         tooltip="Subscript"
         tooltipShortcut={['Mod', '.']}

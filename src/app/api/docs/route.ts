@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { NextRequest } from "next/server";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export const GET = async () => {
       .where("owner", "==", userId)
       .select("name", "owner")
       .get();
-    const documents = docsSnapshot.docs.map((doc: any) => ({
+    const documents = docsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data(),
       name:
@@ -34,7 +35,7 @@ export const GET = async () => {
       .where("share", "array-contains", userId)
       .select("name", "owner")
       .get();
-    const sharedDocuments = sharedDocsSnapshot.docs.map((doc: any) => ({
+    const sharedDocuments = sharedDocsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data(),
       name:

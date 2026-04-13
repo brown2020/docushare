@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
 export async function GET() {
   try {
@@ -26,7 +27,8 @@ export async function GET() {
 
     // Get all user documents and sort them client-side
     // This avoids needing a composite index
-    const allUserDocs = userDocsSnapshot.docs.map((doc: any) => {
+    type DocEntry = { id: string; name: string; updatedAt: Date; lastEdited: string };
+    const allUserDocs: DocEntry[] = userDocsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -38,9 +40,9 @@ export async function GET() {
 
     // Sort by updatedAt (most recent first) and take the first 5
     const recentlyEdited = allUserDocs
-      .sort((a: any, b: any) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
       .slice(0, 5)
-      .map(({ id, name, lastEdited }: any) => ({ id, name, lastEdited }));
+      .map(({ id, name, lastEdited }) => ({ id, name, lastEdited }));
 
     return NextResponse.json({
       totalDocuments: userDocsSnapshot.size,
