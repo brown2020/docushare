@@ -28,6 +28,7 @@ DocuShare is a collaborative document authoring application with rich editing, d
 - Server trust boundary: Firebase Admin verification in `src/lib/auth/session.ts` is the server-side source of truth for authenticated API routes.
 - Client auth boundary: `src/hooks/useFirebaseAuth.ts` adapts provider state for UI components and should not be treated as server authorization.
 - Data boundary: route handlers under `src/app/api` own Firestore Admin access for protected reads/writes; client components should prefer these routes for sensitive operations.
+- Firestore rules boundary: user subcollections are scoped to the authenticated user ID, while document updates preserve owner metadata and allow only owners to change sharing metadata.
 - Editor boundary: Tiptap extension configuration lives in `src/extensions`, while UI controls live under `src/components/menus` and `src/components/panels`.
 - State boundary: Zustand stores hold UI/profile/payment state and should not bypass server authorization for protected operations.
 

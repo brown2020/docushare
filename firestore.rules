@@ -7,36 +7,59 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
     
     // Helper function to check if user is the owner of a document
     function isOwner(resource) {
       return isAuthenticated() && request.auth.uid == resource.data.owner;
     }
+
+    function isShared(resource) {
+      return isAuthenticated() &&
+        resource.data.share is list &&
+        request.auth.uid in resource.data.share;
+    }
     
     // Helper function to check if user has access to a document
     function hasAccess(resource) {
-      return isAuthenticated() && 
-        (request.auth.uid in resource.data.share || 
-         request.auth.uid == resource.data.owner);
+      return isOwner(resource) || isShared(resource);
+    }
+
+    function documentMetadataIsPreserved() {
+      return request.resource.data.owner == resource.data.owner &&
+        request.resource.data.share == resource.data.share;
+    }
+
+    function ownerDocumentUpdateIsSafe() {
+      return request.resource.data.owner == resource.data.owner &&
+        request.resource.data.share is list &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["name", "content", "updatedAt", "share"]);
+    }
+
+    function sharedDocumentUpdateIsSafe() {
+      return documentMetadataIsPreserved() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["name", "content", "updatedAt"]);
     }
     
     // User collection rules
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      allow create: if isAuthenticated();
+      allow read, create, update, delete: if isUser(userId);
       
       match /{path=**} {
-        allow read, write: if isAuthenticated();
+        allow read, write: if isUser(userId);
       }
     }
     
     // Document collection rules
     match /docs/{documentId} {
       // Allow reading if user is authenticated and has access
-      allow read: if isAuthenticated() && 
-        (resource == null || 
-         request.auth.uid in resource.data.share || 
-         request.auth.uid == resource.data.owner);
+      allow read: if isAuthenticated() &&
+        (resource == null || hasAccess(resource));
       
       // Allow creating if user is authenticated
       allow create: if isAuthenticated() && 
@@ -44,14 +67,12 @@ service cloud.firestore {
         request.resource.data.share is list;
       
       // Allow updating if user has access
-      allow update: if isAuthenticated() && 
-        (resource == null || 
-         request.auth.uid in resource.data.share || 
-         request.auth.uid == resource.data.owner);
+      allow update: if (isOwner(resource) && ownerDocumentUpdateIsSafe()) ||
+        (isShared(resource) && sharedDocumentUpdateIsSafe());
       
       // Allow deleting if user is the owner
       allow delete: if isAuthenticated() && 
         resource.data.owner == request.auth.uid;
     }
   }
-} 
+}
