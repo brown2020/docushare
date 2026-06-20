@@ -43,7 +43,7 @@ DocuShare is a collaborative document authoring application with rich editing, d
 
 - README content previously referenced Clerk even though the current source and package manifest use Firebase Auth.
 - Server API routes depend on Firebase Admin credentials being present at runtime.
-- `src/app/api/image/route.ts` mixes upload, signed URL generation, local filesystem caching, and image serving in one route.
+- Firestore rules changes should be covered by emulator tests when a rules test harness is added.
 - The editor save/snapshot flow is asynchronous and should be changed only with targeted validation because it touches initialization, remote updates, and local selection restoration.
 
 ## Roadmap
