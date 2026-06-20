@@ -6,7 +6,7 @@ Name: Codex
 
 ## Scope
 
-Execution batches for the highest-priority Firestore access-control findings F-001/F-002 and image API findings F-003/F-004.
+Execution batches for the highest-priority Firestore access-control findings F-001/F-002 and image API findings F-003/F-004, plus follow-up image media type validation.
 
 ## Inputs
 
@@ -47,6 +47,9 @@ npm run build
 rg -n "api/image|image_key|upload|setImage|ImageUpload" src
 npm run lint
 npm run build
+git diff -- src/app/api/image/route.ts
+npm run lint
+npm run build
 ```
 
 ## Findings
@@ -55,6 +58,7 @@ npm run build
 - F-002 fixed: shared document users can update only `name`, `content`, and `updatedAt`; owner/share metadata is preserved for shared users, and only owners can change `share`.
 - F-003 fixed: image upload returns direct response objects instead of rejecting a route-handler promise with `Response` values.
 - F-004 fixed: image GET now requires an authenticated session, rejects unsafe keys, and streams Firebase Storage downloads without writing to a local `public` cache.
+- F-004 follow-up fixed: image upload now rejects unsupported media types server-side and generates filename extensions from an allowed image extension/content-type set.
 - Remaining queued execution item: package/audit triage.
 
 ## Changes Made
@@ -62,12 +66,12 @@ npm run build
 - Added `isUser`, `isShared`, document metadata-preservation, owner-update, and shared-update helper rules.
 - Replaced broad nested user subcollection access with same-user-only access.
 - Replaced broad document update access with owner/shared update branches that limit changed fields.
-- Refactored `src/app/api/image/route.ts` to remove the async Promise constructor, return explicit 401/400/500 responses, generate opaque upload filenames, validate image keys, require auth for GET, and serve Storage download buffers as web response bodies.
+- Refactored `src/app/api/image/route.ts` to remove the async Promise constructor, return explicit 401/400/500 responses, validate image media types, generate opaque upload filenames, validate image keys, require auth for GET, and serve Storage download buffers as web response bodies.
 - Updated `SPEC.md` to document the current Firestore rules and image API boundaries.
 
 ## Verification
 
-`npm run lint` passed. `npm run build` passed after converting the Firebase Storage download `Buffer` to `Uint8Array` for `NextResponse`. Firestore rules were reviewed statically because the repo does not include Firebase rules tests.
+`npm run lint` passed. `npm run build` passed after converting the Firebase Storage download `Buffer` to `Uint8Array` for `NextResponse`. The follow-up image media type validation also passed lint/build. Firestore rules were reviewed statically because the repo does not include Firebase rules tests.
 
 ## Architecture and Lean Code Scorecard
 
@@ -76,7 +80,7 @@ npm run build
 | Dependency direction | Pass | Rules change preserves client/server call sites and narrows data access at the rules boundary. | None |
 | Module cohesion | Pass | Image API no longer mixes local filesystem caching with Storage reads. | Re-review in stabilization |
 | Public surface area | Watch | No public API changes in this batch. | Defer |
-| Data and side-effect flow | Pass | User nested docs and document metadata writes are constrained in `firestore.rules`; image reads require auth and key validation. | Re-review in stabilization |
+| Data and side-effect flow | Pass | User nested docs and document metadata writes are constrained in `firestore.rules`; image upload/read paths require auth and validation. | Re-review in stabilization |
 | Async/cache/resource lifecycle | Watch | Not changed in this batch. | Defer |
 | Duplication and dead code | Watch | Not changed in this batch. | Defer |
 | Dependency lean-ness | Fail | Audit/package findings remain open. | Package cleanup phase |
