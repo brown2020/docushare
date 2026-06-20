@@ -2,96 +2,106 @@
 
 ## Agent
 
-Name:
+Name: Codex
 
 ## Scope
 
-What this phase inspected or changed:
+Integrator pass for the full codebase-improvement run: final report, pushed commits, verification evidence, deferred items, and final gate readiness.
 
 ## Inputs
 
-Reports, files, or commands used:
+All phase reports, task queue, run state, `git log origin/main..dev`, final stabilization evidence, lint/build/audit results, and Git sync status.
 
 ## Branch and Push
 
-- Branch:
-- Upstream:
-- Commit:
-- Pushed to:
-- Sync status:
+- Branch: `dev`
+- Upstream: `origin/dev`
+- Commit: pending checkpoint
+- Pushed to: pending checkpoint
+- Sync status: local `dev` matches `origin/dev` before final report edits.
 
 ## Loop
 
-- Name:
-- Goal:
-- Verify gate:
-- Stop condition:
-- Attempt:
-- Result:
+- Name: Final Completion Gate
+- Goal: record the completed workflow and ensure remaining risks are explicit.
+- Verify gate: branch is `dev`, local matches `origin/dev`, lint/build passed, no P0/P1 findings remain, and deferred items are documented.
+- Stop condition: final report is ready to commit/push.
+- Attempt: 1
+- Result: passed, pending final report checkpoint.
 
 ## Run State
 
-- Current phase:
-- Current task:
-- Last pushed commit:
-- Next action:
-- Blockers:
+- Current phase: Integrator
+- Current task: T-013
+- Last pushed commit: 840ad46
+- Next action: commit/push final report and confirm clean sync.
+- Blockers: none.
 
 ## Commands Run
 
 ```text
-None.
+git fetch origin
+git status --short --branch
+git log --oneline origin/main..dev
+npm run lint
+npm run build
+npm audit --omit=dev
 ```
 
 ## Findings
 
-- None.
+- No P0/P1 findings remain.
+- Source quality gates passed: `npm run lint`, `npm run build`.
+- Remaining audit items: 10 moderate vulnerabilities requiring forced/breaking dependency moves per npm.
+- Remaining testability item: no dedicated app test script or Firestore rules emulator harness exists.
 
 ## Changes Made
 
-- None.
+- Wrote integrator and final reports.
+- Updated run-state and task queue for final checkpoint.
 
 ## Verification
 
-Checks performed and results:
+Remote read, dry-run push, lint, and build passed during stabilization. Final commit will rerun lint/diff checks before push.
 
 ## Architecture and Lean Code Scorecard
 
 | Area | Status | Evidence | Action |
 | --- | --- | --- | --- |
-| Dependency direction | Not assessed | N/A | Assess if relevant |
-| Module cohesion | Not assessed | N/A | Assess if relevant |
-| Public surface area | Not assessed | N/A | Assess if relevant |
-| Data and side-effect flow | Not assessed | N/A | Assess if relevant |
-| Async/cache/resource lifecycle | Not assessed | N/A | Assess if relevant |
-| Duplication and dead code | Not assessed | N/A | Assess if relevant |
-| Dependency lean-ness | Not assessed | N/A | Assess if relevant |
-| Testability | Not assessed | N/A | Assess if relevant |
+| Dependency direction | Pass | Server/client boundaries preserved; Firestore rules narrowed. | None |
+| Module cohesion | Pass | Image API cache/path handling simplified. | None |
+| Public surface area | Pass | Runtime API surface preserved; dead type stub removed. | None |
+| Data and side-effect flow | Pass | User/doc/image access tightened. | None |
+| Async/cache/resource lifecycle | Pass | Image local cache removed; editor lifecycle unchanged. | None |
+| Duplication and dead code | Watch | AI model-selection duplication remains P3 deferred. | Defer |
+| Dependency lean-ness | Watch | Forced/breaking audit items remain deferred. | Plan upgrade |
+| Testability | Watch | No app tests/rules tests yet. | Add test harness later |
 
 ## Quality Gate
 
-- Command:
-- Result:
-- Notes:
+- Command: `npm run lint`; `npm run build`
+- Result: passed
+- Notes: audit remains documented non-green due forced-update items.
 
 ## Commit-Push Checkpoint
 
-- Status inspected:
-- Diff checked:
-- Files staged:
-- Dry-run push:
-- Push:
-- Post-push sync:
+- Status inspected: pending final checkpoint.
+- Diff checked: pending final checkpoint.
+- Files staged: pending final checkpoint.
+- Dry-run push: pending final checkpoint.
+- Push: pending final checkpoint.
+- Post-push sync: pending final checkpoint.
 
 ## Stabilization
 
-- Cycle:
-- Completion criteria status:
-- Remaining blockers:
+- Cycle: 1
+- Completion criteria status: passed with deferred audit/test items.
+- Remaining blockers: none.
 
 ## Risks
 
-Known risks or uncertainties:
+- Firestore rules were not emulator-tested.
+- Remaining audit fixes require planned forced/breaking dependency upgrades.
 
 ## Open Questions
 
@@ -99,4 +109,4 @@ Known risks or uncertainties:
 
 ## Recommended Next Step
 
-What should happen next:
+Commit and push final report, then confirm branch sync and clean working tree.
