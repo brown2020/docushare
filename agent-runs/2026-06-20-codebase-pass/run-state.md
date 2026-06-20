@@ -11,23 +11,23 @@
 
 ## Current State
 
-- Phase: Baseline Validation
-- Task: T-004
-- Status: Baseline validation complete; ready for checkpoint
-- Last command: `npm run build`
-- Last result: passed
-- Last pushed commit: 52d0d90
+- Phase: Findings Backlog
+- Task: T-006
+- Status: Findings backlog complete; ready for checkpoint
+- Last command: source and package diagnostics
+- Last result: P0/P1 Firestore rules findings queued first
+- Last pushed commit: c7bd1dc
 - Branch sync: local `dev` matches `origin/dev`.
-- Working tree: dirty with in-scope baseline report and run-ledger updates.
-- Next action: Commit/push Baseline Validation, then build findings backlog.
+- Working tree: dirty with in-scope findings report and run-ledger updates.
+- Next action: Commit/push Findings Backlog, then fix Firestore rules.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `agent-runs/2026-06-20-codebase-pass/02-baseline-validation.md` | Safe-to-commit | Baseline Validation report |
+| `agent-runs/2026-06-20-codebase-pass/03-findings-backlog.md` | Safe-to-commit | Findings Backlog report |
 | `agent-runs/2026-06-20-codebase-pass/run-state.md` | Safe-to-commit | Resume ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Baseline task status update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Findings task queue update |
 
 ## Blockers
 
