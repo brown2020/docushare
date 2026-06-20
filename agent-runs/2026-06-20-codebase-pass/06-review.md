@@ -2,96 +2,105 @@
 
 ## Agent
 
-Name:
+Name: Codex
 
 ## Scope
 
-What this phase inspected or changed:
+Judge-loop review of cumulative changes on `dev` since `origin/main`: docs/run reports, Firestore rules, image API, package cleanup, and validation evidence.
 
 ## Inputs
 
-Reports, files, or commands used:
+`git diff origin/main...dev`, `git log origin/main..dev`, `firestore.rules`, `src/app/api/image/route.ts`, `SPEC.md`, package cleanup report, baseline/execution reports, and task queue.
 
 ## Branch and Push
 
-- Branch:
-- Upstream:
-- Commit:
-- Pushed to:
-- Sync status:
+- Branch: `dev`
+- Upstream: `origin/dev`
+- Commit: pending checkpoint
+- Pushed to: pending checkpoint
+- Sync status: local `dev` matches `origin/dev` before review edits.
 
 ## Loop
 
-- Name:
-- Goal:
-- Verify gate:
-- Stop condition:
-- Attempt:
-- Result:
+- Name: Judge Loop
+- Goal: review the diff, task queue, phase reports, and verification results as a strict reviewer.
+- Verify gate: PASS or bounded tasks/blockers for any FAIL item.
+- Stop condition: PASS, or all failures converted into tasks/deferred items.
+- Attempt: 1
+- Result: PASS with one stale spec note fixed and remaining package/test items deferred.
 
 ## Run State
 
-- Current phase:
-- Current task:
-- Last pushed commit:
-- Next action:
-- Blockers:
+- Current phase: Review
+- Current task: T-012
+- Last pushed commit: a1eba7b
+- Next action: commit/push review report, then run stabilization.
+- Blockers: none.
 
 ## Commands Run
 
 ```text
-None.
+git diff --stat origin/main...dev
+git diff origin/main...dev -- firestore.rules src/app/api/image/route.ts package.json SPEC.md AGENTS.md README.md
+git log --oneline origin/main..dev
+sed -n '1,220p' src/app/api/image/route.ts
+sed -n '1,140p' firestore.rules
 ```
 
 ## Findings
 
-- None.
+- No P0/P1 review findings remain.
+- Fixed during review: `SPEC.md` still described image API local filesystem caching as an active risk after the implementation removed that cache path. The risk note now points to missing Firestore rules emulator coverage instead.
+- Remaining deferred item: `npm audit --omit=dev` reports 10 moderate vulnerabilities whose npm-proposed fixes require forced/breaking dependency moves.
+- Remaining deferred item: no dedicated test script or Firestore rules emulator test harness exists.
 
 ## Changes Made
 
-- None.
+- Updated `SPEC.md` to remove a stale image API risk and record the remaining rules-test coverage risk.
+- Updated review report, run state, and task queue.
 
 ## Verification
 
-Checks performed and results:
+Prior phase gates passed: `npm run lint` and `npm run build` after Firestore rules, image API, image media validation, and package cleanup changes. Review inspected cumulative diff and found no introduced P0/P1 regressions.
 
 ## Architecture and Lean Code Scorecard
 
 | Area | Status | Evidence | Action |
 | --- | --- | --- | --- |
-| Dependency direction | Not assessed | N/A | Assess if relevant |
-| Module cohesion | Not assessed | N/A | Assess if relevant |
-| Public surface area | Not assessed | N/A | Assess if relevant |
-| Data and side-effect flow | Not assessed | N/A | Assess if relevant |
-| Async/cache/resource lifecycle | Not assessed | N/A | Assess if relevant |
-| Duplication and dead code | Not assessed | N/A | Assess if relevant |
-| Dependency lean-ness | Not assessed | N/A | Assess if relevant |
-| Testability | Not assessed | N/A | Assess if relevant |
+| Dependency direction | Pass | API/session and client boundaries preserved; rules narrowed access. | None |
+| Module cohesion | Pass | Image API no longer writes local cache while serving Storage reads. | None |
+| Public surface area | Pass | Removed deprecated `@types/uuid`; no runtime public API removal. | None |
+| Data and side-effect flow | Pass | Firestore rules protect user subcollections and document metadata; image routes validate auth/key/type. | None |
+| Async/cache/resource lifecycle | Pass | Removed image GET local cache; editor lifecycle unchanged. | None |
+| Duplication and dead code | Watch | AI model-selection duplication remains deferred P3. | Defer |
+| Dependency lean-ness | Watch | Safe updates applied; forced/breaking audit items remain. | Defer with evidence |
+| Testability | Watch | No app test script or Firestore rules harness exists. | Defer |
 
 ## Quality Gate
 
-- Command:
-- Result:
-- Notes:
+- Command: cumulative diff review; prior `npm run lint`; prior `npm run build`
+- Result: PASS
+- Notes: lint/build will be rerun in stabilization/final gates.
 
 ## Commit-Push Checkpoint
 
-- Status inspected:
-- Diff checked:
-- Files staged:
-- Dry-run push:
-- Push:
-- Post-push sync:
+- Status inspected: pending.
+- Diff checked: pending.
+- Files staged: pending.
+- Dry-run push: pending.
+- Push: pending.
+- Post-push sync: pending.
 
 ## Stabilization
 
-- Cycle:
-- Completion criteria status:
-- Remaining blockers:
+- Cycle: not started.
+- Completion criteria status: ready for stabilization.
+- Remaining blockers: none.
 
 ## Risks
 
-Known risks or uncertainties:
+- Firestore rules behavior was statically reviewed but not emulator-tested.
+- Forced/breaking dependency updates remain deferred.
 
 ## Open Questions
 
@@ -99,4 +108,4 @@ Known risks or uncertainties:
 
 ## Recommended Next Step
 
-What should happen next:
+Commit and push Review, then run Stabilization Loop.

@@ -11,25 +11,24 @@
 
 ## Current State
 
-- Phase: Execute Fixes and Improvements
-- Task: T-011
-- Status: Image upload type hardening follow-up complete; ready for checkpoint
-- Last command: `npm run build`
-- Last result: passed
-- Last pushed commit: 90e1b14
+- Phase: Review
+- Task: T-012
+- Status: Review complete; ready for checkpoint
+- Last command: cumulative diff review
+- Last result: no P0/P1 findings; stale SPEC risk corrected
+- Last pushed commit: a1eba7b
 - Branch sync: local `dev` matches `origin/dev`.
-- Working tree: dirty with image route, spec, and execution report updates.
-- Next action: Commit/push image upload type validation, then run review.
+- Working tree: dirty with review report, SPEC, and run-ledger updates.
+- Next action: Commit/push review report, then run stabilization.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `src/app/api/image/route.ts` | In-scope source | Server-side image media type validation |
-| `SPEC.md` | Safe-to-commit | Current-state image media type note |
-| `agent-runs/2026-06-20-codebase-pass/04-execute-fixes-and-improvements.md` | Safe-to-commit | Execution report update |
+| `SPEC.md` | Safe-to-commit | Review fix for stale image-risk note |
+| `agent-runs/2026-06-20-codebase-pass/06-review.md` | Safe-to-commit | Review report |
 | `agent-runs/2026-06-20-codebase-pass/run-state.md` | Safe-to-commit | Resume ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Image task verification update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Review task status update |
 
 ## Blockers
 
