@@ -2,7 +2,7 @@
 
 # DocuShare
 
-Collaborative document authoring and automation platform built with **Next.js 16**, **React 19**, **Tiptap 3**, **Firebase**, **Clerk**, and integrated AI tooling.
+Collaborative document authoring and automation platform built with **Next.js 16**, **React 19**, **Tiptap 3**, **Firebase**, **Stripe**, and integrated AI tooling.
 
 </div>
 
@@ -30,26 +30,25 @@ Collaborative document authoring and automation platform built with **Next.js 16
 
 DocuShare provides real-time document editing with AI-assisted authoring, robust formatting, sharing, and billing flows. Core capabilities include:
 
-- 🔐 **Clerk authentication** with protected application routes (`dashboard`, `profile`, payment flows).
-- 📝 **Collaborative editor** powered by Tiptap 3 (`@tiptap/* 3.14.0`) with custom blocks, real-time carets (`@tiptap/extension-collaboration-caret@3.14.0`), and AI menus.
-- 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the `ai@6.0.3` SDK layer.
+- 🔐 **Firebase authentication** with server session cookies and protected application routes (`dashboard`, `profile`, payment flows).
+- 📝 **Collaborative editor** powered by Tiptap 3 with custom blocks, real-time carets, and AI menus.
+- 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the AI SDK layer.
 - ☁️ **Firebase persistence** plus Firestore-triggered stats and document sharing endpoints.
-- 💳 **Stripe payments** (`stripe@20.1.0`, `@stripe/react-stripe-js@5.4.1`, `@stripe/stripe-js@8.6.0`) for upgrade and billing scenarios.
+- 💳 **Stripe payments** for upgrade and billing scenarios.
 - 📊 **Document statistics + activity feeds** backed by Firestore queries.
 
 ---
 
 ## Tech Stack
 
-| Category              | Libraries / Versions (from `package-lock.json`) |
+| Category              | Libraries / Versions (from `package.json`) |
 |-----------------------|--------------------------------------------------|
-| Framework             | `next@16.1.1`, `react@19.2.3`, `react-dom@19.2.3` |
-| Editor / Collab       | `@tiptap/core@3.14.0`, `@tiptap/react@3.14.0`, `@tiptap/extension-collaboration@3.14.0`, `@tiptap/extension-collaboration-caret@3.14.0`, `yjs@13.6.28`, `y-webrtc@10.3.0` |
-| Authentication        | `@clerk/nextjs@6.36.5`, `@clerk/express@1.7.60` |
-| Persistence           | `firebase@12.7.0`, `firebase-admin@13.6.0` |
-| AI + LLMs             | `ai@6.0.3`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
-| Payments              | `stripe@20.1.0`, `@stripe/react-stripe-js@5.4.1`, `@stripe/stripe-js@8.6.0` |
-| UI / Styling          | `tailwindcss@4.1.18`, `@floating-ui/react@0.27.16`, `lucide-react@0.562.0` |
+| Framework             | `next@^16.2.4`, `react@^19.2.5`, `react-dom@^19.2.5` |
+| Editor / Collab       | `@tiptap/core@^3.22.4`, `@tiptap/react@^3.22.4`, `@tiptap/extension-collaboration@^3.22.4`, `@tiptap/extension-collaboration-caret@^3.22.4`, `yjs@^13.6.30`, `y-webrtc@^10.3.0` |
+| Authentication        | `firebase@^12.12.1`, `firebase-admin@^13.8.0`, `react-firebase-hooks@^5.1.1` |
+| AI + LLMs             | `ai@^6.0.168`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
+| Payments              | `stripe@^22.0.2`, `@stripe/react-stripe-js@^6.2.0`, `@stripe/stripe-js@^9.3.0` |
+| UI / Styling          | `tailwindcss@^4.2.4`, `@floating-ui/react@^0.27.19`, `lucide-react@^1.8.0` |
 
 ---
 
@@ -59,7 +58,6 @@ DocuShare provides real-time document editing with AI-assisted authoring, robust
 - **npm**: >= 10 (bundled with Node 20+)
 - Accounts / credentials for:
   - [Firebase](https://firebase.google.com/) project (Firestore + Auth)
-  - [Clerk](https://clerk.dev/) application
   - [Stripe](https://stripe.com/) account
   - AI providers (OpenAI, Anthropic, Google, Mistral) if using custom keys
 
@@ -83,8 +81,6 @@ Create a `.env.local` (Next.js) with the following keys (set all secrets before 
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for client SDK |
-| `CLERK_SECRET_KEY` | Clerk secret key for server-side auth |
 | `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key for client Elements |
 | `STRIPE_SECRET_KEY` | Stripe secret key for backend actions/webhooks |
 | `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` | Firebase Admin credentials |
@@ -137,7 +133,7 @@ Visit `http://localhost:3000` to access the app once `npm run dev` is running.
 - **API Routes**:
   - `/api/docs`, `/api/docs/stats`, `/api/share`, `/api/ai`, `/api/image` implement CRUD, sharing, stats, and AI/image utilities.
 - **Authentication Guard**:
-  - `src/proxy.ts` (Next.js 16 proxy/middleware) uses Clerk to protect routes like `/dashboard`, `/profile`, `/payment-*`.
+  - `src/proxy.ts` (Next.js 16 proxy/middleware) checks the Firebase session cookie before protected routes like `/dashboard`, `/profile`, `/payment-*`.
 
 Refer to the source tree for deeper exploration (`src/components`, `src/extensions`, `src/zustand`, etc.).
 
