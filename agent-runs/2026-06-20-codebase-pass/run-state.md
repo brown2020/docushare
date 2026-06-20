@@ -11,24 +11,23 @@
 
 ## Current State
 
-- Phase: Review
-- Task: T-012
-- Status: Review complete; ready for checkpoint
-- Last command: cumulative diff review
-- Last result: no P0/P1 findings; stale SPEC risk corrected
-- Last pushed commit: a1eba7b
+- Phase: Stabilization Loop
+- Task: T-013
+- Status: Stabilization complete; ready for checkpoint
+- Last command: `npm audit --omit=dev`
+- Last result: 10 moderate forced-update audit items remain deferred; lint/build passed
+- Last pushed commit: 9187e12
 - Branch sync: local `dev` matches `origin/dev`.
-- Working tree: dirty with review report, SPEC, and run-ledger updates.
-- Next action: Commit/push review report, then run stabilization.
+- Working tree: dirty with stabilization report and run-ledger updates.
+- Next action: Commit/push stabilization report, then write final integrator report.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `SPEC.md` | Safe-to-commit | Review fix for stale image-risk note |
-| `agent-runs/2026-06-20-codebase-pass/06-review.md` | Safe-to-commit | Review report |
+| `agent-runs/2026-06-20-codebase-pass/07-stabilization-loop.md` | Safe-to-commit | Stabilization report |
 | `agent-runs/2026-06-20-codebase-pass/run-state.md` | Safe-to-commit | Resume ledger update |
-| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Review task status update |
+| `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Stabilization task status update |
 
 ## Blockers
 
