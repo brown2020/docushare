@@ -1,9 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { admin } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import fs from "fs";
 import path from "path";
-import { File } from "buffer";
+import { randomUUID } from "crypto";
+
+function buildUploadFilename(fileName: string) {
+  const extension = path.extname(fileName).toLowerCase();
+  return `${randomUUID()}${extension}`;
+}
+
+function isSafeImageKey(imageKey: string) {
+  return (
+    imageKey.length > 0 &&
+    !imageKey.includes("/") &&
+    !imageKey.includes("\\") &&
+    !imageKey.includes("..")
+  );
+}
+
+function getContentType(imageKey: string) {
+  switch (path.extname(imageKey).toLowerCase()) {
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
+    case ".webp":
+      return "image/webp";
+    case ".gif":
+      return "image/gif";
+    case ".png":
+    default:
+      return "image/png";
+  }
+}
+
 async function uploadFile(fileBuffer: Buffer, bucketPath: string) {
   try {
     const bucket = admin.storage().bucket();
@@ -21,79 +50,53 @@ async function uploadFile(fileBuffer: Buffer, bucketPath: string) {
   }
 }
 
-async function downloadFile(bucketPath: string, filePath: string) {
-  try {
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(bucketPath);
-
-    const stream = file.createReadStream();
-
-    return new Promise((resolve, reject) => {
-      stream.on("error", reject);
-      stream.on("end", resolve);
-
-      stream.pipe(fs.createWriteStream(filePath));
-    });
-  } catch (error) {
-    console.error("Error downloading file:", error);
-    throw error;
-  }
-}
-
 export const POST = async (req: NextRequest) => {
-  return new Promise<void | Response>(async (resolve, reject) => {
-    try {
-      const authUser = await getAuthenticatedUser();
+  try {
+    const authUser = await getAuthenticatedUser();
 
-      if (!authUser) {
-        reject(new Response("User is not signed in.", { status: 401 }));
-        return;
-      }
-
-      // Parse the form data using the native Request API
-      const formData = await req.formData();
-      const file = formData.get("file"); // The 'file' key should match the name of your form input
-
-      if (!file || !(file instanceof File)) {
-        resolve(
-          NextResponse.json({ message: "No file uploaded" }, { status: 400 })
-        );
-        return;
-      }
-
-      const filename = `${parseInt((Math.random() * 100000000).toString())}_${
-        file.name
-      }`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const bucketPath = `uploads/${filename}`;
-      const url = await uploadFile(buffer, bucketPath);
-
-      resolve(
-        NextResponse.json(
-          {
-            status: true,
-            message: "File uploaded successfully",
-            data: { filename, url },
-          },
-          { status: 200 }
-        )
-      );
-    } catch (error) {
-      void error;
-      reject(
-        NextResponse.json(
-          { error: "Failed to fetch documents" },
-          { status: 500 }
-        )
-      );
+    if (!authUser) {
+      return new Response("User is not signed in.", { status: 401 });
     }
-  });
+
+    const formData = await req.formData();
+    const file = formData.get("file");
+
+    if (!(file instanceof File)) {
+      return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
+    }
+
+    const filename = buildUploadFilename(file.name);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const bucketPath = `uploads/${filename}`;
+    const url = await uploadFile(buffer, bucketPath);
+
+    return NextResponse.json(
+      {
+        status: true,
+        message: "File uploaded successfully",
+        data: { filename, url },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error handling image upload:", error);
+    return NextResponse.json(
+      { error: "Failed to upload image" },
+      { status: 500 }
+    );
+  }
 };
 
 export const GET = async (req: NextRequest) => {
   try {
+    const authUser = await getAuthenticatedUser();
+
+    if (!authUser) {
+      return new Response("User is not signed in.", { status: 401 });
+    }
+
     const image_key = req.nextUrl.searchParams.get("image_key");
-    if (!image_key) {
+    if (!image_key || !isSafeImageKey(image_key)) {
       return new Response("Image ID is required.", { status: 400 });
     }
 
@@ -107,22 +110,14 @@ export const GET = async (req: NextRequest) => {
       return new Response("Image not found.", { status: 404 });
     }
 
-    const directoryPath = path.join(__dirname, "../../public");
-    const filename = image_key;
-    const filePath = path.join(directoryPath, filename);
-    await fs.mkdirSync(directoryPath, { recursive: true });
-    if (!(await fs.existsSync(filePath))) {
-      await downloadFile(`uploads/${image_key}`, filePath);
-    }
-
-    const imageBuffer = await fs.readFileSync(filePath);
-    const response = new NextResponse(imageBuffer);
-    response.headers.set("content-type", "image/png");
+    const [imageBuffer] = await file.download();
+    const response = new NextResponse(new Uint8Array(imageBuffer));
+    response.headers.set("content-type", getContentType(image_key));
     return response;
   } catch (error) {
-    void error;
+    console.error("Error fetching image:", error);
     return NextResponse.json(
-      { error: "Failed to fetch user emails" },
+      { error: "Failed to fetch image" },
       { status: 500 }
     );
   }

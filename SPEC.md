@@ -12,6 +12,7 @@ DocuShare is a collaborative document authoring application with rich editing, d
 - Persistence: Firestore stores documents, user profiles, payment records, and document-sharing metadata. Firebase Storage is used for uploaded images.
 - Editor: Tiptap 3 is configured through `src/extensions/extension-kit.ts`; `src/components/CollaborativeEditor.tsx` loads/saves document content and listens for Firestore updates.
 - AI: `src/app/api/ai/route.ts` selects user-configured provider keys from Firestore and routes requests through AI SDK providers.
+- Images: `src/app/api/image/route.ts` requires an authenticated session for upload/read paths, generates opaque upload filenames, validates read keys, and streams Firebase Storage downloads without writing a local cache.
 - Payments: Stripe dependencies and payment components/actions support checkout and payment status flows.
 
 ## Key Workflows

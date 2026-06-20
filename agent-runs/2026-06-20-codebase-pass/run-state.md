@@ -12,21 +12,21 @@
 ## Current State
 
 - Phase: Execute Fixes and Improvements
-- Task: T-007
-- Status: Firestore rules fix complete; ready for checkpoint
+- Task: T-009
+- Status: Image API fixes complete; ready for checkpoint
 - Last command: `npm run build`
 - Last result: passed
-- Last pushed commit: 8cfb3f6
+- Last pushed commit: ba50e6a
 - Branch sync: local `dev` matches `origin/dev`.
-- Working tree: dirty with `firestore.rules`, `SPEC.md`, and in-scope execution report updates.
-- Next action: Commit/push Firestore rules fix, then refactor image API POST handling.
+- Working tree: dirty with `src/app/api/image/route.ts`, `SPEC.md`, and in-scope execution report updates.
+- Next action: Commit/push image API fixes, then triage package/audit cleanup.
 
 ## Dirty File Classification
 
 | Path | Classification | Owner/Reason |
 | --- | --- | --- |
-| `firestore.rules` | In-scope source | T-005/T-006 Firestore access-control fix |
-| `SPEC.md` | Safe-to-commit | Current-state rules-boundary note |
+| `src/app/api/image/route.ts` | In-scope source | T-007/T-008 image API fix |
+| `SPEC.md` | Safe-to-commit | Current-state image API note |
 | `agent-runs/2026-06-20-codebase-pass/04-execute-fixes-and-improvements.md` | Safe-to-commit | Execution report |
 | `agent-runs/2026-06-20-codebase-pass/run-state.md` | Safe-to-commit | Resume ledger update |
 | `agent-runs/2026-06-20-codebase-pass/task-queue.md` | Safe-to-commit | Execution task status update |
