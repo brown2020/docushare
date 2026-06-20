@@ -4,9 +4,41 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import path from "path";
 import { randomUUID } from "crypto";
 
-function buildUploadFilename(fileName: string) {
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".webp",
+]);
+
+function getExtensionForContentType(contentType: string) {
+  switch (contentType) {
+    case "image/gif":
+      return ".gif";
+    case "image/jpeg":
+      return ".jpg";
+    case "image/webp":
+      return ".webp";
+    case "image/png":
+    default:
+      return ".png";
+  }
+}
+
+function buildUploadFilename(fileName: string, contentType: string) {
   const extension = path.extname(fileName).toLowerCase();
-  return `${randomUUID()}${extension}`;
+  const safeExtension = ALLOWED_IMAGE_EXTENSIONS.has(extension)
+    ? extension
+    : getExtensionForContentType(contentType);
+  return `${randomUUID()}${safeExtension}`;
 }
 
 function isSafeImageKey(imageKey: string) {
@@ -65,7 +97,14 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
     }
 
-    const filename = buildUploadFilename(file.name);
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { message: "Unsupported image type" },
+        { status: 400 }
+      );
+    }
+
+    const filename = buildUploadFilename(file.name, file.type);
     const buffer = Buffer.from(await file.arrayBuffer());
     const bucketPath = `uploads/${filename}`;
     const url = await uploadFile(buffer, bucketPath);
