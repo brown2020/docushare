@@ -2,7 +2,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { cn } from "@/lib/utils";
 import { icons } from "lucide-react";
 import { Surface } from "./Surface";
-import { Toolbar } from "./Toolbar";
+import { Toolbar } from "./toolbar";
 
 export const Trigger = Popover.Trigger;
 export const Portal = Popover.Portal;

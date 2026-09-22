@@ -2,7 +2,7 @@ import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react/menus'
 import React, { useCallback, useRef, type JSX } from 'react';
 import { v4 as uuid } from 'uuid'
 
-import { Toolbar } from '@/components/ui/Toolbar'
+import { Toolbar } from '@/components/ui/toolbar'
 import { Icon } from '@/components/ui/Icon'
 import { ImageBlockWidth } from './ImageBlockWidth'
 import { MenuProps } from '@/components/menus/types'

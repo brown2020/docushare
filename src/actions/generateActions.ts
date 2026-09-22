@@ -46,11 +46,11 @@ export async function generateResponse(
   modelName: string,
   api_key: string | null = null
 ) {
-  const model = await getModel(modelName, api_key);
-
   if (process.env.IS_UAT == "1") {
     return "This is a test response in UAT mode.";
   }
+
+  const model = await getModel(modelName, api_key);
 
   const { text } = await generateText({
     model,

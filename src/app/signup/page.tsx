@@ -2,26 +2,22 @@
 
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
 import logo from "@/assets/svg/logo.svg";
 import Link from "next/link";
 
 export default function SignUpPage() {
-  const { isSignedIn } = useFirebaseAuth();
-  const router = useRouter();
+  const { isSignedIn, sessionReady } = useFirebaseAuth();
 
-  // Redirect if already signed in
   useEffect(() => {
-    if (isSignedIn) {
-      router.push("/dashboard");
+    if (isSignedIn && sessionReady) {
+      window.location.assign("/dashboard");
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn, sessionReady]);
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left side - Form */}
+    <main className="min-h-screen flex flex-col lg:flex-row">
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-8 bg-white dark:bg-neutral-950">
         <div className="mb-8 text-center lg:text-left lg:pl-8">
           <Link href="/">
@@ -36,7 +32,6 @@ export default function SignUpPage() {
         <SignUpForm />
       </div>
 
-      {/* Right side - Branding */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12">
         <div className="max-w-md text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Start creating today</h2>
@@ -64,6 +59,6 @@ export default function SignUpPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

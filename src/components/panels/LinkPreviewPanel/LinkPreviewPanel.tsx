@@ -1,6 +1,6 @@
 import { Icon } from '@/components/ui/Icon'
 import { Surface } from '@/components/ui/Surface'
-import { Toolbar } from '@/components/ui/Toolbar'
+import { Toolbar } from '@/components/ui/toolbar'
 import { Tooltip, TooltipContentTitle, TooltipTrigger } from '@/components/ui/Tooltip/Tooltip'
 
 export type LinkPreviewPanelProps = {

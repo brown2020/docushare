@@ -10,7 +10,7 @@ export type ToolbarWrapperProps = {
   isVertical?: boolean;
 } & HTMLProps<HTMLDivElement>;
 
-const ToolbarWrapper = forwardRef<HTMLDivElement, ToolbarWrapperProps>(
+export const ToolbarWrapper = forwardRef<HTMLDivElement, ToolbarWrapperProps>(
   (
     {
       shouldShowContent = true,
@@ -43,7 +43,7 @@ export type ToolbarDividerProps = {
   horizontal?: boolean;
 } & HTMLProps<HTMLDivElement>;
 
-const ToolbarDivider = forwardRef<HTMLDivElement, ToolbarDividerProps>(
+export const ToolbarDivider = forwardRef<HTMLDivElement, ToolbarDividerProps>(
   ({ horizontal, className, ...rest }, ref) => {
     const dividerClassName = cn(
       "bg-neutral-200 dark:bg-neutral-800",
@@ -68,7 +68,7 @@ export type ToolbarButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonProps["variant"];
 };
 
-const ToolbarButton = (
+export const ToolbarButton = (
   {
     children,
     buttonSize = "icon",
@@ -110,8 +110,3 @@ const ToolbarButton = (
 
 ToolbarButton.displayName = "ToolbarButton";
 
-export const Toolbar = {
-  Wrapper: ToolbarWrapper,
-  Divider: ToolbarDivider,
-  Button: ToolbarButton,
-};

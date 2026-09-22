@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { ColorButton } from "./ColorButton";
-import { Toolbar } from "../../ui/Toolbar";
+import { Toolbar } from "../../ui/toolbar";
 import { Icon } from "../../ui/Icon";
 import { themeColors } from "@/lib/constants";
 
@@ -44,10 +44,15 @@ export const ColorPicker = ({ color, onChange, onClear }: ColorPickerProps) => {
         color={color || ""}
         onChange={onChange}
       />
+      <label className="sr-only" htmlFor="color-hex-input">
+        Hex color
+      </label>
       <input
+        id="color-hex-input"
         type="text"
         className="w-full p-2 text-black bg-white border rounded-xs dark:bg-black dark:text-white border-neutral-200 dark:border-neutral-800 focus:outline-1 focus:ring-0 focus:outline-neutral-300 dark:focus:outline-neutral-700"
         placeholder="#000000"
+        aria-label="Hex color"
         value={colorInputValue}
         onChange={handleColorUpdate}
         onBlur={handleColorChange}

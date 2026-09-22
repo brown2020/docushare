@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      IS_UAT: "1"
+      NEXT_PUBLIC_BASE_URL: "http://localhost:3000/"
+      NEXT_PUBLIC_FIREBASE_APIKEY: "REDACTED_BY_HISTORY_PURGE"
+      NEXT_PUBLIC_FIREBASE_AUTHDOMAIN: "sharedocai.firebaseapp.com"
+      NEXT_PUBLIC_FIREBASE_PROJECTID: "sharedocai"
+      NEXT_PUBLIC_FIREBASE_STORAGEBUCKET: "sharedocai.appspot.com"
+      NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID: "457664229780"
+      NEXT_PUBLIC_FIREBASE_APPID: "1:457664229780:web:f5d62bbb2a7f844e975f81"
+      NEXT_PUBLIC_FIREBASE_MEASUREMENTID: "G-2VHXL0Q355"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

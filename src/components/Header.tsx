@@ -3,6 +3,7 @@
 import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { createDocumentClient } from "@/lib/docsClient";
 import { Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
@@ -41,35 +42,21 @@ export default function Header() {
 
     setIsCreatingDocument(true);
     try {
-      const response = await fetch("/api/docs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: "Untitled Document" }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
+      if (!user?.uid) {
+        throw new Error("Not signed in");
       }
-
-      const data = await response.json();
-
-      if (!data || !data.id) {
-        throw new Error("Invalid response data");
-      }
-
+      const data = await createDocumentClient(user.uid, "Untitled Document");
       setActiveDocId(data.id);
       setDocumentName(data.name || "Untitled Document");
       toast.success("Document created successfully");
       refreshDocuments();
     } catch (error) {
-      console.error("Error creating document:", error);
+      console.warn("Error creating document:", error instanceof Error ? error.message : "unknown");
       toast.error("Failed to create document. Please try again.");
     } finally {
       setIsCreatingDocument(false);
     }
-  }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments]);
+  }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments, user]);
 
   // Sync Firebase auth state to Zustand store
   useEffect(() => {
@@ -120,12 +107,20 @@ export default function Header() {
             className="w-[115.13px] h-[60px] max-sm:w-[80.28px] max-sm:h-[50px]"
           />
         </Link>
-        <Link
-          href="/signin"
-          className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          Sign In
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/signup"
+            className="text-neutral-700 dark:text-neutral-200 hover:text-neutral-900 dark:hover:text-white px-3 py-2 rounded-lg font-medium transition-colors"
+          >
+            Create account
+          </Link>
+          <Link
+            href="/signin"
+            className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Sign In
+          </Link>
+        </div>
       </div>
     );
   }

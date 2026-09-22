@@ -172,7 +172,7 @@ export const AIDropdown = ({
                     }}
                     value={aiContinue}
                     className="p-0 outline-hidden border-0 focus:ring-0"
-                    placeholder="Ask AI to edit or generate..."
+                    aria-label="Ask AI" placeholder="Ask AI to edit or generate..."
                   />
                   <Button
                     onClick={() => performAiCommand(handleCustomAiCommand())}
@@ -190,16 +190,14 @@ export const AIDropdown = ({
                           .includes(aiContinue.toLowerCase())
                       : true
                   )
-                  .map((command, index) => (
-                    <div
-                      key={index}
-                      onClick={performAiCommand(command.command)}
+                  .map((command) => (
+                    <DropdownButton
+                      key={command.label}
+                      onClick={() => { command.command(); }}
                     >
-                      <DropdownButton>
-                        <Icon name={command.icon} />
-                        {command.label}
-                      </DropdownButton>
-                    </div>
+                      <Icon name={command.icon} />
+                      {command.label}
+                    </DropdownButton>
                   ))}
               </Fragment>
             )}

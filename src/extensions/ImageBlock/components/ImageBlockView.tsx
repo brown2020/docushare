@@ -120,7 +120,7 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
               width: "100%",
               background: "white",
               opacity: isUploading[0] ? "0.7" : "0",
-              transition: "all",
+              transitionProperty: "opacity",
               transitionDuration: "300ms",
             }}
           >

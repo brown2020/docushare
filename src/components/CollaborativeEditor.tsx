@@ -121,10 +121,12 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
     let unsubscribe: (() => void) | null = null;
 
+    let ignore = false;
     const initializeAndSubscribe = async () => {
       try {
         // First, check and initialize the document
         const docSnap = await getDoc(docRef);
+        if (ignore) return;
 
         if (!docSnap.exists() || !docSnap.data()?.content) {
           await setDoc(
@@ -150,14 +152,15 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
           }
         }
 
+        if (ignore) return;
         // Mark as initialized before subscribing
         setIsInitialized(true);
         scheduleProcessing(false);
 
         // Now subscribe to changes
         unsubscribe = onSnapshot(docRef, updateContent);
-      } catch (error) {
-        console.error("Error initializing document:", error);
+      } catch {
+        console.warn("[editor]", "init_failed");
         scheduleProcessing(false);
       }
     };
@@ -165,6 +168,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     initializeAndSubscribe();
 
     return () => {
+      ignore = true;
       if (unsubscribe) {
         unsubscribe();
       }

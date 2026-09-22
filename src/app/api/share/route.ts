@@ -100,18 +100,17 @@ export const GET = async (req: NextRequest) => {
     }
 
     // Fetch email addresses for the user IDs from Firebase Auth
-    const emails: string[] = [];
-    for (const uid of userIds) {
-      try {
-        const user = await admin.auth().getUser(uid);
-        if (user.email) {
-          emails.push(user.email);
+    const emailResults = await Promise.all(
+      userIds.map(async (uid) => {
+        try {
+          const user = await admin.auth().getUser(uid);
+          return user.email ?? null;
+        } catch {
+          return null;
         }
-      } catch {
-        // User may have been deleted, skip
-        continue;
-      }
-    }
+      })
+    );
+    const emails = emailResults.filter((email): email is string => Boolean(email));
 
     return NextResponse.json({ emails });
   } catch (error) {

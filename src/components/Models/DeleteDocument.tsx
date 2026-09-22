@@ -15,6 +15,7 @@ export default function DeleteDocument({
       <PopupModel
         extraCss="sm:w-[400px]"
         isOpen={true}
+        title="Delete Document"
         onClose={() => setDeleteDoc(null)}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -25,6 +26,8 @@ export default function DeleteDocument({
             </h2>
           </div>
           <button
+            type="button"
+            aria-label="Close delete dialog"
             onClick={() => setDeleteDoc(null)}
             className="p-1 rounded-md hover:bg-gray-100 transition-colors"
           >

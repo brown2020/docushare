@@ -38,6 +38,10 @@ export class API {
         body
       });
 
+      if (!response.ok) {
+        return { status: false };
+      }
+
       const json = await response.json();
       if (json.status === true) {
         return { status: true, url: json.data.url };

@@ -2,7 +2,7 @@
 
 import { SignInForm } from "@/components/auth/SignInForm";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { isSignInWithEmailLink } from "firebase/auth";
 import { auth } from "@/firebase/firebaseClient";
@@ -12,13 +12,12 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 function SignInContent() {
-  const { isSignedIn, completeMagicLinkSignIn } = useFirebaseAuth();
-  const router = useRouter();
+  const { isSignedIn, completeMagicLinkSignIn, sessionReady } = useFirebaseAuth();
   const searchParams = useSearchParams();
   const [isProcessingLink, setIsProcessingLink] = useState(false);
 
-  // Handle magic link sign-in
   useEffect(() => {
+    let cancelled = false;
     const mode = searchParams.get("mode");
     if (
       mode === "emailLink" &&
@@ -27,26 +26,28 @@ function SignInContent() {
     ) {
       const storedEmail = window.localStorage.getItem("emailForSignIn");
       if (storedEmail) {
-        const handleMagicLink = async () => {
-          setIsProcessingLink(true);
-          try {
-            await completeMagicLinkSignIn(storedEmail);
-            router.push("/dashboard");
-          } catch {
+        setIsProcessingLink(true);
+        void (async () => {
+          const ok = await completeMagicLinkSignIn(storedEmail);
+          if (cancelled) return;
+          if (ok) {
+            window.location.assign("/dashboard");
+          } else {
             setIsProcessingLink(false);
           }
-        };
-        handleMagicLink();
+        })();
       }
     }
-  }, [searchParams, completeMagicLinkSignIn, router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, completeMagicLinkSignIn]);
 
-  // Redirect if already signed in
   useEffect(() => {
-    if (isSignedIn) {
-      router.push("/dashboard");
+    if (isSignedIn && sessionReady) {
+      window.location.assign("/dashboard");
     }
-  }, [isSignedIn, router]);
+  }, [isSignedIn, sessionReady]);
 
   if (isProcessingLink) {
     return (
@@ -62,8 +63,7 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left side - Form */}
+    <main className="min-h-screen flex flex-col lg:flex-row">
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-8 bg-white dark:bg-neutral-950">
         <div className="mb-8 text-center lg:text-left lg:pl-8">
           <Link href="/">
@@ -78,7 +78,6 @@ function SignInContent() {
         <SignInForm />
       </div>
 
-      {/* Right side - Branding */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 to-blue-800 items-center justify-center p-12">
         <div className="max-w-md text-center text-white">
           <h2 className="text-3xl font-bold mb-4">
@@ -90,7 +89,7 @@ function SignInContent() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

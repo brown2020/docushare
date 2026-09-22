@@ -2,7 +2,7 @@ import { Icon } from '@/components/ui/Icon'
 import { icons } from 'lucide-react'
 import { useMemo } from 'react'
 import * as Dropdown from '@radix-ui/react-dropdown-menu'
-import { Toolbar } from '@/components/ui/Toolbar'
+import { Toolbar } from '@/components/ui/toolbar'
 import { Surface } from '@/components/ui/Surface'
 import { DropdownButton, DropdownCategoryTitle } from '@/components/ui/Dropdown'
 

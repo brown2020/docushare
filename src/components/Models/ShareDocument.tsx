@@ -26,13 +26,17 @@ export default function ShareDocument({
     setFetching(true);
     try {
       const response = await fetch(`/api/share?documentId=${documentId}`);
+      if (!response.ok) {
+        toast.error("Something went wrong.");
+        return;
+      }
       const data = await response.json();
-      setFetching(false);
-      setEmailList(data.emails);
+      setEmailList(data.emails ?? []);
     } catch (error) {
       void error;
-      setFetching(false);
       toast.error("Something went wrong.");
+    } finally {
+      setFetching(false);
     }
   }, [documentId]);
 
@@ -47,6 +51,7 @@ export default function ShareDocument({
     <div>
       <PopupModel
         isOpen={true}
+        title="Share Document"
         onClose={() => {
           if (!processing) setShareDocument(null);
         }}
@@ -60,6 +65,8 @@ export default function ShareDocument({
             </h2>
           </div>
           <button
+            type="button"
+            aria-label="Close share dialog"
             onClick={() => !processing && setShareDocument(null)}
             className="p-1 rounded-md hover:bg-gray-100 transition-colors"
             disabled={processing}
@@ -79,7 +86,7 @@ export default function ShareDocument({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                placeholder="Enter email address"
+                aria-label="Share email address" placeholder="Enter email address"
                 className="flex-1 outline-none border-none"
               />
             </div>
@@ -99,9 +106,9 @@ export default function ShareDocument({
             <div className="bg-gray-50 rounded-md p-2 min-h-[100px] max-h-[150px] overflow-y-auto">
               {!fetching && Array.isArray(emailList) && emailList.length > 0 ? (
                 <ul className="space-y-1">
-                  {emailList.map((value, index) => (
+                  {emailList.map((value) => (
                     <li
-                      key={index}
+                      key={value}
                       className="text-gray-700 py-1 px-2 rounded hover:bg-gray-100"
                     >
                       {value}

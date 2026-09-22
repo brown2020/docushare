@@ -1,20 +1,25 @@
 import { Icon } from '@/components/ui/Icon'
-import { Toolbar } from '@/components/ui/Toolbar'
+import { Toolbar } from '@/components/ui/toolbar'
 import { useTextmenuCommands } from './hooks/useTextmenuCommands'
 import { useTextmenuStates } from './hooks/useTextmenuStates'
 import { Editor } from '@tiptap/react'
-import { memo } from 'react'
 import { FontFamilyPicker } from './components/FontFamilyPicker'
 import { useTextmenuContentTypes } from './hooks/useTextmenuContentTypes'
 import { ContentTypePicker } from './components/ContentTypePicker'
 import { EditLinkPopover } from './components/EditLinkPopover'
 import { AIDropdown } from './components/AIDropdown'
 
-// We memorize the button so each button is not rerendered
-// on every editor state change
-const MemoButton = memo(Toolbar.Button)
-const MemoFontFamilyPicker = memo(FontFamilyPicker)
-const MemoContentTypePicker = memo(ContentTypePicker)
+const SHORTCUT_BOLD = ['Mod', 'B']
+const SHORTCUT_ITALIC = ['Mod', 'I']
+const SHORTCUT_UNDERLINE = ['Mod', 'U']
+const SHORTCUT_STRIKE = ['Mod', 'Shift', 'S']
+const SHORTCUT_CODE = ['Mod', 'E']
+const SHORTCUT_SUB = ['Mod', '.']
+const SHORTCUT_SUPER = ['Mod', ',']
+const SHORTCUT_ALIGN_LEFT = ['Shift', 'Mod', 'L']
+const SHORTCUT_ALIGN_CENTER = ['Shift', 'Mod', 'E']
+const SHORTCUT_ALIGN_RIGHT = ['Shift', 'Mod', 'R']
+const SHORTCUT_JUSTIFY = ['Shift', 'Mod', 'J']
 
 export type TextMenuProps = {
   editor: Editor
@@ -41,93 +46,93 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
        onCustomAiInput={commands.onCustomAiInput}
       />
       <Toolbar.Divider />
-      <MemoContentTypePicker options={blockOptions} />
-      <MemoFontFamilyPicker onChange={commands.onSetFont} value={states.currentFont || ''} />
+      <ContentTypePicker options={blockOptions} />
+      <FontFamilyPicker onChange={commands.onSetFont} value={states.currentFont || ''} />
       <Toolbar.Divider />
-      <MemoButton tooltip="Image" onClick={commands.onImageUpload} active={states.isBold}>
+      <Toolbar.Button tooltip="Image" onClick={commands.onImageUpload} active={states.isBold}>
         <Icon name="Image" />
-      </MemoButton>
+      </Toolbar.Button>
       <Toolbar.Divider />
-      <MemoButton tooltip="Bold" tooltipShortcut={['Mod', 'B']} onClick={commands.onBold} active={states.isBold}>
+      <Toolbar.Button tooltip="Bold" tooltipShortcut={SHORTCUT_BOLD} onClick={commands.onBold} active={states.isBold}>
         <Icon name="Bold" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Italic"
-        tooltipShortcut={['Mod', 'I']}
+        tooltipShortcut={SHORTCUT_ITALIC}
         onClick={commands.onItalic}
         active={states.isItalic}
       >
         <Icon name="Italic" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Underline"
-        tooltipShortcut={['Mod', 'U']}
+        tooltipShortcut={SHORTCUT_UNDERLINE}
         onClick={commands.onUnderline}
         active={states.isUnderline}
       >
         <Icon name="Underline" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Strikehrough"
-        tooltipShortcut={['Mod', 'Shift', 'S']}
+        tooltipShortcut={SHORTCUT_STRIKE}
         onClick={commands.onStrike}
         active={states.isStrike}
       >
         <Icon name="Strikethrough" />
-      </MemoButton>
-      <MemoButton tooltip="Code" tooltipShortcut={['Mod', 'E']} onClick={commands.onCode} active={states.isCode}>
+      </Toolbar.Button>
+      <Toolbar.Button tooltip="Code" tooltipShortcut={SHORTCUT_CODE} onClick={commands.onCode} active={states.isCode}>
         <Icon name="Code" />
-      </MemoButton>
+      </Toolbar.Button>
       <EditLinkPopover onSetLink={commands.onLink} />
-      <MemoButton
+      <Toolbar.Button
         tooltip="Subscript"
-        tooltipShortcut={['Mod', '.']}
+        tooltipShortcut={SHORTCUT_SUB}
         onClick={commands.onSubscript}
         active={states.isSubscript}
       >
         <Icon name="Subscript" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Superscript"
-        tooltipShortcut={['Mod', ',']}
+        tooltipShortcut={SHORTCUT_SUPER}
         onClick={commands.onSuperscript}
         active={states.isSuperscript}
       >
         <Icon name="Superscript" />
-      </MemoButton>
+      </Toolbar.Button>
       <Toolbar.Divider />
-      <MemoButton
+      <Toolbar.Button
         tooltip="Align left"
-        tooltipShortcut={['Shift', 'Mod', 'L']}
+        tooltipShortcut={SHORTCUT_ALIGN_LEFT}
         onClick={commands.onAlignLeft}
         active={states.isAlignLeft}
       >
         <Icon name="TextAlignStart" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Align center"
-        tooltipShortcut={['Shift', 'Mod', 'E']}
+        tooltipShortcut={SHORTCUT_ALIGN_CENTER}
         onClick={commands.onAlignCenter}
         active={states.isAlignCenter}
       >
         <Icon name="TextAlignCenter" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Align right"
-        tooltipShortcut={['Shift', 'Mod', 'R']}
+        tooltipShortcut={SHORTCUT_ALIGN_RIGHT}
         onClick={commands.onAlignRight}
         active={states.isAlignRight}
       >
         <Icon name="TextAlignEnd" />
-      </MemoButton>
-      <MemoButton
+      </Toolbar.Button>
+      <Toolbar.Button
         tooltip="Justify"
-        tooltipShortcut={['Shift', 'Mod', 'J']}
+        tooltipShortcut={SHORTCUT_JUSTIFY}
         onClick={commands.onAlignJustify}
         active={states.isAlignJustify}
       >
         <Icon name="TextAlignJustify" />
-      </MemoButton>
+      </Toolbar.Button>
 
     </Toolbar.Wrapper>
   )

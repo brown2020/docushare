@@ -11,103 +11,124 @@ type Props = {
   payment_intent: string;
 };
 
-export default function PaymentSuccessPage({ payment_intent }: Props) {
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+type PaymentView = {
+  message: string;
+  created: number;
+  id: string;
+  amount: number;
+  status: string;
+};
 
-  const [created, setCreated] = useState(0);
-  const [id, setId] = useState("");
-  const [amount, setAmount] = useState(0);
-  const [status, setStatus] = useState("");
+export default function PaymentSuccessPage({ payment_intent }: Props) {
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<PaymentView>({
+    message: "",
+    created: 0,
+    id: "",
+    amount: 0,
+    status: "",
+  });
 
   const addPayment = usePaymentsStore((state) => state.addPayment);
   const checkIfPaymentProcessed = usePaymentsStore(
     (state) => state.checkIfPaymentProcessed
   );
   const addCredits = useProfileStore((state) => state.addCredits);
-
   const uid = useAuthStore((state) => state.uid);
 
   useEffect(() => {
+    let ignore = false;
+
     if (!payment_intent) {
-      setMessage("No payment intent found");
+      setView((v) => ({ ...v, message: "No payment intent found" }));
       setLoading(false);
       return;
     }
 
-    const handlePaymentSuccess = async () => {
+    if (!uid) return;
+
+    void (async () => {
       try {
         const data = await validatePaymentIntent(payment_intent);
+        if (ignore) return;
 
-        if (data.status === "succeeded") {
-          // Check if payment is already processed
-          const existingPayment = await checkIfPaymentProcessed(data.id);
-          if (existingPayment) {
-            setMessage("Payment has already been processed.");
-
-            // Convert Timestamp to milliseconds before setting state
-            if (existingPayment.createdAt) {
-              setCreated(existingPayment.createdAt.toMillis());
-            } else {
-              setCreated(0); // Fallback if createdAt is null
-            }
-
-            setId(existingPayment.id);
-            setAmount(existingPayment.amount);
-            setStatus(existingPayment.status);
-            setLoading(false);
-            return;
-          }
-
-          setMessage("Payment successful");
-          setCreated(data.created * 1000); // Assuming `data.created` is a UNIX timestamp in seconds
-          setId(data.id);
-          setAmount(data.amount);
-          setStatus(data.status);
-
-          // Add payment to store
-          await addPayment({
-            id: data.id,
-            amount: data.amount,
-            status: data.status,
-          });
-
-          // Add credits to profile
-          const creditsToAdd = data.amount + 1;
-          await addCredits(creditsToAdd);
-        } else {
-          console.error("Payment validation failed:", data.status);
-          setMessage("Payment validation failed");
+        if (data.status !== "succeeded") {
+          setView((v) => ({ ...v, message: "Payment validation failed" }));
+          return;
         }
-      } catch (error) {
-        console.error("Error handling payment success:", error);
-        setMessage("Error handling payment success");
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    if (uid) handlePaymentSuccess();
+        const existingPayment = await checkIfPaymentProcessed(data.id);
+        if (ignore) return;
+
+        if (existingPayment) {
+          setView({
+            message: "Payment has already been processed.",
+            created: existingPayment.createdAt
+              ? existingPayment.createdAt.toMillis()
+              : 0,
+            id: existingPayment.id,
+            amount: existingPayment.amount,
+            status: existingPayment.status,
+          });
+          return;
+        }
+
+        await addPayment({
+          id: data.id,
+          amount: data.amount,
+          status: data.status,
+        });
+        if (ignore) return;
+
+        await addCredits(data.amount + 1);
+        if (ignore) return;
+
+        setView({
+          message: "Payment successful",
+          created: data.created * 1000,
+          id: data.id,
+          amount: data.amount,
+          status: data.status,
+        });
+      } catch {
+        if (!ignore) {
+          setView((v) => ({
+            ...v,
+            message: "Error handling payment success",
+          }));
+        }
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
   }, [payment_intent, addPayment, checkIfPaymentProcessed, addCredits, uid]);
+
+  const createdLabel = view.created
+    ? new Date(view.created).toISOString()
+    : "";
 
   return (
     <main className="max-w-6xl flex flex-col gap-2.5 mx-auto p-10 text-black text-center border m-10 rounded-sm border-black">
       {loading ? (
         <div>validating...</div>
-      ) : id ? (
+      ) : view.id ? (
         <div className="mb-10">
           <h1 className="text-4xl font-extrabold mb-2">Thank you!</h1>
           <h2 className="text-2xl">You successfully purchased credits</h2>
           <div className="bg-white p-2 rounded-sm my-5 text-4xl font-bold mx-auto">
-            ${amount / 100}
+            ${view.amount / 100}
           </div>
           <div>Uid: {uid}</div>
-          <div>Id: {id}</div>
-          <div>Created: {new Date(created).toLocaleString()}</div>
-          <div>Status: {status}</div>
+          <div>Id: {view.id}</div>
+          <div>Created: {createdLabel}</div>
+          <div>Status: {view.status}</div>
         </div>
       ) : (
-        <div>{message}</div>
+        <div>{view.message}</div>
       )}
 
       <Link

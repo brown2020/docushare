@@ -1,5 +1,6 @@
 "use client";
 
+import { createServerSession, clearServerSession } from "@/lib/auth/sessionClient";
 import { auth } from "@/firebase/firebaseClient";
 import {
   User,
@@ -20,23 +21,28 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
+import {
+  mapFirebaseAuthError,
+  formatFirebaseAuthErrorForLog,
+} from "@/lib/firebaseAuthErrors";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  sessionReady: boolean; // True when session cookie is set
+  sessionReady: boolean;
   error: string | null;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
   signUpWithEmail: (
     email: string,
     password: string,
     displayName?: string
-  ) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  sendMagicLink: (email: string) => Promise<void>;
-  completeMagicLinkSignIn: (email: string) => Promise<void>;
+  ) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
+  sendMagicLink: (email: string) => Promise<boolean>;
+  completeMagicLinkSignIn: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -45,13 +51,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const googleProvider = new GoogleAuthProvider();
 
-const actionCodeSettings = {
-  url:
-    typeof window !== "undefined"
-      ? `${window.location.origin}/signin?mode=emailLink`
-      : "",
-  handleCodeInApp: true,
-};
+
+function handleAuthFailure(err: unknown, fallback: string): string {
+  console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
+  return mapFirebaseAuthError(err, fallback);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -60,37 +64,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let ignore = false;
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (ignore) return;
       setUser(firebaseUser);
-
-      if (firebaseUser) {
-        // Create session cookie on sign in
-        try {
-          const idToken = await firebaseUser.getIdToken(true); // Force refresh
-          const response = await fetch("/api/auth/session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
-
-          if (response.ok) {
-            setSessionReady(true);
-          } else {
-            console.error("Failed to create session:", response.status);
-            setSessionReady(false);
-          }
-        } catch (err) {
-          console.error("Failed to create session:", err);
-          setSessionReady(false);
-        }
-      } else {
+      if (!firebaseUser) {
         setSessionReady(false);
+        setLoading(false);
+        return;
       }
-
       setLoading(false);
+      void (async () => {
+        try {
+          const idToken = await firebaseUser.getIdToken(true);
+          const ok = await createServerSession(idToken);
+          if (!ignore) setSessionReady(ok);
+        } catch (err) {
+          console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
+          if (!ignore) setSessionReady(false);
+        }
+      })();
     });
-
-    return () => unsubscribe();
+    return () => {
+      ignore = true;
+      unsubscribe();
+    };
   }, []);
 
   const signInWithEmail = useCallback(
@@ -99,22 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setSessionReady(false);
       try {
-        const credential = await signInWithEmailAndPassword(auth, email, password);
-        // Manually create session after sign in
+        const credential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        setUser(credential.user);
         const idToken = await credential.user.getIdToken(true);
-        const response = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
-        if (response.ok) {
-          setSessionReady(true);
+        const ok = await createServerSession(idToken);
+        setSessionReady(ok);
+        if (!ok) {
+          setError("Signed in, but session setup failed. Please try again.");
+          return false;
         }
+        return true;
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to sign in";
-        setError(message);
-        throw err;
+        setError(handleAuthFailure(err, "Failed to sign in"));
+        return false;
       } finally {
         setLoading(false);
       }
@@ -136,21 +135,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (displayName && credential.user) {
           await updateProfile(credential.user, { displayName });
         }
-        // Manually create session after sign up
+        setUser(credential.user);
         const idToken = await credential.user.getIdToken(true);
-        const response = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
-        if (response.ok) {
-          setSessionReady(true);
+        const ok = await createServerSession(idToken);
+        setSessionReady(ok);
+        if (!ok) {
+          setError("Account created, but session setup failed. Please sign in.");
+          return false;
         }
+        return true;
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to create account";
-        setError(message);
-        throw err;
+        setError(handleAuthFailure(err, "Failed to create account"));
+        return false;
       } finally {
         setLoading(false);
       }
@@ -164,21 +160,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionReady(false);
     try {
       const credential = await signInWithPopup(auth, googleProvider);
-      // Manually create session after Google sign in
+      setUser(credential.user);
       const idToken = await credential.user.getIdToken(true);
-      const response = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (response.ok) {
-        setSessionReady(true);
+      const ok = await createServerSession(idToken);
+      setSessionReady(ok);
+      if (!ok) {
+        setError("Signed in, but session setup failed. Please try again.");
+        return false;
       }
+      return true;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to sign in with Google";
-      setError(message);
-      throw err;
+      setError(handleAuthFailure(err, "Failed to sign in with Google"));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -186,17 +179,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendMagicLink = useCallback(async (email: string) => {
     setError(null);
+    const actionCodeSettings = {
+      url:
+        typeof window !== "undefined"
+          ? `${window.location.origin}/signin?mode=emailLink`
+          : "",
+      handleCodeInApp: true,
+    };
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      // Store email for when user clicks the link
       if (typeof window !== "undefined") {
         window.localStorage.setItem("emailForSignIn", email);
       }
+      return true;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to send magic link";
-      setError(message);
-      throw err;
+      setError(handleAuthFailure(err, "Failed to send magic link"));
+      return false;
     }
   }, []);
 
@@ -205,25 +203,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setSessionReady(false);
     try {
-      if (typeof window !== "undefined" && isSignInWithEmailLink(auth, window.location.href)) {
-        const credential = await signInWithEmailLink(auth, email, window.location.href);
+      if (
+        typeof window !== "undefined" &&
+        isSignInWithEmailLink(auth, window.location.href)
+      ) {
+        const credential = await signInWithEmailLink(
+          auth,
+          email,
+          window.location.href
+        );
         window.localStorage.removeItem("emailForSignIn");
-        // Manually create session after magic link sign in
         const idToken = await credential.user.getIdToken(true);
-        const response = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
-        if (response.ok) {
-          setSessionReady(true);
-        }
+        const ok = await createServerSession(idToken);
+        setSessionReady(ok);
+        return ok;
       }
+      return false;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to complete sign in";
-      setError(message);
-      throw err;
+      setError(handleAuthFailure(err, "Failed to complete sign in"));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -232,26 +230,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setError(null);
     try {
-      // 1. Delete server session cookie BEFORE Firebase sign-out.
-      await fetch("/api/auth/session", { method: "DELETE" });
+      await clearServerSession();
       setSessionReady(false);
-
-      // 2. Sign out of Firebase.
       await firebaseSignOut(auth);
-
-      // 3. Clear browser storage to prevent stale data leaking to next user.
       if (typeof window !== "undefined") {
         sessionStorage.clear();
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to sign out";
-      setError(message);
-      // Best-effort cleanup even on error
+      setError(handleAuthFailure(err, "Failed to sign out"));
       if (typeof window !== "undefined") {
         sessionStorage.clear();
       }
-      throw err;
     }
   }, []);
 
@@ -259,24 +248,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      sessionReady,
+      error,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      sendMagicLink,
+      completeMagicLinkSignIn,
+      signOut,
+      clearError,
+    }),
+    [
+      user,
+      loading,
+      sessionReady,
+      error,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      sendMagicLink,
+      completeMagicLinkSignIn,
+      signOut,
+      clearError,
+    ]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        sessionReady,
-        error,
-        signInWithEmail,
-        signUpWithEmail,
-        signInWithGoogle,
-        sendMagicLink,
-        completeMagicLinkSignIn,
-        signOut,
-        clearError,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 }
 

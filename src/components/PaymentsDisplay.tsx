@@ -114,7 +114,7 @@ export default function PaymentsDisplay({ className = "" }: PaymentsDisplayProps
               </div>
               <div className="text-sm text-neutral-500 dark:text-neutral-400">
                 {payment.createdAt
-                  ? payment.createdAt.toDate().toLocaleString()
+                  ? payment.createdAt.toDate().toISOString()
                   : "Date unavailable"}
               </div>
             </div>

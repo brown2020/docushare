@@ -36,6 +36,7 @@ export const Toggle = ({ onChange, active = false, size = 'large' }: ToggleProps
       className={buttonClass}
       type="button"
       role="switch"
+      aria-label="Toggle"
       aria-checked={active}
       data-state={state}
       value={value}

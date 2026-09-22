@@ -20,10 +20,11 @@ Important areas:
 
 - `npm run dev`: start the local Next.js development server.
 - `npm run lint`: run ESLint across the repo.
+- `npm run typecheck`: TypeScript `tsc --noEmit`.
+- `npm test`: Vitest unit/contract tests.
 - `npm run build`: create the production build and run Next.js type checks.
 - `npm run start`: start the production server after a build.
-
-There is no dedicated test script at the moment. Use `npm run lint` first, then `npm run build` when source or route behavior changes.
+- Auth routes: `/signin`, `/signup`, `/forgot-password` (email/password with show/hide eye).
 
 ## Operating Notes
 

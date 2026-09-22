@@ -5,11 +5,6 @@ import React, { useCallback, type JSX } from "react";
 
 import { TippyProps, TooltipProps } from "./types";
 
-const isMac =
-  typeof window !== "undefined"
-    ? navigator.platform.toUpperCase().indexOf("MAC") >= 0
-    : false;
-
 export const ShortcutKey = ({
   children,
 }: {
@@ -19,7 +14,7 @@ export const ShortcutKey = ({
     "inline-flex items-center justify-center w-5 h-5 p-1 text-[0.625rem] rounded-xs font-semibold leading-none border border-neutral-200 text-neutral-500 border-b-2";
 
   if (children === "Mod") {
-    return <kbd className={className}>{isMac ? "⌘" : "Ctrl"}</kbd>; // ⌃
+    return <kbd className={className}>Ctrl</kbd>;
   }
 
   if (children === "Shift") {
@@ -27,7 +22,7 @@ export const ShortcutKey = ({
   }
 
   if (children === "Alt") {
-    return <kbd className={className}>{isMac ? "⌥" : "Alt"}</kbd>;
+    return <kbd className={className}>Alt</kbd>;
   }
 
   return <kbd className={className}>{children}</kbd>;
@@ -64,23 +59,20 @@ export const Tooltip = ({
     [shortcut, title]
   );
 
-  if (enabled) {
-    return (
-      <Tippy
-        // delay={1000}
-        // offset={[0, 8]}
-        touch={false}
-        zIndex={99999}
-        appendTo={document.body}
-        {...tippyOptions}
-        render={renderTooltip}
-      >
-        <span>{children}</span>
-      </Tippy>
-    );
+  if (!enabled) {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
+  return (
+    <Tippy
+      touch={false}
+      zIndex={99999}
+      {...tippyOptions}
+      render={renderTooltip}
+    >
+      <span>{children}</span>
+    </Tippy>
+  );
 };
 
 export default Tooltip;

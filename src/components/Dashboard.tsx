@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import CollaborativeEditor from "./CollaborativeEditor";
 import DocumentsList from "./DocumentsList";
 import { useActiveDoc } from "./ActiveDocContext";
@@ -16,10 +16,11 @@ import {
 import DocumentStats from "./DocumentStats";
 import toast from "react-hot-toast";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { createDocumentClient } from "@/lib/docsClient";
 
 const Dashboard = () => {
   const { activeDocId, setActiveDocId, documentName, setDocumentName } = useActiveDoc();
-  const { sessionReady, loading } = useFirebaseAuth();
+  const { sessionReady, loading, user } = useFirebaseAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,35 +46,26 @@ const Dashboard = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/docs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: "Untitled Document" }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
+      if (!user?.uid) {
+        throw new Error("Not signed in");
       }
-
-      const data = await response.json();
-
-      if (!data || !data.id) {
-        throw new Error("Invalid response data");
-      }
-
+      const data = await createDocumentClient(user.uid, "Untitled Document");
       setActiveDocId(data.id);
       setDocumentName(data.name || "Untitled Document");
       toast.success("Document created successfully");
       refreshDocuments();
     } catch (error) {
-      console.error("Error creating document:", error);
+      console.warn("Error creating document:", error instanceof Error ? error.message : "unknown");
       toast.error("Failed to create document. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  }, [setActiveDocId, setDocumentName, isLoading, refreshDocuments, sessionReady]);
+  }, [setActiveDocId, setDocumentName, isLoading, refreshDocuments, sessionReady, user]);
+
+  const handleCreateNewDocumentRef = useRef(handleCreateNewDocument);
+  useEffect(() => {
+    handleCreateNewDocumentRef.current = handleCreateNewDocument;
+  }, [handleCreateNewDocument]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -87,7 +79,7 @@ const Dashboard = () => {
       // Ctrl/Cmd + N to create new document
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
-        handleCreateNewDocument();
+        void handleCreateNewDocumentRef.current();
       }
 
       // Ctrl/Cmd + B to toggle sidebar
@@ -97,14 +89,14 @@ const Dashboard = () => {
       }
 
       // Escape to close keyboard shortcuts modal
-      if (e.key === "Escape" && showKeyboardShortcuts) {
+      if (e.key === "Escape") {
         setShowKeyboardShortcuts(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showKeyboardShortcuts, handleCreateNewDocument]);
+  }, []);
 
   // Show loading while session is being established
   if (loading || !sessionReady) {
@@ -131,7 +123,7 @@ const Dashboard = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search documents..."
+              aria-label="Search documents" placeholder="Search documents..."
               className="pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -265,6 +257,8 @@ const Dashboard = () => {
                 Keyboard Shortcuts
               </h2>
               <button
+                type="button"
+                aria-label="Close keyboard shortcuts"
                 onClick={() => setShowKeyboardShortcuts(false)}
                 className="p-1 rounded-md hover:bg-gray-100 transition-colors"
               >

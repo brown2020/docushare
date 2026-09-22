@@ -12,7 +12,7 @@ const protectedRoutes = [
 ];
 
 // Routes that should redirect to dashboard if already authenticated
-const authRoutes = ["/signin", "/signup"];
+const authRoutes = ["/signin", "/signup", "/forgot-password"];
 
 function isProtectedRoute(pathname: string): boolean {
   return protectedRoutes.some(
