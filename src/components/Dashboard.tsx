@@ -120,7 +120,7 @@ const Dashboard = () => {
             Session Setup Failed
           </h2>
           <p className="text-gray-600 mb-6">
-            We couldn't establish your session. This might be due to a network issue or configuration problem.
+            We couldn&apos;t establish your session. This might be due to a network issue or configuration problem.
           </p>
           <div className="flex flex-col space-y-3">
             <button
@@ -130,7 +130,7 @@ const Dashboard = () => {
               <span>Retry Connection</span>
             </button>
             <button
-              onClick={() => void user && window.location.reload()}
+              onClick={() => window.location.reload()}
               className="text-gray-600 hover:text-gray-800 transition-colors"
             >
               Reload Page
