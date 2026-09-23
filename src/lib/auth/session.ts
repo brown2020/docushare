@@ -6,6 +6,7 @@ const SESSION_COOKIE_NAME = "__session";
 const SESSION_EXPIRY_DAYS = 5;
 const SESSION_EXPIRY_MS = SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 const ID_TOKEN_PREFIX = "idt.";
+const SERVER_OP_TIMEOUT_MS = 10_000;
 
 function adminAuthAvailable(): boolean {
   try {
@@ -15,25 +16,71 @@ function adminAuthAvailable(): boolean {
   }
 }
 
+function getFirebaseProjectId(): string | undefined {
+  return (
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECTID ||
+    undefined
+  );
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`${label} timed out after ${ms}ms`));
+        }, ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Create a session cookie from a Firebase ID token.
  * Prefers Admin session cookies; falls back to a verified ID-token cookie
  * when Admin credentials are not configured (local/dev).
  */
 export async function createSessionCookie(idToken: string): Promise<string> {
+  const projectId = getFirebaseProjectId();
+
   if (adminAuthAvailable()) {
     try {
-      return await admin
-        .auth()
-        .createSessionCookie(idToken, { expiresIn: SESSION_EXPIRY_MS });
+      return await withTimeout(
+        admin.auth().createSessionCookie(idToken, {
+          expiresIn: SESSION_EXPIRY_MS,
+        }),
+        SERVER_OP_TIMEOUT_MS,
+        "Firebase Admin createSessionCookie"
+      );
     } catch {
       // fall through to ID-token session
     }
   }
 
-  const verified = await verifyFirebaseIdToken(idToken);
+  if (!projectId) {
+    throw new Error(
+      "Firebase project ID is not configured. Set FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECTID in your Mac .env (do not invent secrets)."
+    );
+  }
+
+  const verified = await withTimeout(
+    verifyFirebaseIdToken(idToken),
+    SERVER_OP_TIMEOUT_MS,
+    "Firebase ID token JWKS verify"
+  );
   if (!verified) {
-    throw new Error("Invalid ID token");
+    throw new Error(
+      "Invalid Firebase ID token (JWKS verify failed). Confirm NEXT_PUBLIC_FIREBASE_* matches the project that issued the token."
+    );
   }
   return `${ID_TOKEN_PREFIX}${idToken}`;
 }

@@ -1,6 +1,10 @@
 "use client";
 
-import { createServerSession, clearServerSession } from "@/lib/auth/sessionClient";
+import {
+  createServerSession,
+  clearServerSession,
+  type CreateSessionResult,
+} from "@/lib/auth/sessionClient";
 import { auth } from "@/firebase/firebaseClient";
 import {
   User,
@@ -29,11 +33,45 @@ import {
   formatFirebaseAuthErrorForLog,
 } from "@/lib/firebaseAuthErrors";
 
+const AUTH_SETTLE_TIMEOUT_MS = 15_000;
+const DEFAULT_SESSION_ERROR =
+  "We couldn't establish your session. This might be due to a network issue or missing Firebase configuration in your local .env.";
+
+async function establishSession(
+  firebaseUser: User
+): Promise<CreateSessionResult> {
+  try {
+    const idToken = await Promise.race([
+      firebaseUser.getIdToken(true),
+      new Promise<string>((_, reject) => {
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "Timed out fetching Firebase ID token. Check NEXT_PUBLIC_FIREBASE_* in your Mac .env."
+              )
+            ),
+          12_000
+        );
+      }),
+    ]);
+    return await createServerSession(idToken);
+  } catch (err) {
+    const message =
+      err instanceof Error && err.message.trim()
+        ? err.message
+        : DEFAULT_SESSION_ERROR;
+    console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
+    return { ok: false, error: message };
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   sessionReady: boolean;
-  sessionError: boolean;
+  /** Non-null when session cookie setup failed or timed out. */
+  sessionError: string | null;
   error: string | null;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
   signUpWithEmail: (
@@ -53,50 +91,81 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const googleProvider = new GoogleAuthProvider();
 
-
 function handleAuthFailure(err: unknown, fallback: string): string {
   console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
   return mapFirebaseAuthError(err, fallback);
+}
+
+function applySessionResult(
+  result: CreateSessionResult,
+  setSessionReady: (v: boolean) => void,
+  setSessionError: (v: string | null) => void,
+  setError?: (v: string | null) => void,
+  failMessage?: string
+): boolean {
+  if (result.ok) {
+    setSessionReady(true);
+    setSessionError(null);
+    return true;
+  }
+  setSessionReady(false);
+  const msg = result.error || failMessage || DEFAULT_SESSION_ERROR;
+  setSessionError(msg);
+  if (setError) setError(msg);
+  return false;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
-  const [sessionError, setSessionError] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
+    let settled = false;
+
+    const finishLoading = () => {
+      if (!ignore) setLoading(false);
+    };
+
+    // Never leave the UI stuck on "Loading your workspace..." if Firebase
+    // auth state never arrives. Signed-out is fine (no sessionError).
+    const settleTimer = setTimeout(() => {
+      if (ignore || settled) return;
+      settled = true;
+      finishLoading();
+      setSessionReady(false);
+      // Do not set sessionError here: no user yet. If a signed-in user is stuck
+      // without a session, createServerSession's own timeout sets sessionError.
+    }, AUTH_SETTLE_TIMEOUT_MS);
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (ignore) return;
+      settled = true;
+      clearTimeout(settleTimer);
       setUser(firebaseUser);
       if (!firebaseUser) {
         setSessionReady(false);
-        setSessionError(false);
-        setLoading(false);
+        setSessionError(null);
+        finishLoading();
         return;
       }
-      setLoading(false);
+      // Clear loading as soon as Firebase user is known; session cookie
+      // setup has its own timeout + sessionError path.
+      finishLoading();
       void (async () => {
-        try {
-          const idToken = await firebaseUser.getIdToken(true);
-          const ok = await createServerSession(idToken);
-          if (!ignore) {
-            setSessionReady(ok);
-            setSessionError(!ok);
-          }
-        } catch (err) {
-          console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
-          if (!ignore) {
-            setSessionReady(false);
-            setSessionError(true);
-          }
+        const result = await establishSession(firebaseUser);
+        if (!ignore) {
+          applySessionResult(result, setSessionReady, setSessionError);
         }
       })();
     });
+
     return () => {
       ignore = true;
+      clearTimeout(settleTimer);
       unsubscribe();
     };
   }, []);
@@ -104,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithEmail = useCallback(
     async (email: string, password: string) => {
       setError(null);
+      setSessionError(null);
       setLoading(true);
       setSessionReady(false);
       try {
@@ -113,16 +183,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password
         );
         setUser(credential.user);
-        const idToken = await credential.user.getIdToken(true);
-        const ok = await createServerSession(idToken);
-        setSessionReady(ok);
-        if (!ok) {
-          setError("Signed in, but session setup failed. Please try again.");
-          return false;
-        }
-        return true;
+        const result = await establishSession(credential.user);
+        return applySessionResult(
+          result,
+          setSessionReady,
+          setSessionError,
+          setError,
+          "Signed in, but session setup failed. Please try again."
+        );
       } catch (err) {
         setError(handleAuthFailure(err, "Failed to sign in"));
+        setSessionReady(false);
         return false;
       } finally {
         setLoading(false);
@@ -134,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUpWithEmail = useCallback(
     async (email: string, password: string, displayName?: string) => {
       setError(null);
+      setSessionError(null);
       setLoading(true);
       setSessionReady(false);
       try {
@@ -146,16 +218,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await updateProfile(credential.user, { displayName });
         }
         setUser(credential.user);
-        const idToken = await credential.user.getIdToken(true);
-        const ok = await createServerSession(idToken);
-        setSessionReady(ok);
-        if (!ok) {
-          setError("Account created, but session setup failed. Please sign in.");
-          return false;
-        }
-        return true;
+        const result = await establishSession(credential.user);
+        return applySessionResult(
+          result,
+          setSessionReady,
+          setSessionError,
+          setError,
+          "Account created, but session setup failed. Please sign in."
+        );
       } catch (err) {
         setError(handleAuthFailure(err, "Failed to create account"));
+        setSessionReady(false);
         return false;
       } finally {
         setLoading(false);
@@ -166,21 +239,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     setError(null);
+    setSessionError(null);
     setLoading(true);
     setSessionReady(false);
     try {
       const credential = await signInWithPopup(auth, googleProvider);
       setUser(credential.user);
-      const idToken = await credential.user.getIdToken(true);
-      const ok = await createServerSession(idToken);
-      setSessionReady(ok);
-      if (!ok) {
-        setError("Signed in, but session setup failed. Please try again.");
-        return false;
-      }
-      return true;
+      const result = await establishSession(credential.user);
+      return applySessionResult(
+        result,
+        setSessionReady,
+        setSessionError,
+        setError,
+        "Signed in, but session setup failed. Please try again."
+      );
     } catch (err) {
       setError(handleAuthFailure(err, "Failed to sign in with Google"));
+      setSessionReady(false);
       return false;
     } finally {
       setLoading(false);
@@ -210,6 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeMagicLinkSignIn = useCallback(async (email: string) => {
     setError(null);
+    setSessionError(null);
     setLoading(true);
     setSessionReady(false);
     try {
@@ -223,14 +299,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.href
         );
         window.localStorage.removeItem("emailForSignIn");
-        const idToken = await credential.user.getIdToken(true);
-        const ok = await createServerSession(idToken);
-        setSessionReady(ok);
-        return ok;
+        const result = await establishSession(credential.user);
+        return applySessionResult(
+          result,
+          setSessionReady,
+          setSessionError,
+          setError,
+          "Signed in, but session setup failed. Please try again."
+        );
       }
       return false;
     } catch (err) {
       setError(handleAuthFailure(err, "Failed to complete sign in"));
+      setSessionReady(false);
       return false;
     } finally {
       setLoading(false);
@@ -242,6 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await clearServerSession();
       setSessionReady(false);
+      setSessionError(null);
       await firebaseSignOut(auth);
       if (typeof window !== "undefined") {
         sessionStorage.clear();
@@ -260,19 +342,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const retrySession = useCallback(async () => {
     if (!user) return;
-    setSessionError(false);
+    setSessionError(null);
     setLoading(true);
+    setSessionReady(false);
     try {
-      const idToken = await user.getIdToken(true);
-      const ok = await createServerSession(idToken);
-      setSessionReady(ok);
-      if (!ok) {
-        setSessionError(true);
-      }
-    } catch (err) {
-      console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
-      setSessionError(true);
-      setSessionReady(false);
+      const result = await establishSession(user);
+      applySessionResult(result, setSessionReady, setSessionError);
     } finally {
       setLoading(false);
     }

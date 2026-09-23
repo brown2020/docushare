@@ -108,7 +108,7 @@ const Dashboard = () => {
     );
   }
 
-  // Handle session error - show error message with retry option
+  // Handle session error - show recoverable error (never infinite spinner)
   if (!sessionReady && sessionError) {
     return (
       <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
@@ -119,8 +119,8 @@ const Dashboard = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Session Setup Failed
           </h2>
-          <p className="text-gray-600 mb-6">
-            We couldn&apos;t establish your session. This might be due to a network issue or configuration problem.
+          <p className="text-gray-600 mb-6 whitespace-pre-wrap">
+            {sessionError}
           </p>
           <div className="flex flex-col space-y-3">
             <button
@@ -141,12 +141,15 @@ const Dashboard = () => {
     );
   }
 
-  // If not loading and no error but still not ready, show loading (shouldn't happen but safe fallback)
+  // Brief establishing state only; AuthProvider times out into sessionError.
   if (!sessionReady) {
     return (
-      <div className="flex flex-col h-full bg-gray-50 items-center justify-center">
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
         <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
         <p className="text-gray-600">Establishing session...</p>
+        <p className="text-sm text-gray-400 mt-2">
+          If this takes more than a few seconds, session setup will time out with a retry option.
+        </p>
       </div>
     );
   }

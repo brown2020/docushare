@@ -7,6 +7,13 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
+function errorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
+
 /**
  * POST /api/auth/session
  * Create a session cookie from a Firebase ID token.
@@ -32,11 +39,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error creating session:", error);
-    return NextResponse.json(
-      { error: "Failed to create session" },
-      { status: 401 }
-    );
+    const message = errorMessage(error, "Failed to create session");
+    // Do not console.error(Error) — log a plain string only.
+    console.warn("[auth/session] create failed:", message);
+    return NextResponse.json({ error: message }, { status: 401 });
   }
 }
 
@@ -51,10 +57,8 @@ export async function DELETE() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error clearing session:", error);
-    return NextResponse.json(
-      { error: "Failed to clear session" },
-      { status: 500 }
-    );
+    const message = errorMessage(error, "Failed to clear session");
+    console.warn("[auth/session] clear failed:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
