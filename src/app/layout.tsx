@@ -4,6 +4,7 @@ import "./globals.css";
 import "./../assets/GeneralSans/WEB/css/general-sans.css";
 import { AuthProvider } from "@/providers/AuthProvider";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
 import { ActiveDocProvider } from "@/components/ActiveDocContext";
 
@@ -23,9 +24,10 @@ export default function RootLayout({
         <AuthProvider>
           <ActiveDocProvider>
             <Header />
-            <div className="flex flex-col h-full flex-1 bg-white dark:bg-neutral-950 overflow-y-auto">
+            <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-neutral-950 overflow-y-auto">
               {children}
             </div>
+            <Footer />
             <Toaster position="top-right" />
           </ActiveDocProvider>
         </AuthProvider>

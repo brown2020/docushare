@@ -3,7 +3,6 @@
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import Image from "next/image";
 import Link from "next/link";
-import Footer from "./Footer";
 import logo from "@/assets/svg/logo.svg";
 import { useState } from "react";
 import { LoaderCircle, FileText, Users, Sparkles, Shield } from "lucide-react";
@@ -153,7 +152,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      <Footer />
     </div>
   );
 }

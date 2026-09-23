@@ -16,6 +16,7 @@ import {
 import DocumentStats from "./DocumentStats";
 import toast from "react-hot-toast";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { HardSignOutButton } from "@/components/auth/HardSignOutButton";
 import { createDocumentClient } from "@/lib/docsClient";
 
 const Dashboard = () => {
@@ -101,9 +102,12 @@ const Dashboard = () => {
   // Show loading while session is being established
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-gray-50 items-center justify-center">
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
         <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
         <p className="text-gray-600">Loading your workspace...</p>
+        <div className="mt-6">
+          <HardSignOutButton label="Hard sign out" variant="link" />
+        </div>
       </div>
     );
   }
@@ -129,6 +133,11 @@ const Dashboard = () => {
             >
               <span>Retry Connection</span>
             </button>
+            <HardSignOutButton
+              label="Hard sign out"
+              variant="danger"
+              className="w-full"
+            />
             <button
               onClick={() => window.location.reload()}
               className="text-gray-600 hover:text-gray-800 transition-colors"
@@ -150,6 +159,9 @@ const Dashboard = () => {
         <p className="text-sm text-gray-400 mt-2">
           If this takes more than a few seconds, session setup will time out with a retry option.
         </p>
+        <div className="mt-6">
+          <HardSignOutButton label="Hard sign out" variant="link" />
+        </div>
       </div>
     );
   }
