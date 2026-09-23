@@ -47,7 +47,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   onCreateDocument,
   isCreatingDocument,
 }) => {
-  const { isLoaded, user } = useFirebaseAuth();
+  const { sessionReady, user } = useFirebaseAuth();
   const [documents, setDocuments] = useState<DocumentSchema[]>([]);
   const [activeRename, setActiveRename] = useState<string | null>(null);
   const [deleteDocument, setDeleteDocument] = useState<string | null>(null);
@@ -65,7 +65,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   };
 
   const fetchDocuments = useCallback(async () => {
-    if (!isLoaded || !user?.uid) return;
+    if (!sessionReady || !user?.uid) return;
     setFetching(true);
     try {
       const data = await listDocumentsClient(user.uid);
@@ -76,7 +76,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
     } finally {
       setFetching(false);
     }
-  }, [isLoaded, user]);
+  }, [sessionReady, user]);
 
   useEffect(() => {
     if (!user) return;

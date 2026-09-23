@@ -20,7 +20,7 @@ import { createDocumentClient } from "@/lib/docsClient";
 
 const Dashboard = () => {
   const { activeDocId, setActiveDocId, documentName, setDocumentName } = useActiveDoc();
-  const { sessionReady, loading, user } = useFirebaseAuth();
+  const { sessionReady, loading, user, sessionError, retrySession } = useFirebaseAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -99,11 +99,54 @@ const Dashboard = () => {
   }, []);
 
   // Show loading while session is being established
-  if (loading || !sessionReady) {
+  if (loading) {
     return (
       <div className="flex flex-col h-full bg-gray-50 items-center justify-center">
         <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
         <p className="text-gray-600">Loading your workspace...</p>
+      </div>
+    );
+  }
+
+  // Handle session error - show error message with retry option
+  if (!sessionReady && sessionError) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-6 h-6 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Session Setup Failed
+          </h2>
+          <p className="text-gray-600 mb-6">
+            We couldn't establish your session. This might be due to a network issue or configuration problem.
+          </p>
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={() => void retrySession()}
+              className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md transition-colors"
+            >
+              <span>Retry Connection</span>
+            </button>
+            <button
+              onClick={() => void user && window.location.reload()}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not loading and no error but still not ready, show loading (shouldn't happen but safe fallback)
+  if (!sessionReady) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center">
+        <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+        <p className="text-gray-600">Establishing session...</p>
       </div>
     );
   }
