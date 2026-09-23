@@ -17,6 +17,10 @@ import ShareDocument from "@/components/Models/ShareDocument";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { listDocumentsClient } from "@/lib/docsClient";
+import {
+  formatFirebaseErrorForLog,
+  formatFirebaseErrorForToast,
+} from "@/lib/firebaseErrorCode";
 import toast from "react-hot-toast";
 
 interface DocumentSchema {
@@ -71,8 +75,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       const data = await listDocumentsClient(user.uid);
       setDocuments(data);
     } catch (error) {
-      void error;
-      toast.error("Something went wrong.");
+      console.warn("[docs] list_failed", formatFirebaseErrorForLog(error));
+      toast.error(
+        formatFirebaseErrorForToast(error, "Something went wrong.")
+      );
     } finally {
       setFetching(false);
     }
@@ -135,8 +141,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
           setSelectedDocumentName(docName || "Untitled");
         }
       } catch (error) {
-        void error;
-        toast.error("Failed to update document name.");
+        console.warn("[docs] rename_failed", formatFirebaseErrorForLog(error));
+        toast.error(
+          formatFirebaseErrorForToast(error, "Failed to update document name.")
+        );
       } finally {
         setProcessing(false);
       }
@@ -191,8 +199,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
       await fetchDocuments();
       toast.success("Document deleted successfully.");
     } catch (error) {
-      void error;
-      toast.error("Failed to delete document.");
+      console.warn("[docs] delete_failed", formatFirebaseErrorForLog(error));
+      toast.error(
+        formatFirebaseErrorForToast(error, "Failed to delete document.")
+      );
     } finally {
       setProcessing(false);
     }
@@ -225,8 +235,10 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
         setRefreshCode((prev) => prev + 1);
       }
     } catch (error) {
-      void error;
-      toast.error("Something went wrong.");
+      console.warn("[docs] share_failed", formatFirebaseErrorForLog(error));
+      toast.error(
+        formatFirebaseErrorForToast(error, "Something went wrong.")
+      );
     } finally {
       setProcessing(false);
     }

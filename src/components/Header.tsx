@@ -4,6 +4,10 @@ import { useAuthStore } from "@/zustand/useAuthStore";
 import { useInitializeStores } from "@/zustand/useInitializeStores";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { createDocumentClient } from "@/lib/docsClient";
+import {
+  formatFirebaseErrorForLog,
+  formatFirebaseErrorForToast,
+} from "@/lib/firebaseErrorCode";
 import { Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
@@ -17,7 +21,7 @@ import toast from "react-hot-toast";
 import { usePathname } from "next/navigation";
 
 export default function Header() {
-  const { user, isSignedIn, loading } = useFirebaseAuth();
+  const { user, isSignedIn, loading, sessionReady } = useFirebaseAuth();
   const setAuthDetails = useAuthStore((state) => state.setAuthDetails);
   const clearAuthDetails = useAuthStore((state) => state.clearAuthDetails);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -40,10 +44,15 @@ export default function Header() {
   const handleCreateNewDocument = useCallback(async () => {
     if (isCreatingDocument) return;
 
+    if (!sessionReady) {
+      toast.error("Please wait, session is being established...");
+      return;
+    }
+
     setIsCreatingDocument(true);
     try {
       if (!user?.uid) {
-        throw new Error("Not signed in");
+        throw Object.assign(new Error("Not signed in"), { code: "auth/missing-uid" });
       }
       const data = await createDocumentClient(user.uid, "Untitled Document");
       setActiveDocId(data.id);
@@ -51,12 +60,17 @@ export default function Header() {
       toast.success("Document created successfully");
       refreshDocuments();
     } catch (error) {
-      console.warn("Error creating document:", error instanceof Error ? error.message : "unknown");
-      toast.error("Failed to create document. Please try again.");
+      console.warn("[docs] create_failed", formatFirebaseErrorForLog(error));
+      toast.error(
+        formatFirebaseErrorForToast(
+          error,
+          "Failed to create document. Please try again."
+        )
+      );
     } finally {
       setIsCreatingDocument(false);
     }
-  }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments, user]);
+  }, [setActiveDocId, setDocumentName, isCreatingDocument, refreshDocuments, user, sessionReady]);
 
   // Sync Firebase auth state to Zustand store
   useEffect(() => {

@@ -18,6 +18,10 @@ import toast from "react-hot-toast";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { HardSignOutButton } from "@/components/auth/HardSignOutButton";
 import { createDocumentClient } from "@/lib/docsClient";
+import {
+  formatFirebaseErrorForLog,
+  formatFirebaseErrorForToast,
+} from "@/lib/firebaseErrorCode";
 
 const Dashboard = () => {
   const { activeDocId, setActiveDocId, documentName, setDocumentName } = useActiveDoc();
@@ -56,8 +60,13 @@ const Dashboard = () => {
       toast.success("Document created successfully");
       refreshDocuments();
     } catch (error) {
-      console.warn("Error creating document:", error instanceof Error ? error.message : "unknown");
-      toast.error("Failed to create document. Please try again.");
+      console.warn("[docs] create_failed", formatFirebaseErrorForLog(error));
+      toast.error(
+        formatFirebaseErrorForToast(
+          error,
+          "Failed to create document. Please try again."
+        )
+      );
     } finally {
       setIsLoading(false);
     }

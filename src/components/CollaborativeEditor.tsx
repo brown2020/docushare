@@ -18,6 +18,16 @@ import { LoaderCircle, Save } from "lucide-react";
 import ImageBlockMenu from "@/extensions/ImageBlock/components/ImageBlockMenu";
 import { useActiveDoc } from "./ActiveDocContext";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import {
+  formatFirebaseErrorForLog,
+  formatFirebaseErrorForToast,
+} from "@/lib/firebaseErrorCode";
+import {
+  EMPTY_DOC_JSON,
+  needsContentRepair,
+  normalizeEditorContent,
+} from "@/lib/editorContent";
+import toast from "react-hot-toast";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -60,12 +70,19 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
       // Debounced save
       debounceTimeout.current = setTimeout(async () => {
         const docRef = doc(collection(db, DOCUMENT_COLLECTION), docId);
-        const content = editor.getJSON();
         scheduleProcessing(true);
         try {
-          await setDoc(docRef, { content, updatedAt: new Date() }, { merge: true });
+          const content = normalizeEditorContent(editor.getJSON());
+          await setDoc(
+            docRef,
+            { content, updatedAt: new Date() },
+            { merge: true }
+          );
         } catch (error) {
-          console.error("Error saving document:", error);
+          console.warn("[docs] save_failed", formatFirebaseErrorForLog(error));
+          toast.error(
+            formatFirebaseErrorForToast(error, "Failed to save document.")
+          );
         }
         scheduleProcessing(false);
       }, 500);
@@ -85,33 +102,57 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     };
   }, []);
 
+  const applyEditorContent = useCallback(
+    (raw: unknown, opts?: { emitUpdate?: boolean }) => {
+      if (!editor) return;
+      const normalized = normalizeEditorContent(raw);
+      try {
+        editor.commands.setContent(normalized, {
+          emitUpdate: opts?.emitUpdate ?? false,
+        });
+      } catch (error) {
+        console.warn(
+          "[editor] setContent_failed",
+          formatFirebaseErrorForLog(error)
+        );
+        try {
+          editor.commands.setContent(EMPTY_DOC_JSON, { emitUpdate: false });
+        } catch (fallbackError) {
+          console.warn(
+            "[editor] setContent_empty_failed",
+            formatFirebaseErrorForLog(fallbackError)
+          );
+        }
+      }
+    },
+    [editor]
+  );
+
   const updateContent = useCallback(
     (snapshot: DocumentSnapshot) => {
       if (!editor || !isInitialized) return;
 
       const data = snapshot.data();
-      if (
-        data &&
-        data.content &&
-        JSON.stringify(data.content) !== JSON.stringify(editor.getJSON())
-      ) {
-        isUpdating.current = true;
-        editor.commands.setContent(data.content, { emitUpdate: false });
-        // Restore cursor position after content update
-        requestAnimationFrame(() => {
-          try {
-            editor.commands.setTextSelection(userPosition.current);
-          } catch {
-            // Selection might be out of bounds, ignore
-          }
-          isUpdating.current = false;
-          scheduleProcessing(false);
-        });
-      } else {
+      const raw = data?.content;
+      const normalized = normalizeEditorContent(raw);
+      if (JSON.stringify(normalized) === JSON.stringify(editor.getJSON())) {
         scheduleProcessing(false);
+        return;
       }
+      isUpdating.current = true;
+      applyEditorContent(raw, { emitUpdate: false });
+      // Restore cursor position after content update
+      requestAnimationFrame(() => {
+        try {
+          editor.commands.setTextSelection(userPosition.current);
+        } catch {
+          // Selection might be out of bounds, ignore
+        }
+        isUpdating.current = false;
+        scheduleProcessing(false);
+      });
     },
-    [editor, isInitialized, scheduleProcessing]
+    [editor, isInitialized, scheduleProcessing, applyEditorContent]
   );
 
   // FIXED: Wait for initialization before subscribing to snapshots
@@ -128,11 +169,16 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         const docSnap = await getDoc(docRef);
         if (ignore) return;
 
-        if (!docSnap.exists() || !docSnap.data()?.content) {
+        const existing = docSnap.exists() ? docSnap.data()?.content : undefined;
+        if (!docSnap.exists() || needsContentRepair(existing)) {
+          // Prefer empty doc when repairing invalid stored shapes (e.g. `{}`).
+          const content = needsContentRepair(existing)
+            ? EMPTY_DOC_JSON
+            : normalizeEditorContent(editor.getJSON());
           await setDoc(
             docRef,
             {
-              content: editor.getJSON(),
+              content,
               updatedAt: new Date(),
               ...(!docSnap.exists() && {
                 owner: userId,
@@ -142,14 +188,13 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
             },
             { merge: true }
           );
+          isUpdating.current = true;
+          applyEditorContent(content, { emitUpdate: false });
+          isUpdating.current = false;
         } else {
-          // Load existing content into editor
-          const content = docSnap.data()?.content;
-          if (content) {
-            isUpdating.current = true;
-            editor.commands.setContent(content, { emitUpdate: false });
-            isUpdating.current = false;
-          }
+          isUpdating.current = true;
+          applyEditorContent(existing, { emitUpdate: false });
+          isUpdating.current = false;
         }
 
         if (ignore) return;
@@ -159,8 +204,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
 
         // Now subscribe to changes
         unsubscribe = onSnapshot(docRef, updateContent);
-      } catch {
-        console.warn("[editor]", "init_failed");
+      } catch (error) {
+        console.warn("[editor] init_failed", formatFirebaseErrorForLog(error));
         scheduleProcessing(false);
       }
     };
@@ -173,7 +218,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         unsubscribe();
       }
     };
-  }, [editor, docId, userId, updateContent, scheduleProcessing]);
+  }, [editor, docId, userId, updateContent, scheduleProcessing, applyEditorContent]);
 
   if (!editor) {
     return (

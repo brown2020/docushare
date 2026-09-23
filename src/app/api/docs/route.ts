@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
+import { EMPTY_DOC_JSON } from "@/lib/editorContent";
 import { NextRequest } from "next/server";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
@@ -47,7 +48,7 @@ export const GET = async () => {
 
     return NextResponse.json([...documents, ...sharedDocuments]);
   } catch (error) {
-    console.log("Error fetching documents:", error);
+    console.warn("[docs] api_list_failed", error instanceof Error ? error.message : "unknown");
 
     return NextResponse.json(
       { error: "Failed to fetch documents" },
@@ -71,7 +72,7 @@ export const POST = async (req: NextRequest) => {
 
     const docData = {
       name,
-      content: {},
+      content: EMPTY_DOC_JSON,
       owner: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -86,7 +87,7 @@ export const POST = async (req: NextRequest) => {
       owner: userId,
     });
   } catch (error) {
-    console.error("Error creating document:", error);
+    console.warn("[docs] api_create_failed", error instanceof Error ? error.message : "unknown");
     return NextResponse.json(
       { error: "Failed to create document" },
       { status: 500 }

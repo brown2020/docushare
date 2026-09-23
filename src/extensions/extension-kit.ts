@@ -28,6 +28,8 @@ interface ExtensionKitProps {
 
 export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
   Document,
+  // TipTap v3 StarterKit includes Link + Underline by default; disable so
+  // our explicit registrations (below) are unique.
   StarterKit.configure({
     document: false,
     dropcursor: false,
@@ -36,6 +38,8 @@ export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
     blockquote: false,
     // history: false,
     codeBlock: false,
+    link: false,
+    underline: false,
   }),
   Underline,
   Heading,
