@@ -15,6 +15,7 @@ export function useFirebaseAuth() {
     isLoaded: !auth.loading,
     loading: auth.loading,
     sessionReady: auth.sessionReady,
+    sessionError: auth.sessionError,
     userId: auth.user?.uid ?? null,
     email: auth.user?.email ?? null,
     displayName: auth.user?.displayName ?? null,
@@ -28,5 +29,6 @@ export function useFirebaseAuth() {
     sendMagicLink: auth.sendMagicLink,
     completeMagicLinkSignIn: auth.completeMagicLinkSignIn,
     signOut: auth.signOut,
+    retrySession: auth.retrySession,
   };
 }

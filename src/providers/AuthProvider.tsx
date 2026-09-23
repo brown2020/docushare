@@ -33,6 +33,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   sessionReady: boolean;
+  sessionError: boolean;
   error: string | null;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
   signUpWithEmail: (
@@ -45,6 +46,7 @@ interface AuthContextType {
   completeMagicLinkSignIn: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  retrySession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       if (!firebaseUser) {
         setSessionReady(false);
+        setSessionError(false);
         setLoading(false);
         return;
       }
@@ -78,10 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await firebaseUser.getIdToken(true);
           const ok = await createServerSession(idToken);
-          if (!ignore) setSessionReady(ok);
+          if (!ignore) {
+            setSessionReady(ok);
+            setSessionError(!ok);
+          }
         } catch (err) {
           console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
-          if (!ignore) setSessionReady(false);
+          if (!ignore) {
+            setSessionReady(false);
+            setSessionError(true);
+          }
         }
       })();
     });
@@ -248,11 +258,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const retrySession = useCallback(async () => {
+    if (!user) return;
+    setSessionError(false);
+    setLoading(true);
+    try {
+      const idToken = await user.getIdToken(true);
+      const ok = await createServerSession(idToken);
+      setSessionReady(ok);
+      if (!ok) {
+        setSessionError(true);
+      }
+    } catch (err) {
+      console.warn("[auth]", formatFirebaseAuthErrorForLog(err));
+      setSessionError(true);
+      setSessionReady(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   const value = useMemo(
     () => ({
       user,
       loading,
       sessionReady,
+      sessionError,
       error,
       signInWithEmail,
       signUpWithEmail,
@@ -261,11 +292,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeMagicLinkSignIn,
       signOut,
       clearError,
+      retrySession,
     }),
     [
       user,
       loading,
       sessionReady,
+      sessionError,
       error,
       signInWithEmail,
       signUpWithEmail,
@@ -274,6 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       completeMagicLinkSignIn,
       signOut,
       clearError,
+      retrySession,
     ]
   );
 
