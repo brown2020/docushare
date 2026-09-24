@@ -1,181 +1,147 @@
-<div align="center">
-
 # DocuShare
 
-Collaborative document authoring and automation platform built with **Next.js 16**, **React 19**, **Tiptap 3**, **Firebase**, **Stripe**, and integrated AI tooling.
+Collaborative document authoring with a TipTap rich-text editor, Firebase persistence and sharing, multi-provider AI assistance, and optional Stripe credits. Live site: [https://docushare.ai](https://docushare.ai)
 
-</div>
+## Features
 
----
+Verified from the current codebase:
 
-## Table of Contents
+- **Document dashboard** — create, open, list, and delete docs; document stats API
+- **Rich editor** — TipTap 3 (headings, links, images, underline, align, font family/size, typography, markdown bridge)
+- **Sharing** — share documents with other users by email (`/api/share`)
+- **AI writing assist** — `/api/ai` routes to OpenAI, Anthropic, Google, or Mistral based on API keys stored on the user profile
+- **Auth** — Firebase Auth (sign in/up, forgot password) + HttpOnly session cookies (`/api/auth/session`); route protection via `src/proxy.ts`
+- **Profile & credits** — store provider keys; Stripe payment attempt/success flows
+- **Image upload API** — authenticated `/api/image` to Firebase Storage
+- **Theming / UI** — Tailwind CSS 4, local UI primitives, Lucide icons
 
-1. [Project Overview](#project-overview)
-2. [Tech Stack](#tech-stack)
-3. [Prerequisites](#prerequisites)
-4. [Getting Started](#getting-started)
-   - [Installation](#installation)
-   - [Environment Variables](#environment-variables)
-   - [Development Workflow](#development-workflow)
-5. [Available Scripts](#available-scripts)
-6. [Architecture Highlights](#architecture-highlights)
-7. [Quality & Tooling](#quality--tooling)
-8. [Deployment](#deployment)
-9. [Contributing](#contributing)
-10. [License](#license)
+> Note: `.env.example` still lists Clerk variables. The app does **not** use Clerk; authentication is Firebase-only.
 
----
+## Tech stack
 
-## Project Overview
+| Area | Choice |
+|------|--------|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19, Tailwind CSS 4, Radix, Lucide, Floating UI |
+| Editor | TipTap 3 (+ collaboration extensions / Yjs-related packages in deps) |
+| Language | TypeScript 6 |
+| AI | Vercel AI SDK 6 + `@ai-sdk/openai`, `anthropic`, `google`, `mistral`; `openai` SDK |
+| Backend | Firebase 12 + firebase-admin 13 |
+| Payments | Stripe |
+| Validation | Zod 4 |
+| State | Zustand 5 |
+| Rate limit dep | `@upstash/ratelimit` (dependency present) |
+| Tests | Vitest 3 |
+| Node (CI) | 22 |
 
-DocuShare provides real-time document editing with AI-assisted authoring, robust formatting, sharing, and billing flows. Core capabilities include:
+`.npmrc` sets `legacy-peer-deps=true`.
 
-- 🔐 **Firebase authentication** with server session cookies and protected application routes (`dashboard`, `profile`, payment flows).
-- 📝 **Collaborative editor** powered by Tiptap 3 with custom blocks, real-time carets, and AI menus.
-- 🤖 **AI assistance** (OpenAI, Anthropic, Google Gemini, Mistral) through the AI SDK layer.
-- ☁️ **Firebase persistence** plus Firestore-triggered stats and document sharing endpoints.
-- 💳 **Stripe payments** for upgrade and billing scenarios.
-- 📊 **Document statistics + activity feeds** backed by Firestore queries.
+## Project structure
 
----
+```
+docushare/
+├── src/
+│   ├── app/            # Pages + API (ai, auth, docs, image, share)
+│   ├── components/     # Editor, dashboard, auth, payments, menus/panels
+│   ├── extensions/     # TipTap extensions
+│   ├── actions/        # Server actions (e.g. generation)
+│   ├── firebase/, lib/, providers/, hooks/, zustand/
+├── .env.example
+├── firestore.rules
+├── cors.json
+└── .github/workflows/ci.yml
+```
 
-## Tech Stack
+## Getting started
 
-| Category              | Libraries / Versions (from `package.json`) |
-|-----------------------|--------------------------------------------------|
-| Framework             | `next@^16.2.4`, `react@^19.2.5`, `react-dom@^19.2.5` |
-| Editor / Collab       | `@tiptap/core@^3.22.4`, `@tiptap/react@^3.22.4`, `@tiptap/extension-collaboration@^3.22.4`, `@tiptap/extension-collaboration-caret@^3.22.4`, `yjs@^13.6.30`, `y-webrtc@^10.3.0` |
-| Authentication        | `firebase@^12.12.1`, `firebase-admin@^13.8.0`, `react-firebase-hooks@^5.1.1` |
-| AI + LLMs             | `ai@^6.0.168`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/mistral` |
-| Payments              | `stripe@^22.0.2`, `@stripe/react-stripe-js@^6.2.0`, `@stripe/stripe-js@^9.3.0` |
-| UI / Styling          | `tailwindcss@^4.2.4`, `@floating-ui/react@^0.27.19`, `lucide-react@^1.8.0` |
+### Prerequisites
 
----
+- Node.js 22+
+- npm
+- Firebase project (Auth, Firestore, Storage)
+- At least one AI provider key (OpenAI and/or keys on the user profile)
+- Stripe (optional)
 
-## Prerequisites
-
-- **Node.js**: >= 20.9.0 (required by `next@16.1.1`)
-- **npm**: >= 10 (bundled with Node 20+)
-- Accounts / credentials for:
-  - [Firebase](https://firebase.google.com/) project (Firestore + Auth)
-  - [Stripe](https://stripe.com/) account
-  - AI providers (OpenAI, Anthropic, Google, Mistral) if using custom keys
-
----
-
-## Getting Started
-
-### Installation
+### Install
 
 ```bash
-git clone https://github.com/<your-org>/docushare.git
+git clone https://github.com/brown2020/docushare.git
 cd docushare
+git checkout dev
 npm install
-```
-
-> **Note:** Standard `npm install` works across local and CI builds because all Tiptap 3 peer dependencies are aligned.
-
-### Environment Variables
-
-Create a `.env.local` (Next.js) with the following keys (set all secrets before running the app):
-
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key for client Elements |
-| `STRIPE_SECRET_KEY` | Stripe secret key for backend actions/webhooks |
-| `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` | Firebase Admin credentials |
-| `NEXT_PUBLIC_FIREBASE_APIKEY` / `NEXT_PUBLIC_FIREBASE_AUTHDOMAIN` / `NEXT_PUBLIC_FIREBASE_PROJECTID` / `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET` / `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` / `NEXT_PUBLIC_FIREBASE_APPID` / `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Firebase client SDK values |
-| `DOCUMENT_COLLECTION` (optional override) | Firestore collection name for docs (`docs` default) |
-| `IS_UAT` | When set to `1`, the AI layer returns canned responses for staging |
-
-> Add any provider-specific AI keys (OpenAI, Anthropic, Google, Mistral, Fireworks) as needed. See `src/actions/generateActions.ts` for usage.
-
-### Development Workflow
-
-```bash
-# Start dev server with hot reload
+cp .env.example .env.local
+# fill Firebase + Stripe + optional OPENAI_API_KEY — skip Clerk placeholders
 npm run dev
-
-# Lint (Next.js ESLint config)
-npm run lint
-
-# Production build & type-check
-npm run build
-
-# Start production server
-npm run start
 ```
 
-Visit `http://localhost:3000` to access the app once `npm run dev` is running.
+Open [http://localhost:3000](http://localhost:3000).
 
----
+## Environment variables
 
-## Available Scripts
+| Name | Purpose | Where to get it |
+|------|---------|-----------------|
+| `NEXT_PUBLIC_BASE_URL` | Public site URL (trailing slash ok) | You |
+| `NEXT_PUBLIC_FIREBASE_APIKEY` | Firebase web API key | Firebase Console → Your apps |
+| `NEXT_PUBLIC_FIREBASE_AUTHDOMAIN` | Auth domain | Same |
+| `NEXT_PUBLIC_FIREBASE_PROJECTID` | Project ID | Same |
+| `NEXT_PUBLIC_FIREBASE_STORAGEBUCKET` | Storage bucket | Same |
+| `NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID` | Messaging sender ID | Same |
+| `NEXT_PUBLIC_FIREBASE_APPID` | App ID | Same |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENTID` | Analytics ID | Optional |
+| `FIREBASE_TYPE` | Admin type (`service_account`) | Service account JSON |
+| `FIREBASE_PROJECT_ID` | Admin project ID | Same |
+| `FIREBASE_PRIVATE_KEY_ID` | Key ID | Same |
+| `FIREBASE_PRIVATE_KEY` | Private key | Same |
+| `FIREBASE_CLIENT_EMAIL` | Client email | Same |
+| `FIREBASE_CLIENT_ID` | Client ID | Same |
+| `FIREBASE_AUTH_URI` / `FIREBASE_TOKEN_URI` / `FIREBASE_AUTH_PROVIDER_X509_CERT_URL` / `FIREBASE_CLIENT_CERTS_URL` / `FIREBASE_UNIVERSE_DOMAIN` | Admin OAuth metadata | Same / Google defaults |
+| `FIREBASE_STORAGE_BUCKET` | Admin storage bucket | Same |
+| `FIREBASE_DATABASE_URL` | Optional RTDB URL if referenced | Firebase Console |
+| `OPENAI_API_KEY` | Server OpenAI fallback | [platform.openai.com](https://platform.openai.com) |
+| `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `MISTRAL_API_KEY`, `FIREWORKS_API_KEY` | Listed in `.env.example`; primary AI keys for chat are stored on the **user profile** | Respective provider consoles |
+| `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
+| `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
+| `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credits | Stripe product config |
+| `IS_UAT` | UAT/test flag (`1` in CI) | Optional |
+| `NEXT_PUBLIC_CLERK_*`, `CLERK_SECRET_KEY` | Present in `.env.example` only — **unused** by current code | N/A |
 
-| Script          | Description |
-|-----------------|-------------|
-| `npm run dev`   | Development server with Turbopack HMR |
-| `npm run build` | Creates optimized production build, runs TypeScript checks |
-| `npm run start` | Starts Next.js in production mode (requires `npm run build` first) |
-| `npm run lint`  | Runs ESLint (configured via `eslint-config-next`) |
+Never commit real secrets. Prefer setting provider keys in the profile UI for multi-model AI.
 
----
+## Firebase
 
-## Architecture Highlights
+- Rules: `firestore.rules`
+- Storage CORS sample: `cors.json`
+- Session cookie name used by the proxy: `__session`
 
-- **App Router** (`src/app/`) with server components, route handlers (`/api/*`), and page-level layouts.
-- **Editor System**:
-  - `src/components/CollaborativeEditor.tsx` orchestrates Tiptap editor, custom menus, AI controls, and Firestore persistence.
-  - Rich menu components under `src/components/menus` and custom extensions in `src/extensions`.
-- **State & Context**:
-  - `zustand` stores (e.g., `useAuthStore`, `useProfileStore`) manage UI state.
-  - `ActiveDocContext` coordinates document selection across sidebar/editor.
-- **API Routes**:
-  - `/api/docs`, `/api/docs/stats`, `/api/share`, `/api/ai`, `/api/image` implement CRUD, sharing, stats, and AI/image utilities.
-- **Authentication Guard**:
-  - `src/proxy.ts` (Next.js 16 proxy/middleware) checks the Firebase session cookie before protected routes like `/dashboard`, `/profile`, `/payment-*`.
+## Scripts
 
-Refer to the source tree for deeper exploration (`src/components`, `src/extensions`, `src/zustand`, etc.).
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Next.js dev server |
+| `npm run build` | Production build |
+| `npm start` | Serve production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Vitest |
+| `npm run doctor` | react-doctor scan |
 
----
+## Testing and CI
 
-## Quality & Tooling
+Vitest covers editor content helpers, Firebase auth errors, and route security.
 
-- **ESLint**: Next.js default rules + TypeScript support (`npm run lint`).
-- **TypeScript**: Enabled across the repo; `npm run build` fails on type errors (as seen during upgrades).
-- **Prettier / Formatting**: Not enforced via scripts but encouraged for contributions.
-- **Testing**: (Not yet implemented) — contributions welcome to add unit/integration tests.
-
----
+GitHub Actions (`.github/workflows/ci.yml`) on `dev` / `main` and PRs: `npm ci` → lint → typecheck → test → build with `IS_UAT=1` and `NEXT_PUBLIC_*` Firebase/base URL secrets. Node 22.
 
 ## Deployment
 
-1. Ensure environment variables are configured (Vercel, Docker, or your platform of choice).
-2. Run `npm run build` to produce the `.next` production bundle.
-3. Execute `npm run start` behind your process manager (PM2, Docker, Vercel serverless, etc.).
-
-> The project targets Node.js runtime for Next.js 16 proxies. Edge runtime is not currently used.
-
----
+Deploy as a Next.js app (e.g. Vercel) to [https://docushare.ai](https://docushare.ai). Configure Firebase Admin + client env vars and Stripe as needed. Deploy Firestore rules when they change.
 
 ## Contributing
 
-Contributions are welcome! Please:
+- `main` — production
+- `dev` — integration
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request describing the changes and testing performed.
-
-For substantial changes, consider opening an issue to discuss the proposal first.
-
----
+See [AGENTS.md](./AGENTS.md) and [SPEC.md](./SPEC.md).
 
 ## License
 
-This project is distributed under the GNU Affero General Public License v3.0 (**AGPL-3.0-only**). See [`LICENSE.md`](LICENSE.md) for details.
-
----
-
-Happy building! 🛠️
+[GNU Affero General Public License v3](./LICENSE.md) (AGPL-3.0).
