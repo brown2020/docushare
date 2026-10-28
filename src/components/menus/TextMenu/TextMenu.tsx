@@ -49,8 +49,9 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       <ContentTypePicker options={blockOptions} />
       <FontFamilyPicker onChange={commands.onSetFont} value={states.currentFont || ''} />
       <Toolbar.Divider />
-      <Toolbar.Button tooltip="Image" onClick={commands.onImageUpload} active={states.isBold}>
+      <Toolbar.Button tooltip="Upload an image" onClick={commands.onImageUpload} active={false}>
         <Icon name="Image" />
+        <span className="ml-1">Upload</span>
       </Toolbar.Button>
       <Toolbar.Divider />
       <Toolbar.Button tooltip="Bold" tooltipShortcut={SHORTCUT_BOLD} onClick={commands.onBold} active={states.isBold}>

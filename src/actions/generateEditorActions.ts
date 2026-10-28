@@ -9,10 +9,25 @@ import {
 } from "@/lib/constants";
 import { AIOptions } from "@/interfaces/general";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import { requireFirebaseAdmin } from "@/firebase/firebaseAdminConfig";
-import { assertAiRateLimit } from "@/lib/ai/rateLimit";
+import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
-import { debitCredits, refundCredits } from "@/lib/billing/credits";
+import {
+  AI_FAILED_MESSAGE,
+  AI_KEY_MISSING_MESSAGE,
+  AI_RATE_LIMIT_MESSAGE,
+  AI_UNAVAILABLE_MESSAGE,
+  OUT_OF_CREDITS_MESSAGE,
+} from "@/lib/ai/userMessages";
+import {
+  debitCredits,
+  InsufficientCreditsError,
+  refundCredits,
+} from "@/lib/billing/credits";
+import { isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
+
+export type GenerateTextResult =
+  | { ok: true; text: string }
+  | { ok: false; message: string };
 
 const aiCommandPrompts: Record<
   AIOptions,
@@ -73,29 +88,55 @@ function pointsForPrompt(tokens: number) {
   return tokens * COST_POINT_PER_TOKEN;
 }
 
+function failure(message: string): GenerateTextResult {
+  return { ok: false, message };
+}
+
 export async function generateText(
   prompt: string,
   option: AIOptions,
   command: string
-) {
+): Promise<GenerateTextResult> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) {
-    throw new Error("User is not signed in.", { cause: { status: 401 } });
+    return failure("You are not signed in.");
+  }
+  if (!isFirebaseAdminReady()) {
+    return failure(AI_UNAVAILABLE_MESSAGE);
   }
 
-  requireFirebaseAdmin();
-  await assertAiRateLimit(authUser.uid);
+  try {
+    await assertAiRateLimit(authUser.uid);
+  } catch (error) {
+    if (error instanceof AiRateLimitError) {
+      return failure(AI_RATE_LIMIT_MESSAGE);
+    }
+    console.warn(
+      "[ai] rate_limit_failed",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return failure(AI_UNAVAILABLE_MESSAGE);
+  }
 
   if (process.env.IS_UAT == "1") {
-    return "This is a test response in UAT mode.";
+    return { ok: true, text: "This is a test response in UAT mode." };
   }
 
   const builder = aiCommandPrompts[option];
   if (!builder) {
-    throw new Error("Unsupported AI command.");
+    return failure("Unsupported AI command.");
   }
   const { systemPrompt, userPrompt } = builder(prompt, command);
-  const modelOfUser = await resolveStoredModel(authUser.uid);
+  let modelOfUser;
+  try {
+    modelOfUser = await resolveStoredModel(authUser.uid);
+  } catch (error) {
+    console.warn(
+      "[ai] model_lookup_failed",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return failure(AI_UNAVAILABLE_MESSAGE);
+  }
 
   let modelName = DEFAULT_AI_MODEL;
   let apiKey = "";
@@ -103,18 +144,25 @@ export async function generateText(
 
   if (modelOfUser.status === false) {
     if (modelOfUser.code !== RESPONSE_CODE.api_key_not_set) {
-      throw new Error("You have not added any credit or AI key.", {
-        cause: { code: modelOfUser.code },
-      });
+      return failure(AI_KEY_MISSING_MESSAGE);
     }
     apiKey = process.env.OPENAI_API_KEY ?? "";
     if (!apiKey) {
-      throw new Error("You have not added any credit or AI key.", {
-        cause: { code: RESPONSE_CODE.api_key_not_set },
-      });
+      return failure(OUT_OF_CREDITS_MESSAGE);
     }
     reserved = pointsForPrompt(countTokens(userPrompt) + MAX_OUTPUT_TOKEN);
-    await debitCredits(authUser.uid, reserved);
+    try {
+      await debitCredits(authUser.uid, reserved);
+    } catch (error) {
+      if (error instanceof InsufficientCreditsError) {
+        return failure(OUT_OF_CREDITS_MESSAGE);
+      }
+      console.warn(
+        "[ai] debit_failed",
+        error instanceof Error ? error.message : "unknown"
+      );
+      return failure(AI_UNAVAILABLE_MESSAGE);
+    }
   } else {
     modelName = modelOfUser.model;
     apiKey = modelOfUser.key;
@@ -137,11 +185,22 @@ export async function generateText(
         await debitCredits(authUser.uid, actual - reserved);
       }
     }
-    return response;
+    return { ok: true, text: response };
   } catch (error) {
     if (reserved > 0) {
-      await refundCredits(authUser.uid, reserved);
+      try {
+        await refundCredits(authUser.uid, reserved);
+      } catch {
+        // Keep the original failure visible to the user.
+      }
     }
-    throw error;
+    if (error instanceof InsufficientCreditsError) {
+      return failure(OUT_OF_CREDITS_MESSAGE);
+    }
+    console.warn(
+      "[ai] generate_failed",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return failure(AI_FAILED_MESSAGE);
   }
 }

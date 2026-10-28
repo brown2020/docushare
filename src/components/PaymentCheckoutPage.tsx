@@ -7,7 +7,11 @@ import {
 } from "@stripe/react-stripe-js";
 
 import { useEffect, useState } from "react";
-import { createPaymentIntent } from "@/actions/paymentActions";
+import {
+  createPaymentIntent,
+  getPaymentAvailability,
+} from "@/actions/paymentActions";
+import { PAYMENTS_UNAVAILABLE_MESSAGE } from "@/lib/billing/checkout";
 import { ClipLoader } from "react-spinners";
 
 type Props = { amount: number };
@@ -23,11 +27,21 @@ export default function PaymentCheckoutPage({ amount }: Props) {
     let cancelled = false;
     async function initializePayment() {
       try {
-        const secret = await createPaymentIntent();
-        if (!cancelled && secret) setClientSecret(secret);
+        const availability = await getPaymentAvailability();
+        if (!availability.available) {
+          if (!cancelled) setErrorMessage(availability.message);
+          return;
+        }
+        const result = await createPaymentIntent();
+        if (cancelled) return;
+        if (!result.ok) {
+          setErrorMessage(result.message);
+          return;
+        }
+        setClientSecret(result.clientSecret);
       } catch {
         if (!cancelled) {
-          setErrorMessage("Failed to initialize payment. Please try again.");
+          setErrorMessage(PAYMENTS_UNAVAILABLE_MESSAGE);
         }
       }
     }
@@ -72,6 +86,15 @@ export default function PaymentCheckoutPage({ amount }: Props) {
       setLoading(false);
     }
   };
+
+  if (errorMessage && !clientSecret) {
+    return (
+      <main className="max-w-xl mx-auto p-10 text-center">
+        <h1 className="text-2xl font-semibold mb-2">Payments unavailable</h1>
+        <p className="text-neutral-600">{errorMessage}</p>
+      </main>
+    );
+  }
 
   if (!clientSecret || !stripe || !elements) {
     return (

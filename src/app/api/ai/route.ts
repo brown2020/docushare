@@ -19,6 +19,7 @@ import {
 import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
+import { OUT_OF_CREDITS_MESSAGE } from "@/lib/ai/userMessages";
 import {
   debitCredits,
   InsufficientCreditsError,
@@ -208,7 +209,7 @@ export const POST = async (req: NextRequest) => {
     }
     if (error instanceof InsufficientCreditsError) {
       return NextResponse.json(
-        { status: false, message: error.message, code: RESPONSE_CODE.insufficient_points },
+        { status: false, message: OUT_OF_CREDITS_MESSAGE, code: RESPONSE_CODE.insufficient_points },
         { status: 402 }
       );
     }

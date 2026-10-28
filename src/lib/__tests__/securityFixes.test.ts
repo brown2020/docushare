@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
 import { isCreditPackPayment, CREDIT_PACK_PRICE_CENTS } from "@/lib/billing";
+import {
+  isCheckoutConfigured,
+  PAYMENTS_UNAVAILABLE_MESSAGE,
+} from "@/lib/billing/checkout";
+import { OUT_OF_CREDITS_MESSAGE } from "@/lib/ai/userMessages";
 import { resolveModelSelection } from "@/lib/ai/resolveModel";
 import { PROVIDER_MODEL_IDS, RETIRED_PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import { isSafeLinkHref } from "@/lib/links";
@@ -14,6 +19,35 @@ import { isSafeImageKey, sniffImageType } from "@/lib/images";
 import { AI_MODEL_CLAUDE, AI_MODEL_GPT, RESPONSE_CODE } from "@/lib/constants";
 
 const root = path.resolve(__dirname, "../../..");
+
+describe("checkout and credits messaging", () => {
+  const ready = {
+    publishableKey: "pk_test",
+    secretKey: "sk_test",
+    webhookSecret: "whsec_test",
+    productName: "credits",
+    adminReady: true,
+  };
+
+  it("enables checkout only when Stripe and Admin are configured", () => {
+    expect(isCheckoutConfigured(ready)).toBe(true);
+    expect(isCheckoutConfigured({ ...ready, webhookSecret: "" })).toBe(false);
+    expect(isCheckoutConfigured({ ...ready, secretKey: null })).toBe(false);
+    expect(isCheckoutConfigured({ ...ready, adminReady: false })).toBe(false);
+    expect(PAYMENTS_UNAVAILABLE_MESSAGE).toMatch(/not configured/i);
+  });
+
+  it("returns an out-of-credits result instead of throwing", () => {
+    const src = readFileSync(
+      path.join(root, "src/actions/generateEditorActions.ts"),
+      "utf8"
+    );
+    expect(OUT_OF_CREDITS_MESSAGE).toMatch(/out of credits/i);
+    expect(src).toContain("OUT_OF_CREDITS_MESSAGE");
+    expect(src).toContain("ok: false");
+    expect(src).not.toMatch(/throw error/);
+  });
+});
 
 describe("billing", () => {
   it("accepts only the fixed credit pack price in usd", () => {

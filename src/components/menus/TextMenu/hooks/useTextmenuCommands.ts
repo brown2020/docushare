@@ -27,18 +27,15 @@ export const useTextmenuCommands = (editor: Editor) => {
     try {
       const response = await generateText(text, option, command)
 
-      if(response !== undefined) {
-        setAiContent(response.trim())
+      if (response.ok) {
+        setAiContent(response.text.trim())
+      } else {
+        toast.error(response.message);
       }
       setAiProcessing(false);
-    } catch (error: Error| unknown) {
+    } catch {
       setAiProcessing(false);
-      if(error instanceof Error) {
-        toast.error(error.message);
-      }else{
-        toast.error("Something went wrong.");
-      }
-      
+      toast.error("The AI request failed. Please try again.");
     }
   }, [editor])
 

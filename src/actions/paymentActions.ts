@@ -7,7 +7,33 @@ import {
   CREDIT_PACK_PURPOSE,
   isCreditPackPayment,
 } from "@/lib/billing";
+import {
+  isCheckoutConfigured,
+  PAYMENTS_UNAVAILABLE_MESSAGE,
+} from "@/lib/billing/checkout";
 import Stripe from "stripe";
+
+export type PaymentIntentResult =
+  | { ok: true; clientSecret: string }
+  | { ok: false; message: string };
+
+export async function getPaymentAvailability(): Promise<{
+  available: boolean;
+  message: string;
+}> {
+  if (
+    isCheckoutConfigured({
+      publishableKey: process.env.NEXT_PUBLIC_STRIPE_KEY,
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+      productName: process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME,
+      adminReady: isFirebaseAdminReady(),
+    })
+  ) {
+    return { available: true, message: "" };
+  }
+  return { available: false, message: PAYMENTS_UNAVAILABLE_MESSAGE };
+}
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -15,19 +41,21 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
-export async function createPaymentIntent() {
+export async function createPaymentIntent(): Promise<PaymentIntentResult> {
   const authUser = await getAuthenticatedUser();
   if (!authUser) {
-    throw new Error("User is not signed in.");
+    return { ok: false, message: "You are not signed in." };
   }
-  if (!isFirebaseAdminReady()) {
-    throw new Error("Payments are not configured.");
+
+  const availability = await getPaymentAvailability();
+  if (!availability.available) {
+    return { ok: false, message: availability.message };
   }
 
   const stripe = getStripe();
   const product = process.env.NEXT_PUBLIC_STRIPE_PRODUCT_NAME;
-  if (!stripe || !product || !process.env.STRIPE_WEBHOOK_SECRET) {
-    throw new Error("Payments are not configured.");
+  if (!stripe || !product) {
+    return { ok: false, message: PAYMENTS_UNAVAILABLE_MESSAGE };
   }
 
   try {
@@ -42,13 +70,16 @@ export async function createPaymentIntent() {
       description: `Payment for product ${product}`,
     });
 
-    return paymentIntent.client_secret;
+    if (!paymentIntent.client_secret) {
+      return { ok: false, message: PAYMENTS_UNAVAILABLE_MESSAGE };
+    }
+    return { ok: true, clientSecret: paymentIntent.client_secret };
   } catch (error) {
     console.error(
       "Error creating payment intent:",
       error instanceof Error ? error.message : "unknown"
     );
-    throw new Error("Failed to create payment intent");
+    return { ok: false, message: "Failed to start checkout. Please try again." };
   }
 }
 
