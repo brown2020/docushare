@@ -1,4 +1,5 @@
-import { admin } from "@/firebase/firebaseAdminConfig";
+import { auth } from "@/firebase/firebaseAdminConfig";
+import { getApps } from "firebase-admin/app";
 import { cookies } from "next/headers";
 import { verifyFirebaseIdToken } from "@/lib/auth/verifyFirebaseIdToken";
 
@@ -10,7 +11,7 @@ const SERVER_OP_TIMEOUT_MS = 10_000;
 
 function adminAuthAvailable(): boolean {
   try {
-    return Boolean(admin?.apps?.length);
+    return Boolean(getApps().length);
   } catch {
     return false;
   }
@@ -55,7 +56,7 @@ export async function createSessionCookie(idToken: string): Promise<string> {
   if (adminAuthAvailable()) {
     try {
       return await withTimeout(
-        admin.auth().createSessionCookie(idToken, {
+        auth.createSessionCookie(idToken, {
           expiresIn: SESSION_EXPIRY_MS,
         }),
         SERVER_OP_TIMEOUT_MS,
@@ -98,7 +99,7 @@ export async function verifySessionCookie(sessionCookie: string) {
 
   if (adminAuthAvailable()) {
     try {
-      return await admin.auth().verifySessionCookie(sessionCookie, true);
+      return await auth.verifySessionCookie(sessionCookie, true);
     } catch {
       return null;
     }

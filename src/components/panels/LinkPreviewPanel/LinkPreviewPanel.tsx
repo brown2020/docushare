@@ -26,7 +26,7 @@ export const LinkPreviewPanel = ({ onClear, onEdit, url }: LinkPreviewPanelProps
       <Tooltip>
         <TooltipTrigger>
           <Toolbar.Button onClick={onClear}>
-            <Icon name="Trash2" />
+            <Icon name="Trash" />
           </Toolbar.Button>
         </TooltipTrigger>
         <TooltipContentTitle title='Remove link' />

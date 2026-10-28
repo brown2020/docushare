@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { admin } from "@/firebase/firebaseAdminConfig";
+import { storage } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -67,7 +67,7 @@ function getContentType(imageKey: string) {
 
 async function uploadFile(fileBuffer: Buffer, bucketPath: string) {
   try {
-    const bucket = admin.storage().bucket();
+    const bucket = storage.bucket();
     const file = bucket.file(bucketPath);
 
     await file.save(Buffer.from(fileBuffer));
@@ -140,7 +140,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     // Fetch the document
-    const bucket = admin.storage().bucket();
+    const bucket = storage.bucket();
     const file = bucket.file(`uploads/${image_key}`);
 
     const [exists] = await file.exists();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { admin, db } from "@/firebase/firebaseAdminConfig";
+import { auth, db } from "@/firebase/firebaseAdminConfig";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
@@ -27,7 +27,7 @@ export const POST = async (req: NextRequest) => {
     // Look up user by email in Firebase Auth
     let targetUser;
     try {
-      targetUser = await admin.auth().getUserByEmail(email);
+      targetUser = await auth.getUserByEmail(email);
     } catch {
       return NextResponse.json({ status: false, message: "User not found." });
     }
@@ -101,9 +101,9 @@ export const GET = async (req: NextRequest) => {
 
     // Fetch email addresses for the user IDs from Firebase Auth
     const emailResults = await Promise.all(
-      userIds.map(async (uid) => {
+      userIds.map(async (uid: string) => {
         try {
-          const user = await admin.auth().getUser(uid);
+          const user = await auth.getUser(uid);
           return user.email ?? null;
         } catch {
           return null;
