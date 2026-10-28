@@ -1,26 +1,40 @@
 import API from '@/lib/api'
+import { clientUploadRejection } from '@/lib/uploads'
 import { DragEvent, useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
-export const useUploader = ({ onUpload }: { onUpload: (url: string) => void }) => {
+export type UploadedFile = {
+  url: string
+  kind: 'image' | 'document'
+  name: string
+  text: string
+}
+
+export const useUploader = ({ onUpload }: { onUpload: (file: UploadedFile) => void }) => {
   const [loading, setLoading] = useState(false)
 
   const uploadFile = useCallback(async (file: File) => {
+    const rejected = clientUploadRejection(file)
+    if (rejected) {
+      toast.error(rejected)
+      return
+    }
+
     setLoading(true)
     try {
-        const formData = new FormData;
-        formData.append('file', file)
         const resp = await API.uploadImage({ file: file })
         if (resp.status === true) {
-            // const image_key = resp.url;
-            // const url = process.env.NEXT_PUBLIC_BASE_URL + `api/image?image_key=${encodeURIComponent(image_key)}`
-            const url = resp.url;
-            onUpload(url)
+            onUpload({
+              url: resp.url,
+              kind: resp.kind,
+              name: resp.name,
+              text: resp.text,
+            })
+        } else {
+            toast.error(resp.message ?? 'Upload failed.')
         }
-    } catch (errPayload) {
-      console.log("errPayload", errPayload);
-      const error = 'Something went wrong'
-      toast.error(error)
+    } catch {
+      toast.error('Upload failed.')
     }
     setLoading(false)
   }, [onUpload])
@@ -78,19 +92,9 @@ export const useDropZone = ({ uploader }: { uploader: (file: File) => void }) =>
         }
       }
 
-      if (files.some(file => file.type.indexOf('image') === -1)) {
-        return
-      }
-
       e.preventDefault()
-
-      const filteredFiles = files.filter(f => f.type.indexOf('image') !== -1)
-
-      const file = filteredFiles.length > 0 ? filteredFiles[0] : undefined
-
-      if (file) {
-        uploader(file)
-      }
+      const file = files[0]
+      if (file) uploader(file)
     },
     [uploader],
   )

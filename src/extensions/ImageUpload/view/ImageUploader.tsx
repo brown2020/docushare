@@ -1,14 +1,16 @@
+import { UploadedFile } from "./hooks";
 import { Spinner } from "@/components/ui/Spinner";
 import { useDropZone, useFileUpload, useUploader } from "./hooks";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
+import { UPLOAD_ACCEPT } from "@/lib/uploads";
 import { ChangeEvent, useCallback } from "react";
 
 export const ImageUploader = ({
   onUpload,
 }: {
-  onUpload: (url: string) => void;
+  onUpload: (file: UploadedFile) => void;
 }) => {
   const { loading, uploadFile } = useUploader({ onUpload });
   const { handleUploadClick, ref } = useFileUpload();
@@ -49,8 +51,11 @@ export const ImageUploader = ({
       />
       <div className="flex flex-col items-center justify-center gap-2">
         <div className="text-sm font-medium text-center text-neutral-400 dark:text-neutral-500">
-          {draggedInside ? "Drop image here" : "Drag and drop or"}
+          {draggedInside ? "Drop file here" : "Drag and drop or"}
         </div>
+        <p className="text-xs text-center text-neutral-400">
+          JPG, PNG, GIF, WEBP, PDF, TXT, MD, CSV, or DOCX
+        </p>
         <div>
           <Button
             disabled={draggedInside}
@@ -59,7 +64,7 @@ export const ImageUploader = ({
             buttonSize="small"
           >
             <Icon name="Upload" />
-            Upload an image
+            Upload a file
           </Button>
         </div>
       </div>
@@ -67,8 +72,8 @@ export const ImageUploader = ({
         className="w-0 h-0 overflow-hidden opacity-0"
         ref={ref}
         type="file"
-        aria-label="Upload an image"
-        accept=".jpg,.jpeg,.png,.webp,.gif"
+        aria-label="Upload a file"
+        accept={UPLOAD_ACCEPT}
         onChange={onFileChange}
       />
     </div>

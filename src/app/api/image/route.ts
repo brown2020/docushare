@@ -5,13 +5,18 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { canReadDocument, contentReferencesImage } from "@/lib/documents/access";
 import {
-  MAX_IMAGE_BYTES,
   contentTypeForImageKey,
-  extensionForImageType,
   isDocumentId,
   isSafeImageKey,
   sniffImageType,
 } from "@/lib/images";
+import {
+  classifyUpload,
+  displayFileName,
+  EMPTY_FILE_MESSAGE,
+  FILE_TOO_LARGE_MESSAGE,
+  MAX_UPLOAD_BYTES,
+} from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -33,29 +38,33 @@ export const POST = async (req: NextRequest) => {
     if (!(file instanceof File)) {
       return NextResponse.json({ message: "No file uploaded" }, { status: 400 });
     }
-    if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json({ message: "Image is too large" }, { status: 400 });
-    }
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const sniffed = sniffImageType(bytes);
-    const extension = sniffed ? extensionForImageType(sniffed) : "";
-    if (!sniffed || !extension) {
+    if (file.size <= 0 || file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { message: "Unsupported image type" },
+        { message: file.size <= 0 ? EMPTY_FILE_MESSAGE : FILE_TOO_LARGE_MESSAGE },
         { status: 400 }
       );
     }
 
-    const filename = `${randomUUID()}${extension}`;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const classified = classifyUpload(bytes, file.name || "upload");
+    if (!classified.ok) {
+      return NextResponse.json({ message: classified.message }, { status: 400 });
+    }
+
+    const filename = `${randomUUID()}${classified.file.extension}`;
     const imageKey = `${authUser.uid}/${filename}`;
     const object = storage.bucket().file(`uploads/${imageKey}`);
+    const originalName = displayFileName(file.name || "upload", filename);
     await object.save(Buffer.from(bytes), {
       resumable: false,
-      contentType: sniffed,
+      contentType: classified.file.contentType,
       metadata: {
-        contentType: sniffed,
-        metadata: { owner: authUser.uid },
+        contentType: classified.file.contentType,
+        metadata: {
+          owner: authUser.uid,
+          originalName,
+          kind: classified.file.kind,
+        },
       },
     });
 
@@ -63,7 +72,13 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({
       status: true,
       message: "File uploaded successfully",
-      data: { filename: imageKey, url },
+      data: {
+        filename: imageKey,
+        url,
+        kind: classified.file.kind,
+        name: originalName,
+        text: classified.file.text,
+      },
     });
   } catch (error) {
     console.warn(
@@ -121,9 +136,17 @@ export const GET = async (req: NextRequest) => {
     const [imageBuffer] = await file.download();
     const sniffed = sniffImageType(imageBuffer);
     const response = new NextResponse(new Uint8Array(imageBuffer));
+    const originalName = displayFileName(
+      String(metadata?.metadata?.originalName ?? ""),
+      "file"
+    );
     response.headers.set(
       "content-type",
       sniffed ?? contentTypeForImageKey(imageKey)
+    );
+    response.headers.set(
+      "content-disposition",
+      `inline; filename="${originalName}"`
     );
     response.headers.set("cache-control", "private, no-store");
     response.headers.set("x-content-type-options", "nosniff");

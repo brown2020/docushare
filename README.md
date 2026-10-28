@@ -12,7 +12,8 @@ Verified from the current codebase:
 - **AI writing assist** — `/api/ai` routes to OpenAI, Anthropic, Google, or Mistral based on API keys stored on the user profile
 - **Auth** — Firebase Auth (sign in/up, forgot password) + HttpOnly session cookies (`/api/auth/session`); route protection via `src/proxy.ts`
 - **Profile & credits** — store provider keys; Stripe payment attempt/success flows
-- **Image upload API** — authenticated `/api/image` to Firebase Storage
+- **Uploads** — authenticated `/api/image` for images plus PDF, TXT, MD, CSV, and DOCX (5 MB). Unsupported types return an error. Extracted document text is placed in the editor for AI.
+- **Starter credits** — each new account receives 1,000 credits once from the server. Email verification is not required. Spent credits are not refilled; a Stripe pack adds 10,000 credits.
 - **Theming / UI** — Tailwind CSS 4, local UI primitives, Lucide icons
 
 > Note: `.env.example` still lists Clerk variables. The app does **not** use Clerk; authentication is Firebase-only.
@@ -116,6 +117,7 @@ Never commit real secrets. Prefer setting provider keys in the profile UI for mu
 - Storage CORS sample: `cors.json`
 - Session cookie name used by the proxy: `__session`
 - Credit packs are fulfilled only by the signed Stripe webhook (`payment_intent.succeeded`) into `users/{uid}/payments/{paymentIntentId}` and `users/{uid}/profile/userData.credits`
+- New accounts receive 1,000 starter credits once. The marker is `users/{uid}/private/starterCredits`, which clients cannot write when `firestore.rules` is deployed
 
 ```bash
 firebase deploy --only firestore:rules,firestore:indexes,storage

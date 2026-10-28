@@ -38,19 +38,30 @@ export class API {
         body
       });
 
-      if (!response.ok) {
-        return { status: false };
+      const json = await response.json().catch(() => ({} as Record<string, unknown>));
+      const data = json.data as
+        | { url?: string; kind?: string; name?: string; text?: string }
+        | undefined;
+      if (!response.ok || json.status !== true || typeof data?.url !== "string") {
+        const message =
+          typeof json.message === "string"
+            ? json.message
+            : typeof json.error === "string"
+              ? json.error
+              : "Upload failed.";
+        return { status: false as const, message };
       }
 
-      const json = await response.json();
-      if (json.status === true) {
-        return { status: true, url: json.data.url };
-      }
-
-      return { status: false };
+      return {
+        status: true as const,
+        url: data.url,
+        kind: data.kind === "document" ? ("document" as const) : ("image" as const),
+        name: typeof data.name === "string" ? data.name : "file",
+        text: typeof data.text === "string" ? data.text : "",
+      };
     } catch (error) {
       void error;
-      return { status: false };
+      return { status: false as const, message: "Upload failed." };
     }
   };
 

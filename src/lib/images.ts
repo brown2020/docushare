@@ -1,9 +1,12 @@
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-const NEW_IMAGE_KEY =
-  /^[A-Za-z0-9_-]{1,128}\/[0-9a-fA-F-]{36}\.(gif|jpe?g|png|webp)$/;
+const UPLOAD_EXT = "gif|jpe?g|png|webp|pdf|txt|md|csv|docx";
 
-const LEGACY_IMAGE_KEY = /^[0-9a-fA-F-]{36}\.(gif|jpe?g|png|webp)$/;
+const NEW_IMAGE_KEY = new RegExp(
+  `^[A-Za-z0-9_-]{1,128}/[0-9a-fA-F-]{36}\\.(${UPLOAD_EXT})$`
+);
+
+const LEGACY_IMAGE_KEY = new RegExp(`^[0-9a-fA-F-]{36}\\.(${UPLOAD_EXT})$`);
 
 export function isSafeImageKey(imageKey: string): boolean {
   return NEW_IMAGE_KEY.test(imageKey) || LEGACY_IMAGE_KEY.test(imageKey);
@@ -30,6 +33,13 @@ export function contentTypeForImageKey(imageKey: string): string {
   if (lower.endsWith(".webp")) return "image/webp";
   if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
   if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".txt")) return "text/plain; charset=utf-8";
+  if (lower.endsWith(".md")) return "text/markdown; charset=utf-8";
+  if (lower.endsWith(".csv")) return "text/csv; charset=utf-8";
+  if (lower.endsWith(".docx")) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
   return "application/octet-stream";
 }
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { claimStarterCredits } from "@/actions/starterCreditActions";
 import { useAuthStore } from "./useAuthStore";
 import { db } from "@/firebase/firebaseClient";
 
@@ -114,6 +115,8 @@ const useProfileStore = create<ProfileState>((set, get) => ({
         }
       }
       await setDoc(userRef, identity, { merge: true });
+      const starter = await claimStarterCredits();
+      if (starter) newProfile.credits = starter.credits;
       set({ profile: newProfile });
     } catch (error) {
       console.error("Error fetching or creating profile:", error);

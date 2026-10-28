@@ -9,10 +9,10 @@ DocuShare is a collaborative document authoring application with rich editing, d
 - Framework: Next.js 16 App Router with React 19 and TypeScript.
 - Styling: Tailwind CSS 4 plus local UI primitives in `src/components/ui`.
 - Authentication: Firebase Auth on the client, Firebase Admin session cookies on the server, and route redirects in `src/proxy.ts`.
-- Persistence: Firestore stores documents, user profiles, payment records, and document-sharing metadata. Firebase Storage is used for uploaded images.
+- Persistence: Firestore stores documents, user profiles, payment records, and document-sharing metadata. Firebase Storage is used for uploaded images and documents.
 - Editor: Tiptap 3 is configured through `src/extensions/extension-kit.ts`; `src/components/CollaborativeEditor.tsx` loads/saves document content and listens for Firestore updates.
 - AI: `src/app/api/ai/route.ts` selects user-configured provider keys from Firestore and routes requests through AI SDK providers.
-- Images: `src/app/api/image/route.ts` requires an authenticated session for upload/read paths, accepts supported image media types, generates opaque upload filenames, validates read keys, and streams Firebase Storage downloads without writing a local cache.
+- Uploads: `src/app/api/image/route.ts` requires an authenticated session for upload and read. It accepts JPG, PNG, GIF, WEBP, PDF, TXT, MD, CSV, and DOCX (5 MB max), sniffs the bytes, stores them under `uploads/{uid}/{uuid}.ext`, and streams them back only to the owner or to someone who can read a document that references the file. PDF, TXT, MD, CSV, and DOCX text is inserted into the editor so the existing AI commands can read it. Other types return a clear error.
 - Payments: Stripe dependencies and payment components/actions support checkout and payment status flows.
 
 ## Key Workflows
@@ -22,7 +22,8 @@ DocuShare is a collaborative document authoring application with rich editing, d
 - Document list and stats: `/api/docs` and `/api/docs/stats` read owned and shared documents for the verified session user.
 - Sharing: `/api/share` verifies the session user, looks up the target user by email with Firebase Admin, and updates the document `share` array.
 - Editing: `CollaborativeEditor` initializes a Firestore document when needed, loads existing Tiptap JSON content, subscribes to snapshot updates, and debounces saves.
-- AI generation: authenticated users call `/api/ai`; model availability is derived from provider API keys stored in the user's profile document.
+- AI generation: authenticated users call `/api/ai`; model availability is derived from provider API keys stored in the user's profile document. Platform-key usage spends credits. A new account receives 1,000 starter credits once from the server (`claimStarterCredits`), even if the email is not verified. The grant is stored in `users/{uid}/private/starterCredits` and is not repeated after the balance is spent or after a Stripe purchase. Clients cannot write `credits`.
+- Uploading: the editor Upload control posts to `/api/image`. Images become image blocks. PDF and the text document types above become a file link plus the extracted text, which AI commands read from the selection.
 
 ## Architecture Notes
 
