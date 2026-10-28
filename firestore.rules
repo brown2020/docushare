@@ -2,8 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if user is authenticated
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,8 +10,7 @@ service cloud.firestore {
     function isUser(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Helper function to check if user is the owner of a document
+
     function isOwner(resource) {
       return isAuthenticated() && request.auth.uid == resource.data.owner;
     }
@@ -22,57 +20,99 @@ service cloud.firestore {
         resource.data.share is list &&
         request.auth.uid in resource.data.share;
     }
-    
-    // Helper function to check if user has access to a document
+
     function hasAccess(resource) {
       return isOwner(resource) || isShared(resource);
     }
 
-    function documentMetadataIsPreserved() {
-      return request.resource.data.owner == resource.data.owner &&
-        request.resource.data.share == resource.data.share;
+    function creditsUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['credits']);
+    }
+
+    function apiKeysUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'openai_api_key',
+        'anthropic_api_key',
+        'google_gen_ai_api_key',
+        'mistral_api_key',
+        'fireworks_api_key'
+      ]);
+    }
+
+    function noClientSecretsOnCreate() {
+      return (!('credits' in request.resource.data) || request.resource.data.credits == 0)
+        && (!('openai_api_key' in request.resource.data) || request.resource.data.openai_api_key == '')
+        && (!('anthropic_api_key' in request.resource.data) || request.resource.data.anthropic_api_key == '')
+        && (!('google_gen_ai_api_key' in request.resource.data) || request.resource.data.google_gen_ai_api_key == '')
+        && (!('mistral_api_key' in request.resource.data) || request.resource.data.mistral_api_key == '')
+        && (!('fireworks_api_key' in request.resource.data) || request.resource.data.fireworks_api_key == '');
+    }
+
+    function contentRevisionOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['content'])
+        || (
+          request.resource.data.revision is int
+          && request.resource.data.revision == resource.data.get('revision', 0) + 1
+        );
     }
 
     function ownerDocumentUpdateIsSafe() {
-      return request.resource.data.owner == resource.data.owner &&
-        request.resource.data.share is list &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(["name", "content", "updatedAt", "share"]);
+      return request.resource.data.owner == resource.data.owner
+        && request.resource.data.share is list
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'content', 'updatedAt', 'share', 'revision']);
     }
 
     function sharedDocumentUpdateIsSafe() {
-      return documentMetadataIsPreserved() &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(["name", "content", "updatedAt"]);
+      return request.resource.data.owner == resource.data.owner
+        && request.resource.data.share == resource.data.share
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'content', 'updatedAt', 'revision']);
     }
-    
-    // User collection rules
+
     match /users/{userId} {
-      allow read, create, update, delete: if isUser(userId);
-      
-      match /{path=**} {
-        allow read, write: if isUser(userId);
+      allow read: if isUser(userId);
+      allow create: if isUser(userId) && noClientSecretsOnCreate();
+      allow update: if isUser(userId) && creditsUntouched() && apiKeysUntouched();
+      allow delete: if isUser(userId);
+
+      match /profile/{docId} {
+        allow read: if isUser(userId);
+        allow create: if isUser(userId) && noClientSecretsOnCreate();
+        allow update: if isUser(userId) && creditsUntouched() && apiKeysUntouched();
+        allow delete: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow read: if isUser(userId);
+        allow write: if false;
+      }
+
+      match /secrets/{docId} {
+        allow read, write: if false;
+      }
+
+      match /private/{docId} {
+        allow read, write: if false;
       }
     }
-    
-    // Document collection rules
+
     match /docs/{documentId} {
-      // Allow reading if user is authenticated and has access
-      allow read: if isAuthenticated() &&
-        (resource == null || hasAccess(resource));
-      
-      // Allow creating if user is authenticated
-      allow create: if isAuthenticated() && 
-        request.resource.data.owner == request.auth.uid &&
-        request.resource.data.share is list;
-      
-      // Allow updating if user has access
-      allow update: if (isOwner(resource) && ownerDocumentUpdateIsSafe()) ||
-        (isShared(resource) && sharedDocumentUpdateIsSafe());
-      
-      // Allow deleting if user is the owner
-      allow delete: if isAuthenticated() && 
-        resource.data.owner == request.auth.uid;
+      allow get: if isAuthenticated() && hasAccess(resource);
+      allow list: if isAuthenticated() && hasAccess(resource);
+
+      allow create: if isAuthenticated()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.share is list;
+
+      allow update: if contentRevisionOk() && (
+        (isOwner(resource) && ownerDocumentUpdateIsSafe())
+        || (isShared(resource) && sharedDocumentUpdateIsSafe())
+      );
+
+      allow delete: if isAuthenticated()
+        && resource.data.owner == request.auth.uid;
     }
   }
 }

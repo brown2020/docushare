@@ -4,8 +4,18 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { getAuth } from 'firebase-admin/auth';
 
+export class FirebaseAdminNotConfiguredError extends Error {
+  readonly statusCode = 503;
+
+  constructor() {
+    super("Firebase Admin is not configured");
+    this.name = "FirebaseAdminNotConfiguredError";
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any, storage: any, auth: any, app: any;
+let adminReady = false;
 
 try {
   if (!getApps().length) {
@@ -24,12 +34,24 @@ try {
   db = getFirestore();
   storage = getStorage();
   auth = getAuth();
+  adminReady = true;
 } catch (e) {
-  console.warn("Firebase Admin initialization failed (expected in build):", e);
-  db = {};
-  storage = {};
-  auth = {};
-  app = {};
+  console.warn("Firebase Admin initialization failed (expected in build):", e instanceof Error ? e.message : "unknown");
+  db = null;
+  storage = null;
+  auth = null;
+  app = null;
+  adminReady = false;
+}
+
+export function isFirebaseAdminReady(): boolean {
+  return adminReady;
+}
+
+export function requireFirebaseAdmin(): void {
+  if (!adminReady) {
+    throw new FirebaseAdminNotConfiguredError();
+  }
 }
 
 export { app, db, storage, auth };

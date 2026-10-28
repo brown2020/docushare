@@ -2,6 +2,7 @@ import { Icon } from '@/components/ui/Icon'
 import { Surface } from '@/components/ui/Surface'
 import { Toolbar } from '@/components/ui/toolbar'
 import { Tooltip, TooltipContentTitle, TooltipTrigger } from '@/components/ui/Tooltip/Tooltip'
+import { isSafeLinkHref } from '@/lib/links'
 
 export type LinkPreviewPanelProps = {
   url: string
@@ -12,9 +13,13 @@ export type LinkPreviewPanelProps = {
 export const LinkPreviewPanel = ({ onClear, onEdit, url }: LinkPreviewPanelProps) => {
   return (
     <Surface className="flex items-center gap-2 p-2">
-      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm underline break-all">
-        {url}
-      </a>
+      {isSafeLinkHref(url) ? (
+        <a href={url} target="_blank" rel="noopener noreferrer nofollow" className="text-sm underline break-all">
+          {url}
+        </a>
+      ) : (
+        <span className="text-sm break-all">{url}</span>
+      )}
       <Tooltip>
         <TooltipTrigger>
           <Toolbar.Button onClick={onEdit}>

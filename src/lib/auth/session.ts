@@ -1,7 +1,7 @@
-import { auth } from "@/firebase/firebaseAdminConfig";
-import { getApps } from "firebase-admin/app";
+import { auth, isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { cookies } from "next/headers";
 import { verifyFirebaseIdToken } from "@/lib/auth/verifyFirebaseIdToken";
+import { acceptsIdTokenSession } from "@/lib/auth/sessionPolicy";
 
 const SESSION_COOKIE_NAME = "__session";
 const SESSION_EXPIRY_DAYS = 5;
@@ -10,11 +10,7 @@ const ID_TOKEN_PREFIX = "idt.";
 const SERVER_OP_TIMEOUT_MS = 10_000;
 
 function adminAuthAvailable(): boolean {
-  try {
-    return Boolean(getApps().length);
-  } catch {
-    return false;
-  }
+  return isFirebaseAdminReady();
 }
 
 function getFirebaseProjectId(): string | undefined {
@@ -54,17 +50,13 @@ export async function createSessionCookie(idToken: string): Promise<string> {
   const projectId = getFirebaseProjectId();
 
   if (adminAuthAvailable()) {
-    try {
-      return await withTimeout(
-        auth.createSessionCookie(idToken, {
-          expiresIn: SESSION_EXPIRY_MS,
-        }),
-        SERVER_OP_TIMEOUT_MS,
-        "Firebase Admin createSessionCookie"
-      );
-    } catch {
-      // fall through to ID-token session
-    }
+    return await withTimeout(
+      auth.createSessionCookie(idToken, {
+        expiresIn: SESSION_EXPIRY_MS,
+      }),
+      SERVER_OP_TIMEOUT_MS,
+      "Firebase Admin createSessionCookie"
+    );
   }
 
   if (!projectId) {
@@ -91,6 +83,7 @@ export async function createSessionCookie(idToken: string): Promise<string> {
  */
 export async function verifySessionCookie(sessionCookie: string) {
   if (sessionCookie.startsWith(ID_TOKEN_PREFIX)) {
+    if (!acceptsIdTokenSession(adminAuthAvailable())) return null;
     const idToken = sessionCookie.slice(ID_TOKEN_PREFIX.length);
     const verified = await verifyFirebaseIdToken(idToken);
     if (!verified) return null;
@@ -105,7 +98,9 @@ export async function verifySessionCookie(sessionCookie: string) {
     }
   }
 
-  // Last resort: treat raw value as ID token
+  if (!acceptsIdTokenSession(adminAuthAvailable())) return null;
+
+  // Last resort when Admin is not configured: treat raw value as ID token
   const verified = await verifyFirebaseIdToken(sessionCookie);
   if (!verified) return null;
   return { uid: verified.uid, email: verified.email };

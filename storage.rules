@@ -1,0 +1,10 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Uploads go through the Admin SDK, which bypasses these rules.
+      allow read, write: if false;
+    }
+  }
+}

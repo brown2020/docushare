@@ -1,134 +1,69 @@
 "use client";
 
 import { useAuthStore } from "@/zustand/useAuthStore";
-import { usePaymentsStore } from "@/zustand/usePaymentsStore";
 import useProfileStore from "@/zustand/useProfileStore";
+import { db } from "@/firebase/firebaseClient";
+import { doc, onSnapshot } from "firebase/firestore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { validatePaymentIntent } from "@/actions/paymentActions";
 
 type Props = {
   payment_intent: string;
 };
 
-type PaymentView = {
-  message: string;
-  created: number;
-  id: string;
-  amount: number;
-  status: string;
-};
+const PAYMENT_ID = /^pi_[A-Za-z0-9]+$/;
 
 export default function PaymentSuccessPage({ payment_intent }: Props) {
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<PaymentView>({
-    message: "",
-    created: 0,
-    id: "",
-    amount: 0,
-    status: "",
-  });
-
-  const addPayment = usePaymentsStore((state) => state.addPayment);
-  const checkIfPaymentProcessed = usePaymentsStore(
-    (state) => state.checkIfPaymentProcessed
-  );
-  const addCredits = useProfileStore((state) => state.addCredits);
+  const [confirmed, setConfirmed] = useState(false);
+  const [amount, setAmount] = useState(0);
   const uid = useAuthStore((state) => state.uid);
+  const fetchProfile = useProfileStore((state) => state.fetchProfile);
 
   useEffect(() => {
-    let ignore = false;
-
-    if (!payment_intent) {
-      setView((v) => ({ ...v, message: "No payment intent found" }));
+    if (!payment_intent || !PAYMENT_ID.test(payment_intent)) {
       setLoading(false);
       return;
     }
-
     if (!uid) return;
 
-    void (async () => {
-      try {
-        const data = await validatePaymentIntent(payment_intent);
-        if (ignore) return;
-
-        if (data.status !== "succeeded") {
-          setView((v) => ({ ...v, message: "Payment validation failed" }));
-          return;
+    const paymentRef = doc(db, "users", uid, "payments", payment_intent);
+    const unsubscribe = onSnapshot(
+      paymentRef,
+      (snap) => {
+        if (snap.exists() && snap.data()?.status === "succeeded") {
+          setConfirmed(true);
+          const paid = snap.data()?.amount;
+          setAmount(typeof paid === "number" ? paid : 0);
+          void fetchProfile();
         }
-
-        const existingPayment = await checkIfPaymentProcessed(data.id);
-        if (ignore) return;
-
-        if (existingPayment) {
-          setView({
-            message: "Payment has already been processed.",
-            created: existingPayment.createdAt
-              ? existingPayment.createdAt.toMillis()
-              : 0,
-            id: existingPayment.id,
-            amount: existingPayment.amount,
-            status: existingPayment.status,
-          });
-          return;
-        }
-
-        await addPayment({
-          id: data.id,
-          amount: data.amount,
-          status: data.status,
-        });
-        if (ignore) return;
-
-        await addCredits(data.amount + 1);
-        if (ignore) return;
-
-        setView({
-          message: "Payment successful",
-          created: data.created * 1000,
-          id: data.id,
-          amount: data.amount,
-          status: data.status,
-        });
-      } catch {
-        if (!ignore) {
-          setView((v) => ({
-            ...v,
-            message: "Error handling payment success",
-          }));
-        }
-      } finally {
-        if (!ignore) setLoading(false);
+        setLoading(false);
+      },
+      () => {
+        setLoading(false);
       }
-    })();
+    );
 
-    return () => {
-      ignore = true;
-    };
-  }, [payment_intent, addPayment, checkIfPaymentProcessed, addCredits, uid]);
-
-  const createdLabel = view.created
-    ? new Date(view.created).toISOString()
-    : "";
+    return () => unsubscribe();
+  }, [payment_intent, uid, fetchProfile]);
 
   return (
     <main className="max-w-6xl flex flex-col gap-2.5 mx-auto p-10 text-black text-center border m-10 rounded-sm border-black">
       {loading ? (
-        <div>validating...</div>
-      ) : view.id ? (
+        <div>Confirming your payment…</div>
+      ) : confirmed ? (
         <div className="mb-10">
           <h1 className="text-4xl font-extrabold mb-2">Thank you!</h1>
           <h2 className="text-2xl">You successfully purchased credits</h2>
           <div className="bg-white p-2 rounded-sm my-5 text-4xl font-bold mx-auto">
-            ${view.amount / 100}
+            ${amount / 100}
           </div>
-          <div>Uid: {uid}</div>
-          <div>Id: {view.id}</div>
-          <div>Created: {createdLabel}</div>
-          <div>Status: {view.status}</div>
+          <div>Id: {payment_intent}</div>
         </div>
       ) : (
-        <div>{view.message}</div>
+        <div>
+          Payment submitted. Credits appear after Stripe confirms the charge.
+        </div>
       )}
 
       <Link

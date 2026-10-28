@@ -9,31 +9,30 @@ import {
   AI_MODEL_CLAUDE,
   AI_MODEL_GEMINI,
   AI_MODEL_GPT,
+  AI_MODEL_LLAMA,
   AI_MODEL_MISTRAL,
 } from "@/lib/constants";
+import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 
-async function getModel(modelName: string, api_key: string | null = null) {
-  const aiOptions = api_key ? { apiKey: api_key } : {};
-
+async function getModel(modelName: string, apiKey: string) {
   switch (modelName) {
     case AI_MODEL_GPT: {
-      const openai11 = createOpenAI(aiOptions);
-      return openai11("gpt-4o");
+      const openai = createOpenAI({ apiKey });
+      return openai(PROVIDER_MODEL_IDS[AI_MODEL_GPT]);
     }
     case AI_MODEL_GEMINI:
-      return createGoogleGenerativeAI(aiOptions)(
-        "models/gemini-1.5-pro-latest"
-      );
+      return createGoogleGenerativeAI({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_GEMINI]);
     case AI_MODEL_MISTRAL:
-      return createMistral(aiOptions)("mistral-large-latest");
+      return createMistral({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_MISTRAL]);
     case AI_MODEL_CLAUDE:
-      return createAnthropic(aiOptions)("claude-3-5-sonnet-20241022");
-    case "llama-v3p1-405b": {
+      return createAnthropic({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_CLAUDE]);
+    case AI_MODEL_LLAMA: {
       const fireworks = createOpenAI({
-        ...aiOptions,
+        apiKey,
         baseURL: "https://api.fireworks.ai/inference/v1",
       });
-      return fireworks("accounts/fireworks/models/llama-v3p1-405b-instruct");
+      return fireworks(PROVIDER_MODEL_IDS[AI_MODEL_LLAMA]);
     }
     default:
       throw new Error(`Unsupported model name: ${modelName}`);
@@ -44,13 +43,21 @@ export async function generateResponse(
   systemPrompt: string,
   userPrompt: string,
   modelName: string,
-  api_key: string | null = null
+  apiKey: string
 ) {
+  const authUser = await getAuthenticatedUser();
+  if (!authUser) {
+    throw new Error("User is not signed in.");
+  }
+  if (!apiKey) {
+    throw new Error("AI key not configured.");
+  }
+
   if (process.env.IS_UAT == "1") {
     return "This is a test response in UAT mode.";
   }
 
-  const model = await getModel(modelName, api_key);
+  const model = await getModel(modelName, apiKey);
 
   const { text } = await generateText({
     model,

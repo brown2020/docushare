@@ -69,7 +69,6 @@ async function updateUserDetailsInFirestore(
     authEmailVerified: details.authEmailVerified,
     authReady: details.authReady,
     premium: details.premium,
-    credits: details.credits,
     lastSignIn: serverTimestamp(),
   };
 

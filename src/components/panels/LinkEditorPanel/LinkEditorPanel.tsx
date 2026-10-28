@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Surface } from "@/components/ui/Surface";
 import { Toggle } from "@/components/ui/Toggle";
+import { isSafeLinkHref } from "@/lib/links";
 import { useState, useCallback, useMemo } from "react";
 
 export type LinkEditorPanelProps = {
@@ -24,7 +25,7 @@ export const useLinkEditorState = ({
     setUrl(event.target.value);
   }, []);
 
-  const isValidUrl = useMemo(() => /^(\S+):(\/\/)?\S+$/.test(url), [url]);
+  const isValidUrl = useMemo(() => isSafeLinkHref(url), [url]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {

@@ -1,7 +1,10 @@
 "use client";
 
 import PaymentCheckoutPage from "@/components/PaymentCheckoutPage";
-import convertToSubcurrency from "@/lib/convertToSubcurrency";
+import {
+  CREDIT_PACK_AMOUNT_USD,
+  CREDIT_PACK_PRICE_CENTS,
+} from "@/lib/billing";
 
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -10,7 +13,7 @@ const stripeKey = process.env.NEXT_PUBLIC_STRIPE_KEY;
 const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 export default function PaymentAttempt() {
-  const amount = 99.99;
+  const amount = CREDIT_PACK_AMOUNT_USD;
 
   if (!stripePromise) {
     return (
@@ -28,7 +31,7 @@ export default function PaymentAttempt() {
       stripe={stripePromise}
       options={{
         mode: "payment",
-        amount: convertToSubcurrency(amount),
+        amount: CREDIT_PACK_PRICE_CENTS,
         currency: "usd",
       }}
     >

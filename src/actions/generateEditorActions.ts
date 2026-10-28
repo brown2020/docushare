@@ -1,133 +1,18 @@
 "use server";
 
-import { db } from "@/firebase/firebaseAdminConfig";
 import { generateResponse } from "./generateActions";
 import {
-  AI_MODEL_CLAUDE,
-  AI_MODEL_GEMINI,
-  AI_MODEL_GPT,
-  AI_MODEL_LLAMA,
-  AI_MODEL_MISTRAL,
-  AI_MODELS_LIST,
   COST_POINT_PER_TOKEN,
   DEFAULT_AI_MODEL,
   MAX_OUTPUT_TOKEN,
   RESPONSE_CODE,
-  USER_COLLECTION,
 } from "@/lib/constants";
 import { AIOptions } from "@/interfaces/general";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-
-class User {
-  userRef: FirebaseFirestore.DocumentReference;
-  userSnapshot: FirebaseFirestore.DocumentSnapshot | null;
-  constructor(public id: string) {
-    this.userRef = db
-      .collection(USER_COLLECTION)
-      .doc(id)
-      .collection("profile")
-      .doc("userData");
-    this.userSnapshot = null;
-  }
-
-  async loadUserSnapshot() {
-    this.userSnapshot = await this.userRef.get();
-    return this.userSnapshot;
-  }
-
-  async getUserData() {
-    const userSnapshot = await this.loadUserSnapshot();
-    return userSnapshot.data();
-  }
-
-  async getAIModel() {
-    const data = await this.getUserData();
-    // FIXED: correct key-to-model mapping
-    const availableModelKeys = [];
-    if (data && data.openai_api_key) availableModelKeys.push(AI_MODEL_GPT);
-    if (data && data.anthropic_api_key) availableModelKeys.push(AI_MODEL_CLAUDE);
-    if (data && data.google_gen_ai_api_key) availableModelKeys.push(AI_MODEL_GEMINI);
-    if (data && data.mistral_api_key) availableModelKeys.push(AI_MODEL_MISTRAL);
-    if (data && data.fireworks_api_key) availableModelKeys.push(AI_MODEL_LLAMA);
-
-    if (availableModelKeys.length == 0) {
-      return { status: false, code: RESPONSE_CODE.api_key_not_set };
-    }
-
-    // FIXED: correct key-to-model mapping
-    const aiModelKeys: Record<string, string> = {
-      [AI_MODEL_GPT]: data && data.openai_api_key ? data.openai_api_key : "",
-      [AI_MODEL_CLAUDE]: data && data.anthropic_api_key ? data.anthropic_api_key : "",
-      [AI_MODEL_GEMINI]: data && data.google_gen_ai_api_key ? data.google_gen_ai_api_key : "",
-      [AI_MODEL_MISTRAL]: data && data.mistral_api_key ? data.mistral_api_key : "",
-      [AI_MODEL_LLAMA]: data && data.fireworks_api_key ? data.fireworks_api_key : "",
-    };
-
-    if (typeof data != "object") {
-      throw new Error("User data not found.");
-    }
-
-    if (
-      Object.keys(data).includes("ai_model") &&
-      typeof data.ai_model == "string" &&
-      AI_MODELS_LIST.includes(data.ai_model)
-    ) {
-      // if user has selected ai model then use only that
-      if (!availableModelKeys.includes(data.ai_model))
-        throw new Error("AI key not found.", {
-          cause: { code: RESPONSE_CODE.api_key_not_found },
-        });
-      return {
-        status: true,
-        data: { model: data.ai_model, key: aiModelKeys[data.ai_model] },
-      };
-    }
-
-    // If not selected then use first default model
-    if (availableModelKeys.includes(DEFAULT_AI_MODEL))
-      return {
-        status: true,
-        data: { model: DEFAULT_AI_MODEL, key: aiModelKeys[DEFAULT_AI_MODEL] },
-      };
-
-    // If default ai model does not have key then use model which key is set
-    const aiModel = availableModelKeys[0];
-    return {
-      status: true,
-      data: { model: aiModel, key: aiModelKeys[aiModel] },
-    };
-  }
-
-  async checkExpectedPointForPrompt(
-    prompt: string,
-    expectedOutputTokens: number = MAX_OUTPUT_TOKEN
-  ) {
-    // Rough estimate by considering each word as a token
-    const data = await this.getUserData();
-    const userCredits = data && data.credits ? data.credits : 0;
-
-    if (userCredits <= 0) return false;
-
-    const inputTokens = countTokens(prompt); // Implement token counting logic
-    const totalTokens = inputTokens + expectedOutputTokens;
-    return pointsForPrompt(totalTokens) <= userCredits ? true : false;
-  }
-  async deductPoint(inputPrompt: string, outputPrompt: string) {
-    // Rough estimate by considering each word as a token
-    const data = await this.getUserData();
-    const userCredits = data && data.credits ? data.credits : 0;
-    const updatedCredits =
-      userCredits -
-      pointsForPrompt(countTokens(inputPrompt) + countTokens(outputPrompt));
-
-    await this.userRef.set(
-      {
-        credits: updatedCredits,
-      },
-      { merge: true }
-    );
-  }
-}
+import { requireFirebaseAdmin } from "@/firebase/firebaseAdminConfig";
+import { assertAiRateLimit } from "@/lib/ai/rateLimit";
+import { resolveStoredModel } from "@/lib/ai/loadUserModel";
+import { debitCredits, refundCredits } from "@/lib/billing/credits";
 
 const aiCommandPrompts: Record<
   AIOptions,
@@ -198,49 +83,65 @@ export async function generateText(
     throw new Error("User is not signed in.", { cause: { status: 401 } });
   }
 
-  const user = new User(authUser.uid);
+  requireFirebaseAdmin();
+  await assertAiRateLimit(authUser.uid);
 
-  const modelOfUser = await user.getAIModel();
-  const { systemPrompt, userPrompt } = aiCommandPrompts[option](
-    prompt,
-    command
-  );
+  if (process.env.IS_UAT == "1") {
+    return "This is a test response in UAT mode.";
+  }
+
+  const builder = aiCommandPrompts[option];
+  if (!builder) {
+    throw new Error("Unsupported AI command.");
+  }
+  const { systemPrompt, userPrompt } = builder(prompt, command);
+  const modelOfUser = await resolveStoredModel(authUser.uid);
+
   let modelName = DEFAULT_AI_MODEL;
-  let api_key = process.env.OPENAI_API_KEY ?? "";
+  let apiKey = "";
+  let reserved = 0;
+
   if (modelOfUser.status === false) {
-    if (modelOfUser.code === RESPONSE_CODE.api_key_not_set) {
-      const hasExpectedPoint = await user.checkExpectedPointForPrompt(
-        userPrompt
-      );
-      if (!hasExpectedPoint) {
-        throw new Error("You don't have enough points to run this command.", {
-          cause: { code: RESPONSE_CODE.insufficient_points },
-        });
-      }
-    } else {
+    if (modelOfUser.code !== RESPONSE_CODE.api_key_not_set) {
       throw new Error("You have not added any credit or AI key.", {
         cause: { code: modelOfUser.code },
       });
     }
-  } else if (!modelOfUser.data) {
-    // Calculate expected credit require user to run ai command
-    throw new Error("You have not added any credit or AI key.", {
-      cause: { code: modelOfUser.code },
-    });
+    apiKey = process.env.OPENAI_API_KEY ?? "";
+    if (!apiKey) {
+      throw new Error("You have not added any credit or AI key.", {
+        cause: { code: RESPONSE_CODE.api_key_not_set },
+      });
+    }
+    reserved = pointsForPrompt(countTokens(userPrompt) + MAX_OUTPUT_TOKEN);
+    await debitCredits(authUser.uid, reserved);
   } else {
-    modelName = modelOfUser.data.model;
-    api_key = modelOfUser.data.key;
+    modelName = modelOfUser.model;
+    apiKey = modelOfUser.key;
   }
 
-  const response = await generateResponse(
-    systemPrompt,
-    userPrompt,
-    modelName,
-    api_key
-  );
-
-  // FIXED: await the deductPoint call to ensure credits are deducted
-  await user.deductPoint(userPrompt, response);
-
-  return response;
+  try {
+    const response = await generateResponse(
+      systemPrompt,
+      userPrompt,
+      modelName,
+      apiKey
+    );
+    if (reserved > 0) {
+      const actual = pointsForPrompt(
+        countTokens(userPrompt) + countTokens(response)
+      );
+      if (actual < reserved) {
+        await refundCredits(authUser.uid, reserved - actual);
+      } else if (actual > reserved) {
+        await debitCredits(authUser.uid, actual - reserved);
+      }
+    }
+    return response;
+  } catch (error) {
+    if (reserved > 0) {
+      await refundCredits(authUser.uid, reserved);
+    }
+    throw error;
+  }
 }

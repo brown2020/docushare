@@ -5,9 +5,10 @@ import {
   collection,
   doc,
   DocumentSnapshot,
-  onSnapshot,
-  setDoc,
   getDoc,
+  onSnapshot,
+  runTransaction,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase/firebaseClient";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
@@ -28,6 +29,11 @@ import {
   normalizeEditorContent,
 } from "@/lib/editorContent";
 import toast from "react-hot-toast";
+import {
+  DocumentRevisionConflict,
+  nextRevision,
+  readRevision,
+} from "@/lib/documents/revision";
 
 interface CollaborativeEditorProps {
   docId: string;
@@ -35,10 +41,14 @@ interface CollaborativeEditorProps {
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
   const [isReady, setIsReady] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const userPosition = useRef({ from: 0, to: 0 });
   const isUpdating = useRef(false);
+  const baseRevision = useRef(0);
+  const initializedRef = useRef(false);
+  const applyContentRef = useRef<
+    (raw: unknown, opts?: { emitUpdate?: boolean }) => void
+  >(() => {});
   const [processing, setProcessing] = useState(true);
   const menuContainerRef = useRef(null);
   const { userId } = useFirebaseAuth();
@@ -73,16 +83,42 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         scheduleProcessing(true);
         try {
           const content = normalizeEditorContent(editor.getJSON());
-          await setDoc(
-            docRef,
-            { content, updatedAt: new Date() },
-            { merge: true }
-          );
+          const base = baseRevision.current;
+          const committed = await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(docRef);
+            const next = nextRevision(snap.data()?.revision, base);
+            if (next === null) throw new DocumentRevisionConflict();
+            transaction.set(
+              docRef,
+              { content, updatedAt: new Date(), revision: next },
+              { merge: true }
+            );
+            return next;
+          });
+          baseRevision.current = committed;
         } catch (error) {
-          console.warn("[docs] save_failed", formatFirebaseErrorForLog(error));
-          toast.error(
-            formatFirebaseErrorForToast(error, "Failed to save document.")
-          );
+          if (error instanceof DocumentRevisionConflict) {
+            try {
+              const latest = await getDoc(docRef);
+              baseRevision.current = readRevision(latest.data()?.revision);
+              isUpdating.current = true;
+              applyContentRef.current(latest.data()?.content, { emitUpdate: false });
+              isUpdating.current = false;
+            } catch (reloadError) {
+              console.warn(
+                "[docs] conflict_reload_failed",
+                formatFirebaseErrorForLog(reloadError)
+              );
+            }
+            toast.error(
+              "This document changed elsewhere. Reloaded the latest version."
+            );
+          } else {
+            console.warn("[docs] save_failed", formatFirebaseErrorForLog(error));
+            toast.error(
+              formatFirebaseErrorForToast(error, "Failed to save document.")
+            );
+          }
         }
         scheduleProcessing(false);
       }, 500);
@@ -128,17 +164,26 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
     [editor]
   );
 
+  useEffect(() => {
+    applyContentRef.current = applyEditorContent;
+  }, [applyEditorContent]);
+
   const updateContent = useCallback(
     (snapshot: DocumentSnapshot) => {
-      if (!editor || !isInitialized) return;
+      if (!editor || !initializedRef.current) return;
 
       const data = snapshot.data();
       const raw = data?.content;
+      const incomingRevision = readRevision(data?.revision);
       const normalized = normalizeEditorContent(raw);
-      if (JSON.stringify(normalized) === JSON.stringify(editor.getJSON())) {
+      if (
+        incomingRevision === baseRevision.current &&
+        JSON.stringify(normalized) === JSON.stringify(editor.getJSON())
+      ) {
         scheduleProcessing(false);
         return;
       }
+      baseRevision.current = incomingRevision;
       isUpdating.current = true;
       applyEditorContent(raw, { emitUpdate: false });
       // Restore cursor position after content update
@@ -152,7 +197,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
         scheduleProcessing(false);
       });
     },
-    [editor, isInitialized, scheduleProcessing, applyEditorContent]
+    [editor, scheduleProcessing, applyEditorContent]
   );
 
   // FIXED: Wait for initialization before subscribing to snapshots
@@ -175,11 +220,15 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
           const content = needsContentRepair(existing)
             ? EMPTY_DOC_JSON
             : normalizeEditorContent(editor.getJSON());
+          const revision = docSnap.exists()
+            ? readRevision(docSnap.data()?.revision) + 1
+            : 0;
           await setDoc(
             docRef,
             {
               content,
               updatedAt: new Date(),
+              revision,
               ...(!docSnap.exists() && {
                 owner: userId,
                 share: [],
@@ -188,18 +237,19 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
             },
             { merge: true }
           );
+          baseRevision.current = revision;
           isUpdating.current = true;
           applyEditorContent(content, { emitUpdate: false });
           isUpdating.current = false;
         } else {
+          baseRevision.current = readRevision(docSnap.data()?.revision);
           isUpdating.current = true;
           applyEditorContent(existing, { emitUpdate: false });
           isUpdating.current = false;
         }
 
         if (ignore) return;
-        // Mark as initialized before subscribing
-        setIsInitialized(true);
+        initializedRef.current = true;
         scheduleProcessing(false);
 
         // Now subscribe to changes
@@ -214,6 +264,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
 
     return () => {
       ignore = true;
+      initializedRef.current = false;
       if (unsubscribe) {
         unsubscribe();
       }
@@ -260,6 +311,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ docId }) => {
             {/* Editor Content */}
             <div
               ref={menuContainerRef}
+              data-document-id={docId}
               className="overflow-auto grow scroll-bar-design bg-white dark:bg-neutral-900"
             >
               <EditorContent

@@ -104,6 +104,7 @@ export async function createDocumentClient(
     createdAt: new Date(),
     updatedAt: new Date(),
     share: [] as string[],
+    revision: 0,
   };
 
   try {
@@ -133,6 +134,15 @@ export async function listDocumentsClient(
     throw Object.assign(new Error("Not signed in"), {
       code: "auth/missing-uid",
     });
+  }
+
+  try {
+    return await listDocumentsViaApi();
+  } catch (apiError) {
+    console.warn(
+      "[docs] list_api_failed_falling_back_client",
+      formatFirebaseErrorForLog(apiError)
+    );
   }
 
   const docsRef = collection(db, DOCUMENT_COLLECTION);
@@ -173,17 +183,5 @@ export async function listDocumentsClient(
     return [...owned, ...shared];
   }
 
-  console.warn(
-    "[docs] list_client_failed_falling_back_api",
-    failures.map(formatFirebaseErrorForLog).join(",")
-  );
-  try {
-    return await listDocumentsViaApi();
-  } catch (apiError) {
-    console.warn(
-      "[docs] list_api_fallback_failed",
-      formatFirebaseErrorForLog(apiError)
-    );
-    throw failures[0];
-  }
+  throw failures[0];
 }

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/firebase/firebaseAdminConfig";
 import { FieldValue } from "firebase-admin/firestore";
+import { isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
+import { canReadDocument } from "@/lib/documents/access";
+import { isDocumentId } from "@/lib/images";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -11,12 +14,21 @@ export const POST = async (req: NextRequest) => {
     if (!authUser) {
       return new Response("User is not signed in.", { status: 401 });
     }
+    if (!isFirebaseAdminReady()) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
 
     const userId = authUser.uid;
 
     const body = await req.json();
     const email = body.email as string;
     const documentId = body.documentId as string;
+    if (!documentId || !isDocumentId(documentId)) {
+      return NextResponse.json({
+        status: false,
+        message: "Document ID is required.",
+      });
+    }
     if (!email) {
       return NextResponse.json({
         status: false,
@@ -80,19 +92,21 @@ export const GET = async (req: NextRequest) => {
       return new Response("User is not signed in.", { status: 401 });
     }
 
+    if (!isFirebaseAdminReady()) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
+
     const documentId = req.nextUrl.searchParams.get("documentId");
-    if (!documentId) {
+    if (!documentId || !isDocumentId(documentId)) {
       return new Response("Document ID is required.", { status: 400 });
     }
 
-    // Fetch the document
     const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
     const docSnapshot = await docRef.get();
-    if (!docSnapshot.exists) {
+    const documentData = docSnapshot.data();
+    if (!docSnapshot.exists || !canReadDocument(documentData, authUser.uid)) {
       return new Response("Document not found.", { status: 404 });
     }
-
-    const documentData = docSnapshot.data();
     const userIds: string[] = documentData?.share || [];
 
     if (userIds.length === 0) {

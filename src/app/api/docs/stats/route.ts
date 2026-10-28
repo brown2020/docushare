@@ -1,84 +1,133 @@
 import { NextResponse } from "next/server";
+import { isFirebaseAdminReady, db } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import { db } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
-export async function GET() {
-  try {
-    const authUser = await getAuthenticatedUser();
+export const dynamic = "force-dynamic";
 
-    if (!authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+type RecentDoc = { id: string; name: string; lastEdited: string };
 
-    const userId = authUser.uid;
-
-    // Get all documents for the user
-    const docsRef = db.collection(DOCUMENT_COLLECTION);
-
-    // Get documents owned by the user
-    const userDocsSnapshot = await docsRef.where("owner", "==", userId).get();
-
-    // Get shared documents
-    const sharedDocsSnapshot = await docsRef
-      .where("share", "array-contains", userId)
-      .get();
-
-    // Get all user documents and sort them client-side
-    // This avoids needing a composite index
-    type DocEntry = { id: string; name: string; updatedAt: Date; lastEdited: string };
-    const allUserDocs: DocEntry[] = userDocsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: typeof data.name === "string" ? data.name : "Untitled Document",
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-        lastEdited: formatLastEdited(data.updatedAt?.toDate() || new Date()),
-      };
-    });
-
-    // Sort by updatedAt (most recent first) and take the first 5
-    const recentlyEdited = allUserDocs
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-      .slice(0, 5)
-      .map(({ id, name, lastEdited }) => ({ id, name, lastEdited }));
-
-    return NextResponse.json({
-      totalDocuments: userDocsSnapshot.size,
-      sharedDocuments: sharedDocsSnapshot.size,
-      recentlyEdited,
-    });
-  } catch (error) {
-    console.error("Error fetching document stats:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch document stats" },
-      { status: 500 }
-    );
+function toDate(value: unknown): Date {
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    return (value as { toDate: () => Date }).toDate();
   }
+  if (value instanceof Date) return value;
+  return new Date(0);
 }
 
-// Helper function to format the last edited date
 function formatLastEdited(date: Date): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
     return "Just now";
-  } else if (diffInSeconds < 3600) {
+  }
+  if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60);
     return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
-  } else if (diffInSeconds < 86400) {
+  }
+  if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600);
     return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
-  } else if (diffInSeconds < 604800) {
+  }
+  if (diffInSeconds < 604800) {
     const days = Math.floor(diffInSeconds / 86400);
     return `${days} ${days === 1 ? "day" : "days"} ago`;
-  } else {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+  }
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function mapRecent(id: string, data: Record<string, unknown>): RecentDoc & { updatedAt: Date } {
+  const updatedAt = toDate(data.updatedAt);
+  return {
+    id,
+    name: typeof data.name === "string" ? data.name : "Untitled Document",
+    updatedAt,
+    lastEdited: formatLastEdited(updatedAt),
+  };
+}
+
+function isMissingIndex(error: unknown): boolean {
+  const code = (error as { code?: number | string }).code;
+  const message = error instanceof Error ? error.message : "";
+  return (
+    code === 9 ||
+    code === "failed-precondition" ||
+    message.includes("FAILED_PRECONDITION") ||
+    message.includes("requires an index")
+  );
+}
+
+async function recentOwned(userId: string): Promise<RecentDoc[]> {
+  const base = db.collection(DOCUMENT_COLLECTION).where("owner", "==", userId);
+  try {
+    const snap = await base
+      .orderBy("updatedAt", "desc")
+      .limit(5)
+      .select("name", "updatedAt")
+      .get();
+    return snap.docs.map((doc: { id: string; data: () => Record<string, unknown> }) => {
+      const row = mapRecent(doc.id, doc.data());
+      return { id: row.id, name: row.name, lastEdited: row.lastEdited };
     });
+  } catch (error) {
+    if (!isMissingIndex(error)) throw error;
+    const snap = await base.select("name", "updatedAt").get();
+    return snap.docs
+      .map((doc: { id: string; data: () => Record<string, unknown> }) =>
+        mapRecent(doc.id, doc.data())
+      )
+      .sort(
+        (
+          a: { updatedAt: Date },
+          b: { updatedAt: Date }
+        ) => b.updatedAt.getTime() - a.updatedAt.getTime()
+      )
+      .slice(0, 5)
+      .map(({ id, name, lastEdited }: RecentDoc) => ({ id, name, lastEdited }));
+  }
+}
+
+export async function GET() {
+  try {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!isFirebaseAdminReady()) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
+
+    const userId = authUser.uid;
+    const docsRef = db.collection(DOCUMENT_COLLECTION);
+    const [ownedCount, sharedCount, recentlyEdited] = await Promise.all([
+      docsRef.where("owner", "==", userId).count().get(),
+      docsRef.where("share", "array-contains", userId).count().get(),
+      recentOwned(userId),
+    ]);
+
+    return NextResponse.json({
+      totalDocuments: ownedCount.data().count,
+      sharedDocuments: sharedCount.data().count,
+      recentlyEdited,
+    });
+  } catch (error) {
+    console.warn(
+      "[docs] stats_failed",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return NextResponse.json(
+      { error: "Failed to fetch document stats" },
+      { status: 500 }
+    );
   }
 }

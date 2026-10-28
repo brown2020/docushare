@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth/session";
-import { db } from "@/firebase/firebaseAdminConfig";
+import { db, isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { EMPTY_DOC_JSON } from "@/lib/editorContent";
 import { NextRequest } from "next/server";
@@ -14,6 +14,10 @@ export const GET = async () => {
 
     if (!authUser) {
       return new Response("User is not signed in.", { status: 401 });
+    }
+
+    if (!isFirebaseAdminReady()) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
     }
 
     const userId = authUser.uid;
@@ -65,6 +69,10 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!isFirebaseAdminReady()) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
+
     const userId = authUser.uid;
 
     const body = await req.json();
@@ -77,6 +85,7 @@ export const POST = async (req: NextRequest) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       share: [],
+      revision: 0,
     };
 
     const docRef = await db.collection(DOCUMENT_COLLECTION).add(docData);

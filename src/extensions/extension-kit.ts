@@ -46,7 +46,7 @@ export const ExtensionKit = ({ }: ExtensionKitProps): AnyExtension[] => [
   HighLightSelection,
   FontFamily,
   Typography,
-  Markdown,
+  Markdown.configure({ html: false }),
   TextStyle,
   Link.configure({
     openOnClick: false,

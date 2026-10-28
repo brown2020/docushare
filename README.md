@@ -102,16 +102,24 @@ Open [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credits | Stripe product config |
-| `IS_UAT` | UAT/test flag (`1` in CI) | Optional |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret for `POST /api/stripe/webhook`. If unset, checkout is disabled and the webhook returns 503 so credits are not granted from the client | Stripe Dashboard → Webhooks → signing secret |
+| `IS_UAT` | When `1`, AI calls return a canned response and do not debit credits. Leave `0` locally; CI sets `1` for the production build | Optional |
 | `NEXT_PUBLIC_CLERK_*`, `CLERK_SECRET_KEY` | Present in `.env.example` only — **unused** by current code | N/A |
 
 Never commit real secrets. Prefer setting provider keys in the profile UI for multi-model AI.
 
 ## Firebase
 
-- Rules: `firestore.rules`
+- Rules: `firestore.rules` (deploy with the Firebase CLI; this repo does not deploy them)
+- Indexes: `firestore.indexes.json` (owner/updatedAt and share/updatedAt). Stats queries fall back to an in-memory sort until these exist
+- Storage rules: `storage.rules` (client read/write denied; uploads go through the Admin SDK)
 - Storage CORS sample: `cors.json`
 - Session cookie name used by the proxy: `__session`
+- Credit packs are fulfilled only by the signed Stripe webhook (`payment_intent.succeeded`) into `users/{uid}/payments/{paymentIntentId}` and `users/{uid}/profile/userData.credits`
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage
+```
 
 ## Scripts
 
@@ -133,7 +141,7 @@ GitHub Actions (`.github/workflows/ci.yml`) on `dev` / `main` and PRs: `npm ci` 
 
 ## Deployment
 
-Deploy as a Next.js app (e.g. Vercel) to [https://docushare.ai](https://docushare.ai). Configure Firebase Admin + client env vars and Stripe as needed. Deploy Firestore rules when they change.
+Deploy as a Next.js app (e.g. Vercel) to [https://docushare.ai](https://docushare.ai). Configure Firebase Admin + client env vars, Stripe, and `STRIPE_WEBHOOK_SECRET`. Point Stripe at `POST /api/stripe/webhook` for `payment_intent.succeeded`. Deploy `firestore.rules`, `firestore.indexes.json`, and `storage.rules` when they change. Do not rely on the client to grant credits.
 
 ## Contributing
 

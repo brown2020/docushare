@@ -1,5 +1,6 @@
 import { Attributes, Extension } from '@tiptap/core'
 import '@tiptap/extension-text-style'
+import { isAllowedFontSize } from '@/lib/fontSize'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -31,9 +32,12 @@ export const FontSize = Extension.create({
         types: this.options.types,
         attributes: {
           fontSize: {
-            parseHTML: element => element.style.fontSize.replace(/['"]+/g, ''),
+            parseHTML: element => {
+              const size = element.style.fontSize.replace(/['"]+/g, '')
+              return isAllowedFontSize(size) && size ? size : null
+            },
             renderHTML: attributes => {
-              if (!attributes.fontSize) {
+              if (!isAllowedFontSize(attributes.fontSize) || !attributes.fontSize) {
                 return {}
               }
 
@@ -51,8 +55,10 @@ export const FontSize = Extension.create({
     return {
       setFontSize:
         (fontSize: string) =>
-        ({ chain }) =>
-          chain().setMark('textStyle', { fontSize }).run(),
+        ({ chain }) => {
+          if (!isAllowedFontSize(fontSize) || !fontSize) return false
+          return chain().setMark('textStyle', { fontSize }).run()
+        },
       unsetFontSize:
         () =>
         ({ chain }) =>

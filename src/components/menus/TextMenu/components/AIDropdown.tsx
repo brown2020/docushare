@@ -13,7 +13,7 @@ interface AIDropdownProps {
   onMakeShorter: () => void;
   onContinue: () => void;
   onImprove: () => void;
-  onCustomAiInput: () => void;
+  onCustomAiInput: (input?: string) => void;
   aiProcessing: boolean;
   aiContent: string;
   onReplaceAiContent: () => void;
@@ -43,13 +43,10 @@ export const AIDropdown = ({
   const [open, setOpen] = useState(false);
   const [aiContinue, setAiContinue] = useState("");
 
-  const handleCustomAiCommand = useCallback(
-    () => () => {
-      onCustomAiInput();
-      setAiContinue("");
-    },
-    [onCustomAiInput]
-  );
+  const handleCustomAiCommand = useCallback(() => {
+    onCustomAiInput(aiContinue);
+    setAiContinue("");
+  }, [onCustomAiInput, aiContinue]);
 
   const performAiCommand =
     (action: () => void) => (event: React.MouseEvent) => {
@@ -59,7 +56,7 @@ export const AIDropdown = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key == "Enter" && aiContinue.trim().length) {
-      handleCustomAiCommand()();
+      handleCustomAiCommand();
     }
   };
 
@@ -175,7 +172,7 @@ export const AIDropdown = ({
                     aria-label="Ask AI" placeholder="Ask AI to edit or generate..."
                   />
                   <Button
-                    onClick={() => performAiCommand(handleCustomAiCommand())}
+                    onClick={performAiCommand(handleCustomAiCommand)}
                     variant="icon"
                     className="ml-2"
                   >

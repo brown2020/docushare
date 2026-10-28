@@ -8,7 +8,6 @@ import {
 
 import { useEffect, useState } from "react";
 import { createPaymentIntent } from "@/actions/paymentActions";
-import convertToSubcurrency from "@/lib/convertToSubcurrency";
 import { ClipLoader } from "react-spinners";
 
 type Props = { amount: number };
@@ -24,7 +23,7 @@ export default function PaymentCheckoutPage({ amount }: Props) {
     let cancelled = false;
     async function initializePayment() {
       try {
-        const secret = await createPaymentIntent(convertToSubcurrency(amount));
+        const secret = await createPaymentIntent();
         if (!cancelled && secret) setClientSecret(secret);
       } catch {
         if (!cancelled) {

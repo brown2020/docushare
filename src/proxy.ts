@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySessionCookie } from "@/lib/auth/session";
 
 const SESSION_COOKIE_NAME = "__session";
+const VERIFY_TIMEOUT_MS = 8_000;
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -26,24 +28,38 @@ function isAuthRoute(pathname: string): boolean {
   );
 }
 
+async function hasValidSession(sessionCookie: string | undefined): Promise<boolean> {
+  if (!sessionCookie) return false;
+  try {
+    const verified = await Promise.race([
+      verifySessionCookie(sessionCookie),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), VERIFY_TIMEOUT_MS);
+      }),
+    ]);
+    return Boolean(verified);
+  } catch {
+    return false;
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const needsSessionCheck =
+    isProtectedRoute(pathname) || (isAuthRoute(pathname) && Boolean(sessionCookie));
+  const sessionValid = needsSessionCheck
+    ? await hasValidSession(sessionCookie)
+    : false;
 
-  // For protected routes, redirect to signin if no session
-  if (isProtectedRoute(pathname)) {
-    if (!sessionCookie) {
-      const signinUrl = new URL("/signin", request.url);
-      signinUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(signinUrl);
-    }
+  if (isProtectedRoute(pathname) && !sessionValid) {
+    const signinUrl = new URL("/signin", request.url);
+    signinUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(signinUrl);
   }
 
-  // For auth routes, redirect to dashboard if already has session
-  if (isAuthRoute(pathname)) {
-    if (sessionCookie) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+  if (isAuthRoute(pathname) && sessionValid) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

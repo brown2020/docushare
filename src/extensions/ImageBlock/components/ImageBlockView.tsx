@@ -59,32 +59,46 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
   };
 
   useEffect(() => {
-    const resolveImageUrl = async () => {
-      try {
-        const _imgUrl = new URL(node.attrs.src);
-        const imageBlockExt = editor.extensionManager.extensions.find(
-          (ext) => ext.name == "imageBlock"
-        );
+    let cancelled = false;
+    const resolve = () => {
+      if (cancelled) return;
+      const src = typeof node.attrs.src === "string" ? node.attrs.src : "";
+      if (!src) {
+        setImageUrl("");
+        return;
+      }
 
-        if (
-          _imgUrl.searchParams.has("image_key") &&
-          imageBlockExt !== undefined &&
-          imageBlockExt.options.imageBaseUrl
-        ) {
-          setImageUrl(
-            encodeURI(
-              `${
-                imageBlockExt.options.imageBaseUrl
-              }?image_key=${_imgUrl.searchParams.get("image_key")}`
-            )
-          );
+      const documentId = editor.view?.dom
+        ?.closest("[data-document-id]")
+        ?.getAttribute("data-document-id");
+
+      try {
+        const parsed = new URL(src, "http://local");
+        const isAppImage =
+          src.startsWith("/api/image") || parsed.pathname.endsWith("/api/image");
+        const imageKey = parsed.searchParams.get("image_key");
+        if (isAppImage && imageKey) {
+          const params = new URLSearchParams({ image_key: imageKey });
+          if (documentId) params.set("documentId", documentId);
+          setImageUrl(`/api/image?${params.toString()}`);
+          return;
         }
       } catch {
-        // Invalid URL, keep default image
+        // Keep the stored src when it is not a URL.
       }
+      setImageUrl(src);
     };
-    resolveImageUrl();
+
+    resolve();
+    const frame = requestAnimationFrame(resolve);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [node.attrs.src, editor]);
+
+  const usePlainImage =
+    imageUrl.startsWith("/api/image") || imageUrl.startsWith("blob:");
 
   // Get numeric width and height values
   const imageWidth = getNumericWidth();
@@ -99,15 +113,25 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
           style={{ position: "relative" }}
           className={`${props.selected ? "selected is-active" : ""}`}
         >
-          <Image
-            className="block"
-            src={imageUrl}
-            alt=""
-            onClick={onClick}
-            width={imageWidth}
-            height={imageHeight}
-            style={{ width: "100%", height: "auto" }}
-          />
+          {usePlainImage ? (
+            <img
+              className="block"
+              src={imageUrl}
+              alt=""
+              onClick={onClick}
+              style={{ width: "100%", height: "auto" }}
+            />
+          ) : (
+            <Image
+              className="block"
+              src={imageUrl}
+              alt=""
+              onClick={onClick}
+              width={imageWidth}
+              height={imageHeight}
+              style={{ width: "100%", height: "auto" }}
+            />
+          )}
           <div
             style={{
               position: "absolute",
