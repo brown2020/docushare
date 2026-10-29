@@ -24,7 +24,7 @@ Important areas:
 - `npm test`: Vitest unit/contract tests.
 - `npm run build`: create the production build and run Next.js type checks.
 - `npm run start`: start the production server after a build.
-- Auth routes: `/signin`, `/signup`, `/forgot-password` (email/password with show/hide eye).
+- Auth routes: `/signin`, `/signup`, `/forgot-password` (Firebase email/password with show/hide eye, and Google).
 
 ## Operating Notes
 

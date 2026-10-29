@@ -54,7 +54,7 @@ git status --short --branch
 python3 .../scripts/start_run.py --root /Users/stephenbrown/Code/OPENSOURCE/docushare --branch dev --mode full
 python3 .../scripts/validate_skill.py --skill-dir .../skills/codebase-improvement --run-dir agent-runs/2026-06-20-codebase-pass
 rg --files
-rg -n "Clerk|clerk|Firebase|firebase|session|auth|Stripe|stripe|OpenAI|Anthropic|Mistral|Google|ai" README.md package.json src
+rg -n "Firebase|firebase|session|auth|Stripe|stripe|OpenAI|Anthropic|Mistral|Google|ai" README.md package.json src
 npm run lint
 npm ci
 npm run lint
@@ -65,14 +65,14 @@ git diff --check
 
 - No local or remote `dev` branch existed at startup; created `dev` from fetched `origin/main` and pushed it to `origin/dev`.
 - The remote URL pointed to the moved repository path `brown2020/sharedocai`; updated origin to `git@github.com:brown2020/docushare.git` after GitHub reported the new location.
-- `README.md` described Clerk authentication, but the current source and package manifest use Firebase Auth, Firebase Admin session cookies, and `src/proxy.ts` cookie checks.
+- `README.md` auth notes were stale, but the current source and package manifest use Firebase Auth (email/password and Google), Firebase Admin session cookies, and `src/proxy.ts` cookie checks.
 - No dedicated test script exists in `package.json`.
 
 ## Changes Made
 
 - Added `AGENTS.md` with repo commands, architecture notes, and safe operating rules.
 - Added `SPEC.md` with current implementation, workflows, validation, and quality-risk notes.
-- Updated `README.md` to describe Firebase Auth and current package manifest versions instead of stale Clerk references.
+- Updated `README.md` to describe Firebase email/password and Google sign-in and current package manifest versions.
 - Updated orchestration plan, run-state ledger, task queue, and this phase report.
 
 ## Verification

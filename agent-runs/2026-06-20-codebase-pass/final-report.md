@@ -18,7 +18,7 @@ Completed and pushed the improvement run. The pass fixed Firestore access-contro
 ## Changes Made
 
 - Added `AGENTS.md`, `SPEC.md`, and run reports under `agent-runs/2026-06-20-codebase-pass/`.
-- Updated README stale Clerk/package notes to current Firebase Auth and package manifest evidence.
+- Updated README stale auth and package notes to current Firebase email/password and Google sign-in and package manifest evidence.
 - Tightened `firestore.rules` for user subcollections and document owner/share metadata.
 - Refactored `src/app/api/image/route.ts` to return explicit responses, validate auth/key/media type, use opaque filenames, and remove local cache writes.
 - Ran safe in-range npm updates and removed deprecated `@types/uuid`.

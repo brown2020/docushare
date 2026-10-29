@@ -8,7 +8,7 @@ DocuShare is a collaborative document authoring application with rich editing, d
 
 - Framework: Next.js 16 App Router with React 19 and TypeScript.
 - Styling: Tailwind CSS 4 plus local UI primitives in `src/components/ui`.
-- Authentication: Firebase Auth on the client, Firebase Admin session cookies on the server, and route redirects in `src/proxy.ts`.
+- Authentication: Firebase email/password and Google sign-in on the client, Firebase Admin session cookies on the server, and route redirects in `src/proxy.ts`.
 - Persistence: Firestore stores documents, user profiles, payment records, and document-sharing metadata. Firebase Storage is used for uploaded images and documents.
 - Editor: Tiptap 3 is configured through `src/extensions/extension-kit.ts`; `src/components/CollaborativeEditor.tsx` loads/saves document content and listens for Firestore updates.
 - AI: `src/app/api/ai/route.ts` selects user-configured provider keys from Firestore and routes requests through AI SDK providers.
@@ -17,7 +17,7 @@ DocuShare is a collaborative document authoring application with rich editing, d
 
 ## Key Workflows
 
-- Sign in/sign up: `src/components/auth/*` uses Firebase Auth through `src/providers/AuthProvider.tsx`, then posts an ID token to `/api/auth/session`.
+- Sign in/sign up: `src/components/auth/*` uses Firebase email/password and Google through `src/providers/AuthProvider.tsx`, then posts an ID token to `/api/auth/session`.
 - Protected navigation: `src/proxy.ts` redirects unauthenticated requests away from dashboard, profile, and payment pages when the `__session` cookie is absent.
 - Document list and stats: `/api/docs` and `/api/docs/stats` read owned and shared documents for the verified session user.
 - Sharing: `/api/share` verifies the session user, looks up the target user by email with Firebase Admin, and updates the document `share` array.
@@ -42,7 +42,6 @@ DocuShare is a collaborative document authoring application with rich editing, d
 
 ## Quality Risks
 
-- README content previously referenced Clerk even though the current source and package manifest use Firebase Auth.
 - Server API routes depend on Firebase Admin credentials being present at runtime.
 - Firestore rules changes should be covered by emulator tests when a rules test harness is added.
 - The editor save/snapshot flow is asynchronous and should be changed only with targeted validation because it touches initialization, remote updates, and local selection restoration.

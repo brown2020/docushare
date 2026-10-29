@@ -10,13 +10,11 @@ Verified from the current codebase:
 - **Rich editor** — TipTap 3 (headings, links, images, underline, align, font family/size, typography, markdown bridge)
 - **Sharing** — share documents with other users by email (`/api/share`)
 - **AI writing assist** — `/api/ai` routes to OpenAI, Anthropic, Google, or Mistral based on API keys stored on the user profile
-- **Auth** — Firebase Auth (sign in/up, forgot password) + HttpOnly session cookies (`/api/auth/session`); route protection via `src/proxy.ts`
+- **Auth** — Firebase email/password and Google sign-in, plus HttpOnly session cookies (`/api/auth/session`); route protection via `src/proxy.ts`
 - **Profile & credits** — store provider keys; Stripe payment attempt/success flows
 - **Uploads** — authenticated `/api/image` for images plus PDF, TXT, MD, CSV, and DOCX (5 MB). Unsupported types return an error. Extracted document text is placed in the editor for AI.
 - **Starter credits** — each new account receives 1,000 credits once from the server. Email verification is not required. Spent credits are not refilled; a Stripe pack adds 10,000 credits.
 - **Theming / UI** — Tailwind CSS 4, local UI primitives, Lucide icons
-
-> Note: `.env.example` still lists Clerk variables. The app does **not** use Clerk; authentication is Firebase-only.
 
 ## Tech stack
 
@@ -71,7 +69,7 @@ cd docushare
 git checkout dev
 npm install
 cp .env.example .env.local
-# fill Firebase + Stripe + optional OPENAI_API_KEY — skip Clerk placeholders
+# fill Firebase + Stripe + optional OPENAI_API_KEY
 npm run dev
 ```
 
@@ -105,7 +103,6 @@ Open [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credits | Stripe product config |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret for `POST /api/stripe/webhook`. If unset, checkout is disabled and the webhook returns 503 so credits are not granted from the client | Stripe Dashboard → Webhooks → signing secret |
 | `IS_UAT` | When `1`, AI calls return a canned response and do not debit credits. Leave `0` locally; CI sets `1` for the production build | Optional |
-| `NEXT_PUBLIC_CLERK_*`, `CLERK_SECRET_KEY` | Present in `.env.example` only — **unused** by current code | N/A |
 
 Never commit real secrets. Prefer setting provider keys in the profile UI for multi-model AI.
 
