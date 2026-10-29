@@ -1,5 +1,10 @@
 import { db, requireFirebaseAdmin } from "@/firebase/firebaseAdminConfig";
 import { STARTER_CREDITS } from "@/lib/billing";
+import {
+  displayedCredits,
+  readCreditField,
+  userProfileDocPath,
+} from "@/lib/billing/creditBalance";
 import { USER_COLLECTION } from "@/lib/constants";
 
 export type StarterGrantInput = {
@@ -30,7 +35,7 @@ export function decideStarterGrant(input: StarterGrantInput): StarterGrantDecisi
 }
 
 function profileRef(uid: string) {
-  return db.collection(USER_COLLECTION).doc(uid).collection("profile").doc("userData");
+  return db.doc(userProfileDocPath(uid));
 }
 
 function markerRef(uid: string) {
@@ -39,10 +44,6 @@ function markerRef(uid: string) {
     .doc(uid)
     .collection("private")
     .doc("starterCredits");
-}
-
-function readCredits(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 type TxSnap = {
@@ -73,7 +74,7 @@ export async function ensureStarterCredits(uid: string): Promise<number> {
       tx.get(marker),
       tx.get(payments),
     ]);
-    const credits = readCredits(profileSnap.data()?.credits);
+    const credits = displayedCredits(readCreditField(profileSnap));
     const hasPayment = Array.isArray(paymentSnap.docs)
       ? paymentSnap.docs.length > 0
       : paymentSnap.empty === false;

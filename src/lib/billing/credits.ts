@@ -1,6 +1,12 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { db, requireFirebaseAdmin } from "@/firebase/firebaseAdminConfig";
 import { CREDIT_PACK_CREDITS } from "@/lib/billing";
+import {
+  displayedCredits,
+  readCreditField,
+  settleCreditCharge,
+  userProfileDocPath,
+} from "@/lib/billing/creditBalance";
 import { USER_COLLECTION } from "@/lib/constants";
 
 export class InsufficientCreditsError extends Error {
@@ -13,11 +19,7 @@ export class InsufficientCreditsError extends Error {
 }
 
 function profileRef(uid: string) {
-  return db.collection(USER_COLLECTION).doc(uid).collection("profile").doc("userData");
-}
-
-function readCredits(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return db.doc(userProfileDocPath(uid));
 }
 
 /** A zero or missing balance cannot pay a positive charge. */
@@ -52,22 +54,21 @@ export async function applyCreditCharge(
   return db.runTransaction(async (tx: CreditTx) => {
     const ref = profileRef(uid);
     const snap = await tx.get(ref);
-    const credits = readCredits(snap.data()?.credits);
-    if (!canAffordCredits(credits, amount)) {
+    const settled = settleCreditCharge(readCreditField(snap), amount, deduct);
+    if (!settled.ok) {
       throw new InsufficientCreditsError();
     }
-    const next = deduct ? credits - amount : credits;
     if (deduct) {
-      tx.set(ref, { credits: next }, { merge: true });
+      tx.set(ref, { credits: settled.next }, { merge: true });
     }
-    return next;
+    return settled.next;
   });
 }
 
 export async function readCreditsBalance(uid: string): Promise<number> {
   requireFirebaseAdmin();
   const snap = await profileRef(uid).get();
-  return readCredits(snap.data()?.credits);
+  return displayedCredits(readCreditField(snap));
 }
 
 /** Subtract credits inside a transaction. A non-positive amount is ignored. */
@@ -83,7 +84,7 @@ export async function refundCredits(uid: string, amount: number): Promise<void> 
   await db.runTransaction(async (tx: CreditTx) => {
     const ref = profileRef(uid);
     const snap = await tx.get(ref);
-    const credits = readCredits(snap.data()?.credits);
+    const credits = displayedCredits(readCreditField(snap));
     tx.set(ref, { credits: credits + amount }, { merge: true });
   });
 }
@@ -105,7 +106,7 @@ export async function grantCreditPack(
     if (existing.exists) return;
 
     const profile = await tx.get(userProfile);
-    const credits = readCredits(profile.data()?.credits);
+    const credits = displayedCredits(readCreditField(profile));
     tx.set(userProfile, { credits: credits + CREDIT_PACK_CREDITS }, { merge: true });
     tx.set(payRef, {
       id: payment.id,

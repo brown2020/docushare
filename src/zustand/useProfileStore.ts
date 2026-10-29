@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { claimStarterCredits } from "@/actions/starterCreditActions";
+import { displayedCredits, userProfileDocPath } from "@/lib/billing/creditBalance";
 import { useAuthStore } from "./useAuthStore";
 import { db } from "@/firebase/firebaseClient";
 
@@ -59,10 +60,6 @@ const CLIENT_PROFILE_FIELDS = [
   "emailVerified",
 ] as const;
 
-function creditsFromProfile(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
 // Merge profile identity fields. Credits and provider keys are server-owned.
 const mergeProfileWithDefaults = (
   profile: Partial<ProfileType>,
@@ -74,7 +71,7 @@ const mergeProfileWithDefaults = (
   displayName: profile.displayName || authState.authDisplayName || "",
   photoUrl: profile.photoUrl || authState.authPhotoUrl || "",
   emailVerified: profile.emailVerified ?? authState.authEmailVerified ?? false,
-  credits: creditsFromProfile(profile.credits),
+  credits: displayedCredits(profile.credits),
 });
 
 const useProfileStore = create<ProfileState>((set, get) => ({
@@ -87,7 +84,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
+      const userRef = doc(db, userProfileDocPath(uid));
       const docSnap = await getDoc(userRef);
 
       let newProfile: ProfileType;
@@ -119,7 +116,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
       }
       await setDoc(userRef, identity, { merge: true });
       const starter = await claimStarterCredits();
-      if (starter) newProfile.credits = starter.credits;
+      if (starter) newProfile.credits = displayedCredits(starter.credits);
       set({ profile: newProfile, creditsLoaded: true });
     } catch (error) {
       console.error("Error fetching or creating profile:", error);
@@ -131,7 +128,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
     if (!uid) return;
 
     try {
-      const userRef = doc(db, `users/${uid}/profile/userData`);
+      const userRef = doc(db, userProfileDocPath(uid));
       const updatedProfile = { ...get().profile, ...newProfile };
       const identity: Record<string, string | boolean> = {};
       for (const field of CLIENT_PROFILE_FIELDS) {

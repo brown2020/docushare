@@ -1,6 +1,7 @@
 import { auth, isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { cookies } from "next/headers";
 import { verifyFirebaseIdToken } from "@/lib/auth/verifyFirebaseIdToken";
+import { firebaseAuthUid } from "@/lib/billing/creditBalance";
 import { acceptsIdTokenSession } from "@/lib/auth/sessionPolicy";
 
 const SESSION_COOKIE_NAME = "__session";
@@ -128,8 +129,11 @@ export async function getAuthenticatedUser(): Promise<{
       return null;
     }
 
+    const uid = firebaseAuthUid(decodedClaims);
+    if (!uid) return null;
+
     return {
-      uid: decodedClaims.uid,
+      uid,
       email: decodedClaims.email as string | undefined,
     };
   } catch {

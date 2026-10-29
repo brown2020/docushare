@@ -194,7 +194,14 @@ export const POST = async (req: NextRequest) => {
         const refund = reserved;
         reserved = 0;
         if (refund > 0) await refundCredits(authUser.uid, refund);
-        return outOfCredits();
+        return NextResponse.json(
+          {
+            status: false,
+            message: AI_KEY_MISSING_MESSAGE,
+            code: RESPONSE_CODE.api_key_not_set,
+          },
+          { status: 400 }
+        );
       }
     } else {
       modelName = modelOfUser.model;

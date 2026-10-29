@@ -174,7 +174,7 @@ export async function generateText(
           // Keep the original failure visible to the user.
         }
       }
-      return failure(OUT_OF_CREDITS_MESSAGE);
+      return failure(AI_KEY_MISSING_MESSAGE);
     }
   } else {
     modelName = modelOfUser.model;

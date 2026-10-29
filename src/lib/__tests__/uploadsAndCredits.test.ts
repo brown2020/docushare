@@ -1,8 +1,17 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { deflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { canAffordCredits } from "@/lib/billing/credits";
 import { estimateAiCharge } from "@/lib/ai/creditCharge";
 import { STARTER_CREDITS } from "@/lib/billing";
+import {
+  displayedCredits,
+  firebaseAuthUid,
+  readCreditField,
+  settleCreditCharge,
+  userProfileDocPath,
+} from "@/lib/billing/creditBalance";
 import { decideStarterGrant } from "@/lib/billing/starterCredits";
 import { isSafeImageKey } from "@/lib/images";
 import { isSafeLinkHref } from "@/lib/links";
@@ -58,6 +67,45 @@ describe("ai credit gate", () => {
     expect(canAffordCredits(0, 1)).toBe(false);
     expect(estimateAiCharge("hello")).toBeGreaterThanOrEqual(1);
     expect(canAffordCredits(estimateAiCharge("hello"), estimateAiCharge("hello"))).toBe(true);
+  });
+
+  it("deducts the charge from the balance the profile displays", () => {
+    const uid = "firebase-uid";
+    const charge = estimateAiCharge("Make this shorter");
+    expect(userProfileDocPath(uid)).toBe(`users/${uid}/profile/userData`);
+    expect(firebaseAuthUid({ uid: "other", sub: uid, user_id: "also" })).toBe(uid);
+    expect(charge).toBeGreaterThan(0);
+    expect(charge).toBeLessThan(990);
+
+    const profile = {
+      get: (field: string) => (field === "credits" ? "990" : undefined),
+      data: () => ({ credits: "990" }),
+    };
+    const raw = readCreditField(profile);
+    expect(displayedCredits(raw)).toBe(990);
+
+    const settled = settleCreditCharge(raw, charge, true);
+    expect(settled).toEqual({ ok: true, balance: 990, next: 990 - charge });
+    const fromNumber = settleCreditCharge(990, charge, true);
+    const fromBigint = settleCreditCharge(BigInt(990), charge, true);
+    expect(fromNumber.ok && fromBigint.ok).toBe(true);
+    if (fromNumber.ok) expect(fromNumber.next).toBe(990 - charge);
+    if (fromBigint.ok) expect(fromBigint.next).toBe(990 - charge);
+
+    expect(settleCreditCharge(0, charge, true)).toEqual({ ok: false, balance: 0 });
+    expect(settleCreditCharge("0", charge, true).ok).toBe(false);
+    expect(canAffordCredits(0, charge)).toBe(false);
+
+    const route = readFileSync(
+      path.resolve(__dirname, "../../app/api/ai/route.ts"),
+      "utf8"
+    );
+    const missingKey = route.slice(route.indexOf("process.env.OPENAI_API_KEY"));
+    const keyReturn = missingKey.slice(0, missingKey.indexOf("modelName ="));
+    expect(keyReturn).toContain("AI_KEY_MISSING_MESSAGE");
+    expect(keyReturn).toContain("status: 400");
+    expect(keyReturn).not.toContain("outOfCredits");
+    expect(route).toContain("status: 402");
   });
 });
 
