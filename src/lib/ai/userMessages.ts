@@ -1,5 +1,5 @@
 export const OUT_OF_CREDITS_MESSAGE =
-  "You are out of credits. Add an AI key in your profile, or buy credits.";
+  "You are out of credits. Buy credits to use AI tools.";
 
 export const AI_UNAVAILABLE_MESSAGE = "AI is temporarily unavailable.";
 

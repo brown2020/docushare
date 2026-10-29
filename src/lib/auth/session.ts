@@ -92,7 +92,9 @@ export async function verifySessionCookie(sessionCookie: string) {
 
   if (adminAuthAvailable()) {
     try {
-      return await auth.verifySessionCookie(sessionCookie, true);
+      // Signature check only. A revocation lookup adds a network round trip on
+      // every protected page and was the long spinner after sign-in.
+      return await auth.verifySessionCookie(sessionCookie, false);
     } catch {
       return null;
     }

@@ -46,6 +46,19 @@ describe("checkout and credits messaging", () => {
     expect(src).toContain("OUT_OF_CREDITS_MESSAGE");
     expect(src).toContain("ok: false");
     expect(src).not.toMatch(/throw error/);
+    const chargeAt = src.indexOf("authorizeAiSpend");
+    const uatAt = src.indexOf("isUatAi()");
+    expect(chargeAt).toBeGreaterThan(-1);
+    expect(uatAt).toBeGreaterThan(chargeAt);
+    const route = readFileSync(path.join(root, "src/app/api/ai/route.ts"), "utf8");
+    expect(route).toContain("status: 402");
+    expect(route.indexOf("authorizeAiSpend")).toBeLessThan(route.indexOf("isUatAi()"));
+    const client = readFileSync(
+      path.join(root, "src/components/menus/TextMenu/hooks/useTextmenuCommands.ts"),
+      "utf8"
+    );
+    expect(client).toContain("response.status === 402");
+    expect(client).toContain("OUT_OF_CREDITS_MESSAGE");
   });
 });
 

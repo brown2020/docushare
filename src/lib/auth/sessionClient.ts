@@ -1,4 +1,4 @@
-const SESSION_TIMEOUT_MS = 12_000;
+const SESSION_TIMEOUT_MS = 8_000;
 
 export type CreateSessionResult = {
   ok: boolean;

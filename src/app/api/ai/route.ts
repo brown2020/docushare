@@ -12,14 +12,18 @@ import {
   AI_MODEL_LLAMA,
   AI_MODEL_MISTRAL,
   DEFAULT_AI_MODEL,
-  COST_POINT_PER_TOKEN,
-  MAX_OUTPUT_TOKEN,
   RESPONSE_CODE,
 } from "@/lib/constants";
 import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
-import { OUT_OF_CREDITS_MESSAGE } from "@/lib/ai/userMessages";
+import { OUT_OF_CREDITS_MESSAGE, AI_KEY_MISSING_MESSAGE } from "@/lib/ai/userMessages";
+import {
+  authorizeAiSpend,
+  chargeForWords,
+  isUatAi,
+  wordCount,
+} from "@/lib/ai/creditCharge";
 import {
   debitCredits,
   InsufficientCreditsError,
@@ -69,8 +73,15 @@ async function getModel(modelName: string, apiKey: string) {
   }
 }
 
-function countTokens(text: string) {
-  return text.split(/\s+/).filter(Boolean).length;
+function outOfCredits() {
+  return NextResponse.json(
+    {
+      status: false,
+      message: OUT_OF_CREDITS_MESSAGE,
+      code: RESPONSE_CODE.insufficient_points,
+    },
+    { status: 402 }
+  );
 }
 
 export const POST = async (req: NextRequest) => {
@@ -148,16 +159,31 @@ export const POST = async (req: NextRequest) => {
       }))
       .exhaustive();
 
+    const spend = await authorizeAiSpend(authUser.uid, messages.prompt);
+    if (!spend.ok) {
+      return outOfCredits();
+    }
+    reserved = spend.charged;
+
+    if (isUatAi()) {
+      return NextResponse.json({
+        response: "This is a test response in UAT mode.",
+      });
+    }
+
     const modelOfUser = await resolveStoredModel(authUser.uid);
     let modelName = DEFAULT_AI_MODEL;
     let apiKey = "";
 
     if (!modelOfUser.status) {
       if (modelOfUser.code !== RESPONSE_CODE.api_key_not_set) {
+        const refund = reserved;
+        reserved = 0;
+        if (refund > 0) await refundCredits(authUser.uid, refund);
         return NextResponse.json(
           {
             status: false,
-            message: "You have not added any credit or AI key.",
+            message: AI_KEY_MISSING_MESSAGE,
             code: modelOfUser.code,
           },
           { status: 400 }
@@ -165,18 +191,11 @@ export const POST = async (req: NextRequest) => {
       }
       apiKey = process.env.OPENAI_API_KEY ?? "";
       if (!apiKey) {
-        return NextResponse.json(
-          {
-            status: false,
-            message: "You have not added any credit or AI key.",
-            code: RESPONSE_CODE.api_key_not_set,
-          },
-          { status: 400 }
-        );
+        const refund = reserved;
+        reserved = 0;
+        if (refund > 0) await refundCredits(authUser.uid, refund);
+        return outOfCredits();
       }
-      reserved =
-        (countTokens(messages.prompt) + MAX_OUTPUT_TOKEN) * COST_POINT_PER_TOKEN;
-      await debitCredits(authUser.uid, reserved);
     } else {
       modelName = modelOfUser.model;
       apiKey = modelOfUser.key;
@@ -193,9 +212,9 @@ export const POST = async (req: NextRequest) => {
     });
 
     if (reserved > 0) {
-      const actual =
-        (countTokens(messages.prompt) + countTokens(text)) * COST_POINT_PER_TOKEN;
+      const actual = chargeForWords(wordCount(messages.prompt) + wordCount(text));
       if (actual < reserved) await refundCredits(authUser.uid, reserved - actual);
+      else if (actual > reserved) await debitCredits(authUser.uid, actual - reserved);
     }
 
     return NextResponse.json({ response: text });
@@ -208,10 +227,7 @@ export const POST = async (req: NextRequest) => {
       }
     }
     if (error instanceof InsufficientCreditsError) {
-      return NextResponse.json(
-        { status: false, message: OUT_OF_CREDITS_MESSAGE, code: RESPONSE_CODE.insufficient_points },
-        { status: 402 }
-      );
+      return outOfCredits();
     }
     if (error instanceof AiRateLimitError) {
       return NextResponse.json({ error: error.message }, { status: 429 });

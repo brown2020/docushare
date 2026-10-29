@@ -45,7 +45,9 @@ interface AuthState {
 
 interface ProfileState {
   profile: ProfileType;
-  fetchProfile: () => void;
+  /** True after a profile read has applied the server credit balance. */
+  creditsLoaded: boolean;
+  fetchProfile: () => Promise<void>;
   updateProfile: (newProfile: Partial<ProfileType>) => Promise<void>;
 }
 
@@ -77,6 +79,7 @@ const mergeProfileWithDefaults = (
 
 const useProfileStore = create<ProfileState>((set, get) => ({
   profile: defaultProfile,
+  creditsLoaded: false,
 
   fetchProfile: async () => {
     const { uid, authEmail, authDisplayName, authPhotoUrl, authEmailVerified } =
@@ -117,7 +120,7 @@ const useProfileStore = create<ProfileState>((set, get) => ({
       await setDoc(userRef, identity, { merge: true });
       const starter = await claimStarterCredits();
       if (starter) newProfile.credits = starter.credits;
-      set({ profile: newProfile });
+      set({ profile: newProfile, creditsLoaded: true });
     } catch (error) {
       console.error("Error fetching or creating profile:", error);
     }

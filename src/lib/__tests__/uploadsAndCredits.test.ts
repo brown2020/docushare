@@ -1,5 +1,7 @@
 import { deflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
+import { canAffordCredits } from "@/lib/billing/credits";
+import { estimateAiCharge } from "@/lib/ai/creditCharge";
 import { STARTER_CREDITS } from "@/lib/billing";
 import { decideStarterGrant } from "@/lib/billing/starterCredits";
 import { isSafeImageKey } from "@/lib/images";
@@ -49,6 +51,15 @@ function zip(entries: { name: string; data: Buffer }[]): Buffer {
   eocd.writeUInt32LE(offset, 16);
   return Buffer.concat([...locals, centralBuf, eocd]);
 }
+
+describe("ai credit gate", () => {
+  it("rejects a zero balance and still prices an empty prompt", () => {
+    expect(canAffordCredits(0, estimateAiCharge(""))).toBe(false);
+    expect(canAffordCredits(0, 1)).toBe(false);
+    expect(estimateAiCharge("hello")).toBeGreaterThanOrEqual(1);
+    expect(canAffordCredits(estimateAiCharge("hello"), estimateAiCharge("hello"))).toBe(true);
+  });
+});
 
 describe("starter credits", () => {
   it("grants 1000 once to an account with no balance and no purchase", () => {

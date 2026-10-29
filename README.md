@@ -102,7 +102,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credits | Stripe product config |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret for `POST /api/stripe/webhook`. If unset, checkout is disabled and the webhook returns 503 so credits are not granted from the client | Stripe Dashboard → Webhooks → signing secret |
-| `IS_UAT` | When `1`, AI calls return a canned response and do not debit credits. Leave `0` locally; CI sets `1` for the production build | Optional |
+| `IS_UAT` | When `1`, AI calls return a canned response and do not debit credits. A zero balance is still rejected. Leave `0` locally; CI sets `1` for the production build | Optional |
 
 Never commit real secrets. Prefer setting provider keys in the profile UI for multi-model AI.
 

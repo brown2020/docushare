@@ -33,7 +33,8 @@ import {
   formatFirebaseAuthErrorForLog,
 } from "@/lib/firebaseAuthErrors";
 
-const AUTH_SETTLE_TIMEOUT_MS = 15_000;
+const AUTH_SETTLE_TIMEOUT_MS = 5_000;
+const ID_TOKEN_TIMEOUT_MS = 5_000;
 const DEFAULT_SESSION_ERROR =
   "We couldn't establish your session. This might be due to a network issue or missing Firebase configuration in your local .env.";
 
@@ -42,7 +43,7 @@ async function establishSession(
 ): Promise<CreateSessionResult> {
   try {
     const idToken = await Promise.race([
-      firebaseUser.getIdToken(true),
+      firebaseUser.getIdToken(),
       new Promise<string>((_, reject) => {
         setTimeout(
           () =>
@@ -51,7 +52,7 @@ async function establishSession(
                 "Timed out fetching Firebase ID token. Check NEXT_PUBLIC_FIREBASE_* in your Mac .env."
               )
             ),
-          12_000
+          ID_TOKEN_TIMEOUT_MS
         );
       }),
     ]);

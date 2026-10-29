@@ -3,7 +3,9 @@ import { useCallback, useState } from 'react'
 import toast from 'react-hot-toast';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import { AIOptions } from '@/interfaces/general';
-import { generateText } from '@/actions/generateEditorActions';
+import { OUT_OF_CREDITS_MESSAGE } from '@/lib/ai/userMessages';
+import { RESPONSE_CODE } from '@/lib/constants';
+import useProfileStore from '@/zustand/useProfileStore';
 
 interface MarkdownEditorStorage {
   markdown: {
@@ -20,22 +22,55 @@ export const useTextmenuCommands = (editor: Editor) => {
   const aiCommand = useCallback( async (option: AIOptions, command = '') => {
     setAiContent("");
 
+    const profileState = useProfileStore.getState();
+    if (profileState.creditsLoaded && profileState.profile.credits <= 0) {
+      toast.error(OUT_OF_CREDITS_MESSAGE);
+      return;
+    }
+
     const slice: Slice = editor.state.selection.content();
     const text:string = (editor.storage as unknown as MarkdownEditorStorage).markdown.serializer.serialize(slice.content);
     
     setAiProcessing(true);
     try {
-      const response = await generateText(text, option, command)
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text, option, command }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        response?: unknown;
+        message?: unknown;
+        error?: unknown;
+        code?: unknown;
+      };
 
-      if (response.ok) {
-        setAiContent(response.text.trim())
-      } else {
-        toast.error(response.message);
+      if (response.status === 402 || data.code === RESPONSE_CODE.insufficient_points) {
+        toast.error(
+          typeof data.message === "string" && data.message.trim()
+            ? data.message
+            : OUT_OF_CREDITS_MESSAGE
+        );
+        return;
       }
-      setAiProcessing(false);
+
+      if (!response.ok || typeof data.response !== "string") {
+        const message =
+          typeof data.message === "string" && data.message.trim()
+            ? data.message
+            : typeof data.error === "string" && data.error.trim()
+              ? data.error
+              : "The AI request failed. Please try again.";
+        toast.error(message);
+        return;
+      }
+
+      setAiContent(data.response.trim());
     } catch {
-      setAiProcessing(false);
       toast.error("The AI request failed. Please try again.");
+    } finally {
+      setAiProcessing(false);
+      void useProfileStore.getState().fetchProfile();
     }
   }, [editor])
 

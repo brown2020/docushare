@@ -108,8 +108,10 @@ const Dashboard = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Show loading while session is being established
-  if (loading) {
+  // Full-screen spinner only while Firebase auth is still unknown.
+  // Once the user is known, render the workspace and finish the session
+  // cookie in the background instead of holding a second spinner.
+  if (loading && !user) {
     return (
       <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
         <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
@@ -159,8 +161,9 @@ const Dashboard = () => {
     );
   }
 
-  // Brief establishing state only; AuthProvider times out into sessionError.
-  if (!sessionReady) {
+  // Auth has not produced a user yet. A known user renders below while the
+  // session cookie finishes, so sign-in does not sit on this spinner.
+  if (!user) {
     return (
       <div className="flex flex-col h-full bg-gray-50 items-center justify-center px-4">
         <LoaderCircle className="w-8 h-8 animate-spin text-blue-600 mb-4" />
