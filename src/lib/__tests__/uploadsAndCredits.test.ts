@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { deflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { canAffordCredits } from "@/lib/billing/credits";
+import { canAffordCredits, isChargeableAmount } from "@/lib/billing/credits";
 import { estimateAiCharge } from "@/lib/ai/creditCharge";
 import { STARTER_CREDITS } from "@/lib/billing";
 import {
@@ -67,6 +67,31 @@ describe("ai credit gate", () => {
     expect(canAffordCredits(0, 1)).toBe(false);
     expect(estimateAiCharge("hello")).toBeGreaterThanOrEqual(1);
     expect(canAffordCredits(estimateAiCharge("hello"), estimateAiCharge("hello"))).toBe(true);
+  });
+
+  it("lets a shown balance pay a short command", () => {
+    const charge = estimateAiCharge("Hi");
+    const improve = estimateAiCharge("The existing text is: Hello world from QA.");
+    expect(charge).toBeGreaterThan(0);
+    expect(improve).toBeLessThan(990);
+    expect(canAffordCredits(1000, charge)).toBe(true);
+    expect(canAffordCredits(990, improve)).toBe(true);
+    expect(settleCreditCharge(1000, charge, true)).toEqual({
+      ok: true,
+      balance: 1000,
+      next: 1000 - charge,
+    });
+    // Infinity is not a finite balance. Using it as the pre-check rejected every charge.
+    expect(canAffordCredits(Number.POSITIVE_INFINITY, charge)).toBe(false);
+    expect(isChargeableAmount(charge)).toBe(true);
+    expect(isChargeableAmount(Number.POSITIVE_INFINITY)).toBe(false);
+    expect(isChargeableAmount(0)).toBe(false);
+
+    const gate = readFileSync(path.resolve(__dirname, "../ai/creditCharge.ts"), "utf8");
+    const credits = readFileSync(path.resolve(__dirname, "../billing/credits.ts"), "utf8");
+    expect(gate).not.toContain("POSITIVE_INFINITY");
+    expect(credits).not.toContain("POSITIVE_INFINITY");
+    expect(gate).toContain("isChargeableAmount");
   });
 
   it("deducts the charge from the balance the profile displays", () => {
