@@ -6,6 +6,7 @@ import { canAffordCredits, isChargeableAmount } from "@/lib/billing/credits";
 import { estimateAiCharge } from "@/lib/ai/creditCharge";
 import { STARTER_CREDITS } from "@/lib/billing";
 import {
+  creditsAvailableLabel,
   displayedCredits,
   firebaseAuthUid,
   readCreditField,
@@ -131,6 +132,31 @@ describe("ai credit gate", () => {
     expect(keyReturn).toContain("status: 400");
     expect(keyReturn).not.toContain("outOfCredits");
     expect(route).toContain("status: 402");
+  });
+});
+
+describe("profile credit label", () => {
+  it("shows a loading state until the balance is read, then the displayed credits", () => {
+    expect(creditsAvailableLabel(false, 0)).toBeNull();
+    expect(creditsAvailableLabel(true, 990)).toBe("Credits Available: 990");
+    expect(creditsAvailableLabel(true, 999.3)).toBe("Credits Available: 999");
+    expect(creditsAvailableLabel(true, 0)).toBe("Credits Available: 0");
+
+    const card = readFileSync(
+      path.resolve(__dirname, "../../components/ProfileCreditComponent.tsx"),
+      "utf8"
+    );
+    const keys = readFileSync(
+      path.resolve(__dirname, "../../components/ProfileComponent.tsx"),
+      "utf8"
+    );
+    for (const src of [card, keys]) {
+      expect(src).toContain("creditsLoaded");
+      expect(src).toContain("creditsAvailableLabel");
+      expect(src).toContain("Loading credits");
+      expect(src).not.toContain("Credits Available: {");
+      expect(src).not.toContain("Credits available: {");
+    }
   });
 });
 

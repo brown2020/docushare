@@ -75,6 +75,16 @@ export function displayedCredits(value: unknown): number {
   return Math.round(n);
 }
 
+/**
+ * Profile credit line. Null until a read has applied the balance, so the
+ * default of 0 is not shown as "Credits Available: 0".
+ */
+export function creditsAvailableLabel(loaded: boolean, credits: number): string | null {
+  if (!loaded) return null;
+  const shown = Number.isFinite(credits) ? Math.round(credits) : 0;
+  return `Credits Available: ${shown}`;
+}
+
 type CreditSnapshot = {
   get?: (field: string) => unknown;
   data?: () => Record<string, unknown> | undefined | null;

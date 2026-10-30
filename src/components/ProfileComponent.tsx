@@ -2,6 +2,8 @@
 
 import { getApiKeyStatus, saveApiKeys } from "@/actions/apiKeyActions";
 import { API_KEY_FIELDS, type ApiKeyField } from "@/lib/ai/apiKeyFields";
+import { creditsAvailableLabel } from "@/lib/billing/creditBalance";
+import { LoadingState } from "@/components/ui/LoadingState";
 import useProfileStore from "@/zustand/useProfileStore";
 import { useEffect, useState } from "react";
 
@@ -15,6 +17,8 @@ const FIELD_LABELS: Record<ApiKeyField, string> = {
 
 export default function ProfileComponent() {
   const credits = useProfileStore((state) => state.profile.credits);
+  const creditsLoaded = useProfileStore((state) => state.creditsLoaded);
+  const creditsLabel = creditsAvailableLabel(creditsLoaded, credits);
   const [drafts, setDrafts] = useState<Record<ApiKeyField, string>>({
     openai_api_key: "",
     anthropic_api_key: "",
@@ -72,8 +76,14 @@ export default function ProfileComponent() {
 
   return (
     <div className="flex flex-col p-5 border rounded-[10px] shadow-[rgba(50,_50,_105,_0.15)_0px_2px_5px_0px,_rgba(0,_0,_0,_0.05)_0px_1px_1px_0px]">
-      <div className="mb-4 text-sm text-neutral-600">
-        Credits available: {Math.round(credits)}
+      <div className="mb-4 text-sm text-neutral-600" aria-live="polite" aria-busy={!creditsLoaded}>
+        {creditsLabel ?? (
+          <LoadingState
+            size="sm"
+            text="Loading credits"
+            className="flex-row justify-start gap-2 py-0"
+          />
+        )}
       </div>
       <div className="flex flex-col gap-5">
         {API_KEY_FIELDS.map((field) => (
