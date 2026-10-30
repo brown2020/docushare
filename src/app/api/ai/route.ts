@@ -169,6 +169,7 @@ export const POST = async (req: NextRequest) => {
           detail = {
             amount: spend.amount,
             words: wordCount(messages.prompt),
+            charge: spend.detail ?? null,
             ...(await inspectCreditDocument(authUser.uid)),
           };
         } catch (error) {

@@ -12,10 +12,12 @@ import { USER_COLLECTION } from "@/lib/constants";
 
 export class InsufficientCreditsError extends Error {
   readonly code = "insufficient_points";
+  readonly detail?: Record<string, unknown>;
 
-  constructor() {
+  constructor(detail?: Record<string, unknown>) {
     super("You don't have enough points to run this command.");
     this.name = "InsufficientCreditsError";
+    this.detail = detail;
   }
 }
 
@@ -33,8 +35,15 @@ export function canAffordCredits(balance: number, amount: number): boolean {
   );
 }
 
+type CreditSnap = {
+  exists?: boolean;
+  constructor?: { name?: string };
+  get?: (field: string) => unknown;
+  data?: () => Record<string, unknown> | undefined;
+};
+
 type CreditTx = {
-  get: (ref: unknown) => Promise<{ exists: boolean; data: () => Record<string, unknown> | undefined }>;
+  get: (ref: unknown) => Promise<CreditSnap>;
   set: (ref: unknown, data: unknown, options?: { merge?: boolean }) => void;
 };
 
@@ -57,7 +66,22 @@ export async function applyCreditCharge(
     const snap = await tx.get(ref);
     const settled = settleCreditCharge(readCreditField(snap), amount, deduct);
     if (!settled.ok) {
-      throw new InsufficientCreditsError();
+      let fromGet: unknown;
+      try {
+        fromGet = typeof snap.get === "function" ? snap.get("credits") : "no-get";
+      } catch (error) {
+        fromGet = error instanceof Error ? `throw:${error.message}` : "throw";
+      }
+      const data = typeof snap.data === "function" ? snap.data() : undefined;
+      throw new InsufficientCreditsError({
+        txExists: snap.exists === true,
+        txExistsType: typeof snap.exists,
+        txBalance: settled.balance,
+        txGet: creditPreview(fromGet),
+        txData: creditPreview(data && typeof data === "object" ? data.credits : undefined),
+        txKeys: data && typeof data === "object" ? Object.keys(data).slice(0, 12) : [],
+        snapName: snap.constructor?.name ?? typeof snap,
+      });
     }
     if (deduct) {
       tx.set(ref, { credits: settled.next }, { merge: true });
