@@ -26,6 +26,7 @@ import {
 } from "@/lib/ai/creditCharge";
 import {
   debitCredits,
+  inspectCreditDocument,
   InsufficientCreditsError,
   refundCredits,
 } from "@/lib/billing/credits";
@@ -73,12 +74,13 @@ async function getModel(modelName: string, apiKey: string) {
   }
 }
 
-function outOfCredits() {
+function outOfCredits(detail?: Record<string, unknown>) {
   return NextResponse.json(
     {
       status: false,
       message: OUT_OF_CREDITS_MESSAGE,
       code: RESPONSE_CODE.insufficient_points,
+      ...(detail ? { detail } : {}),
     },
     { status: 402 }
   );
@@ -161,7 +163,22 @@ export const POST = async (req: NextRequest) => {
 
     const spend = await authorizeAiSpend(authUser.uid, messages.prompt);
     if (!spend.ok) {
-      return outOfCredits();
+      let detail: Record<string, unknown> | undefined;
+      if (req.headers.get("x-credit-debug") === "1") {
+        try {
+          detail = {
+            amount: spend.amount,
+            words: wordCount(messages.prompt),
+            ...(await inspectCreditDocument(authUser.uid)),
+          };
+        } catch (error) {
+          detail = {
+            amount: spend.amount,
+            inspect: error instanceof Error ? error.message : "inspect_failed",
+          };
+        }
+      }
+      return outOfCredits(detail);
     }
     reserved = spend.charged;
 

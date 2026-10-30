@@ -29,7 +29,7 @@ export function isUatAi(): boolean {
 
 export type AiSpend =
   | { ok: true; charged: number }
-  | { ok: false; message: string };
+  | { ok: false; message: string; amount: number };
 
 /**
  * Atomically require a positive balance before any AI result.
@@ -39,7 +39,7 @@ export type AiSpend =
 export async function authorizeAiSpend(uid: string, prompt: string): Promise<AiSpend> {
   const amount = estimateAiCharge(prompt);
   if (!canAffordCredits(Number.POSITIVE_INFINITY, amount)) {
-    return { ok: false, message: OUT_OF_CREDITS_MESSAGE };
+    return { ok: false, message: OUT_OF_CREDITS_MESSAGE, amount };
   }
   try {
     const deduct = !isUatAi();
@@ -47,7 +47,7 @@ export async function authorizeAiSpend(uid: string, prompt: string): Promise<AiS
     return { ok: true, charged: deduct ? amount : 0 };
   } catch (error) {
     if (error instanceof InsufficientCreditsError) {
-      return { ok: false, message: OUT_OF_CREDITS_MESSAGE };
+      return { ok: false, message: OUT_OF_CREDITS_MESSAGE, amount };
     }
     throw error;
   }
