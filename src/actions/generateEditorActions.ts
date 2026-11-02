@@ -23,6 +23,7 @@ import {
   refundCredits,
 } from "@/lib/billing/credits";
 import { isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
+import { IMPROVE_SYSTEM_PROMPT, improveUserPrompt } from "@/lib/ai/prompts";
 
 export type GenerateTextResult =
   | { ok: true; text: string }
@@ -44,11 +45,8 @@ const aiCommandPrompts: Record<
     userPrompt: text,
   }),
   improve: (text: string) => ({
-    systemPrompt:
-      "You are an AI writing assistant that improves existing text. " +
-      "Limit your response to no more than 200 characters, but make sure to construct complete sentences." +
-      "Use Markdown formatting when appropriate.",
-    userPrompt: `The existing text is: ${text}`,
+    systemPrompt: IMPROVE_SYSTEM_PROMPT,
+    userPrompt: improveUserPrompt(text),
   }),
   shorter: (text: string) => ({
     systemPrompt:

@@ -18,6 +18,7 @@ import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
 import { OUT_OF_CREDITS_MESSAGE, AI_KEY_MISSING_MESSAGE } from "@/lib/ai/userMessages";
+import { IMPROVE_SYSTEM_PROMPT, improveUserPrompt } from "@/lib/ai/prompts";
 import {
   authorizeAiSpend,
   chargeForWords,
@@ -119,11 +120,8 @@ export const POST = async (req: NextRequest) => {
         prompt,
       }))
       .with("improve", () => ({
-        system:
-          "You are an AI writing assistant that improves existing text. " +
-          "Limit your response to no more than 200 characters, but make sure to construct complete sentences." +
-          "Use Markdown formatting when appropriate.",
-        prompt: `The existing text is: ${prompt}`,
+        system: IMPROVE_SYSTEM_PROMPT,
+        prompt: improveUserPrompt(prompt),
       }))
       .with("shorter", () => ({
         system:
@@ -212,7 +210,7 @@ export const POST = async (req: NextRequest) => {
     const { text } = await generateText({
       model: aiModel,
       ...messages,
-      temperature: 0.7,
+      temperature: option === "improve" ? 0 : 0.7,
       topP: 1,
       frequencyPenalty: 0,
       presencePenalty: 0,

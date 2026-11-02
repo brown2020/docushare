@@ -5,6 +5,7 @@ import { isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { DOCUMENT_COLLECTION } from "@/lib/constants";
 import { canReadDocument } from "@/lib/documents/access";
+import { planShareWrite } from "@/lib/documents/share";
 import { isDocumentId } from "@/lib/images";
 
 export const POST = async (req: NextRequest) => {
@@ -21,62 +22,60 @@ export const POST = async (req: NextRequest) => {
     const userId = authUser.uid;
 
     const body = await req.json();
-    const email = body.email as string;
-    const documentId = body.documentId as string;
-    if (!documentId || !isDocumentId(documentId)) {
-      return NextResponse.json({
-        status: false,
-        message: "Document ID is required.",
-      });
-    }
-    if (!email) {
-      return NextResponse.json({
-        status: false,
-        message: "Email address is required.",
-      });
+    const rawEmail = typeof body?.email === "string" ? body.email : "";
+    const documentId = body?.documentId;
+
+    let targetUid: string | null = null;
+    const emailForLookup = rawEmail.trim().toLowerCase();
+    if (emailForLookup.includes("@")) {
+      try {
+        const targetUser = await auth.getUserByEmail(emailForLookup);
+        targetUid = typeof targetUser?.uid === "string" ? targetUser.uid : null;
+      } catch (error) {
+        const code =
+          error && typeof error === "object" && "code" in error
+            ? String((error as { code?: unknown }).code)
+            : "";
+        if (code !== "auth/user-not-found") {
+          console.warn(
+            "[share] lookup_failed",
+            error instanceof Error ? error.message : "unknown"
+          );
+          return NextResponse.json(
+            { error: "Failed to share document" },
+            { status: 500 }
+          );
+        }
+      }
     }
 
-    // Look up user by email in Firebase Auth
-    let targetUser;
-    try {
-      targetUser = await auth.getUserByEmail(email);
-    } catch {
-      return NextResponse.json({ status: false, message: "User not found." });
+    let documentExists = false;
+    let owner: unknown;
+    if (typeof documentId === "string" && isDocumentId(documentId)) {
+      const existing = await db.collection(DOCUMENT_COLLECTION).doc(documentId).get();
+      documentExists = existing.exists;
+      owner = existing.data()?.owner;
     }
 
-    if (targetUser.uid === userId) {
-      return NextResponse.json({
-        status: false,
-        message: "Cannot share with yourself.",
-      });
+    const plan = planShareWrite({
+      callerUid: userId,
+      documentId,
+      email: rawEmail,
+      targetUid,
+      documentExists,
+      owner,
+    });
+    if (!plan.ok) {
+      return NextResponse.json({ error: plan.error }, { status: plan.status });
     }
 
-    // Fetch the document to update
-    const docRef = db.collection(DOCUMENT_COLLECTION).doc(documentId);
-    const docSnapshot = await docRef.get();
-    if (!docSnapshot.exists) {
-      return NextResponse.json({
-        status: false,
-        message: "Document not found.",
-      });
-    }
-
-    const docData = docSnapshot.data();
-    if (docData?.owner !== userId) {
-      return NextResponse.json({
-        status: false,
-        message: "Only the document owner can share.",
-      });
-    }
-
-    // Update the document with the target user's UID
-    await docRef.update({
-      share: FieldValue.arrayUnion(targetUser.uid),
+    await db.collection(DOCUMENT_COLLECTION).doc(plan.documentId).update({
+      share: FieldValue.arrayUnion(plan.targetUid),
     });
 
-    return NextResponse.json({ status: true });
+    return NextResponse.json({ status: true, email: plan.email });
   } catch (error) {
-    void error;
+    console.warn("[share] write_failed", error instanceof Error ? error.message : "unknown");
     return NextResponse.json(
       { error: "Failed to share document" },
       { status: 500 }

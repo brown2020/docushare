@@ -22,6 +22,7 @@ import {
   formatFirebaseErrorForToast,
 } from "@/lib/firebaseErrorCode";
 import toast from "react-hot-toast";
+import { readShareResult } from "@/lib/documents/share";
 
 interface DocumentSchema {
   id: string;
@@ -214,26 +215,24 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
     try {
       const response = await fetch("/api/share", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           documentId: shareDocument,
-          email,
+          email: email.trim(),
         }),
       });
-      if (!response.ok) {
-        toast.error("Failed to share document.");
+      const data = await response.json().catch(() => ({}));
+      const result = readShareResult(response.ok, data);
+      if (!result.ok) {
+        toast.error(result.message);
         return;
       }
-      const data = await response.json();
-      if (data.error) {
-        toast.error(data.error);
-      } else {
-        toast.success("Document shared successfully!");
-        setShareDocument(null);
-        setRefreshCode((prev) => prev + 1);
-      }
+      toast.success("Document shared successfully!");
+      setShareDocument(null);
+      setRefreshCode((prev) => prev + 1);
     } catch (error) {
       console.warn("[docs] share_failed", formatFirebaseErrorForLog(error));
       toast.error(

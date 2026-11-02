@@ -79,6 +79,14 @@ export default function ShareDocument({
         </div>
 
         <div className="p-6">
+          <form
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (!processing && email.trim()) handleShareDocument(email);
+            }}
+          >
           <div className="mb-4">
             <div className="flex items-center space-x-2 p-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
               <Mail className="text-gray-400" size={18} />
@@ -125,6 +133,7 @@ export default function ShareDocument({
 
           <div className="flex gap-3">
             <button
+              type="button"
               disabled={processing}
               onClick={() => !processing && setShareDocument(null)}
               className="flex-1 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors font-medium disabled:opacity-50"
@@ -132,8 +141,8 @@ export default function ShareDocument({
               Cancel
             </button>
             <button
+              type="submit"
               disabled={processing || !email.trim()}
-              onClick={() => handleShareDocument(email)}
               className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium disabled:opacity-50 flex items-center justify-center"
             >
               {processing ? (
@@ -146,6 +155,7 @@ export default function ShareDocument({
               )}
             </button>
           </div>
+          </form>
         </div>
       </PopupModel>
     </div>
