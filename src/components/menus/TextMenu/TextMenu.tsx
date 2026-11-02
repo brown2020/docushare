@@ -55,7 +55,7 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       </Toolbar.Button>
       <Toolbar.Divider />
       <Toolbar.Button tooltip="Bold" tooltipShortcut={SHORTCUT_BOLD} onClick={commands.onBold} active={states.isBold}>
-        <Icon name="Bold" />
+        <Icon name="LetterB" />
       </Toolbar.Button>
       <Toolbar.Button
         tooltip="Italic"
