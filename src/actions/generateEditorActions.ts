@@ -24,6 +24,7 @@ import {
 } from "@/lib/billing/credits";
 import { isFirebaseAdminReady } from "@/firebase/firebaseAdminConfig";
 import { IMPROVE_SYSTEM_PROMPT, improveUserPrompt } from "@/lib/ai/prompts";
+import { after } from "next/server";
 
 export type GenerateTextResult =
   | { ok: true; text: string }
@@ -99,10 +100,12 @@ export async function generateText(
     if (error instanceof AiRateLimitError) {
       return failure(AI_RATE_LIMIT_MESSAGE);
     }
-    console.warn(
-      "[ai] rate_limit_failed",
-      error instanceof Error ? error.message : "unknown"
-    );
+    after(() => {
+      console.warn(
+        "[ai] rate_limit_failed",
+        error instanceof Error ? error.message : "unknown"
+      );
+    });
     return failure(AI_UNAVAILABLE_MESSAGE);
   }
 
@@ -116,10 +119,12 @@ export async function generateText(
   try {
     spend = await authorizeAiSpend(authUser.uid, userPrompt);
   } catch (error) {
-    console.warn(
-      "[ai] debit_failed",
-      error instanceof Error ? error.message : "unknown"
-    );
+    after(() => {
+      console.warn(
+        "[ai] debit_failed",
+        error instanceof Error ? error.message : "unknown"
+      );
+    });
     return failure(AI_UNAVAILABLE_MESSAGE);
   }
   if (!spend.ok) {
@@ -141,10 +146,12 @@ export async function generateText(
         // Keep the original failure visible to the user.
       }
     }
-    console.warn(
-      "[ai] model_lookup_failed",
-      error instanceof Error ? error.message : "unknown"
-    );
+    after(() => {
+      console.warn(
+        "[ai] model_lookup_failed",
+        error instanceof Error ? error.message : "unknown"
+      );
+    });
     return failure(AI_UNAVAILABLE_MESSAGE);
   }
 
@@ -206,10 +213,12 @@ export async function generateText(
     if (error instanceof InsufficientCreditsError) {
       return failure(OUT_OF_CREDITS_MESSAGE);
     }
-    console.warn(
-      "[ai] generate_failed",
-      error instanceof Error ? error.message : "unknown"
-    );
+    after(() => {
+      console.warn(
+        "[ai] generate_failed",
+        error instanceof Error ? error.message : "unknown"
+      );
+    });
     return failure(AI_FAILED_MESSAGE);
   }
 }

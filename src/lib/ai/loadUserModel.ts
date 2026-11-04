@@ -30,8 +30,10 @@ export async function loadUserKeyBag(uid: string): Promise<KeyBag> {
     set: (ref: unknown, data: unknown, options?: { merge?: boolean }) => void;
     update: (ref: unknown, data: Record<string, unknown>) => void;
   }) => {
-    const profileSnap = await tx.get(profile);
-    const secretSnap = await tx.get(secrets);
+    const [profileSnap, secretSnap] = await Promise.all([
+      tx.get(profile),
+      tx.get(secrets),
+    ]);
     const profileData = profileSnap.data() ?? {};
     const secretData = secretSnap.data() ?? {};
     const merged: KeyBag = {};

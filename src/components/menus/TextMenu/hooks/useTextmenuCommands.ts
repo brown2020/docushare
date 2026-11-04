@@ -38,30 +38,39 @@ export const useTextmenuCommands = (editor: Editor) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: text, option, command }),
       });
-      const data = (await response.json().catch(() => ({}))) as {
+      type AiBody = {
         response?: unknown;
         message?: unknown;
         error?: unknown;
         code?: unknown;
       };
+      const errorMessage = (data: {
+        message?: unknown;
+        error?: unknown;
+      }) =>
+        typeof data.message === "string" && data.message.trim()
+          ? data.message
+          : typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : "The AI request failed. Please try again.";
 
-      if (response.status === 402 || data.code === RESPONSE_CODE.insufficient_points) {
-        toast.error(
-          typeof data.message === "string" && data.message.trim()
-            ? data.message
-            : OUT_OF_CREDITS_MESSAGE
-        );
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as AiBody;
+        if (response.status === 402 || data.code === RESPONSE_CODE.insufficient_points) {
+          toast.error(
+            typeof data.message === "string" && data.message.trim()
+              ? data.message
+              : OUT_OF_CREDITS_MESSAGE
+          );
+          return;
+        }
+        toast.error(errorMessage(data));
         return;
       }
 
-      if (!response.ok || typeof data.response !== "string") {
-        const message =
-          typeof data.message === "string" && data.message.trim()
-            ? data.message
-            : typeof data.error === "string" && data.error.trim()
-              ? data.error
-              : "The AI request failed. Please try again.";
-        toast.error(message);
+      const data = (await response.json().catch(() => ({}))) as AiBody;
+      if (typeof data.response !== "string") {
+        toast.error(errorMessage(data));
         return;
       }
 

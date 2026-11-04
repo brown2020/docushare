@@ -23,7 +23,7 @@ Verified from the current codebase:
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind CSS 4, Radix, Lucide, Floating UI |
 | Editor | TipTap 3 (+ collaboration extensions / Yjs-related packages in deps) |
-| Language | TypeScript 7 (`tsc` via `@typescript/native`). ESLint still imports the TypeScript 6 API from `@typescript/typescript6` because TypeScript 7.0 does not ship a programmatic API |
+| Language | TypeScript 6.0.3. TypeScript 7 is not used: it does not ship a compiler API, which ESLint and Next.js need |
 | AI | Vercel AI SDK 7 + `@ai-sdk/openai`, `anthropic`, `google`, `mistral`; `openai` SDK |
 | Backend | Firebase 13 + firebase-admin 14 |
 | Payments | Stripe |
@@ -136,7 +136,7 @@ firebase deploy --only firestore:rules,firestore:indexes,storage
 
 Vitest covers editor content helpers, Firebase auth errors, and route security.
 
-GitHub Actions (`.github/workflows/ci.yml`) on `dev` / `main` and PRs: `npm ci` → lint → typecheck → test → build with `IS_UAT=1` and `NEXT_PUBLIC_*` Firebase/base URL secrets. Node 24. `npm run typecheck` runs TypeScript 7.0. Lint resolves the `typescript` package to `@typescript/typescript6`.
+GitHub Actions (`.github/workflows/ci.yml`) on `dev` / `main` and PRs: `npm ci` → lint → typecheck → test → build. `IS_UAT=1` is set for the job. `NEXT_PUBLIC_*` Firebase and base URL secrets are passed only to test and build, not to `npm ci`. Node 24. `npm run typecheck` runs TypeScript 6.0.3.
 
 ## Deployment
 

@@ -38,18 +38,28 @@ export class API {
         body
       });
 
-      const json = await response.json().catch(() => ({} as Record<string, unknown>));
+      const failureMessage = (json: Record<string, unknown>) =>
+        typeof json.message === "string"
+          ? json.message
+          : typeof json.error === "string"
+            ? json.error
+            : "Upload failed.";
+
+      if (!response.ok) {
+        const json = (await response.json().catch(
+          () => ({}) as Record<string, unknown>
+        )) as Record<string, unknown>;
+        return { status: false as const, message: failureMessage(json) };
+      }
+
+      const json = (await response.json().catch(
+        () => ({}) as Record<string, unknown>
+      )) as Record<string, unknown>;
       const data = json.data as
         | { url?: string; kind?: string; name?: string; text?: string }
         | undefined;
-      if (!response.ok || json.status !== true || typeof data?.url !== "string") {
-        const message =
-          typeof json.message === "string"
-            ? json.message
-            : typeof json.error === "string"
-              ? json.error
-              : "Upload failed.";
-        return { status: false as const, message };
+      if (json.status !== true || typeof data?.url !== "string") {
+        return { status: false as const, message: failureMessage(json) };
       }
 
       return {

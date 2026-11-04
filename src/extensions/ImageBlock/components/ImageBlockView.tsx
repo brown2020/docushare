@@ -114,23 +114,35 @@ const ImageBlockView: React.FC<NodeViewProps> = (props) => {
           className={`${props.selected ? "selected is-active" : ""}`}
         >
           {usePlainImage ? (
-            <img
-              className="block"
-              src={imageUrl}
-              alt=""
+            <button
+              type="button"
+              aria-label="Select image"
               onClick={onClick}
-              style={{ width: "100%", height: "auto" }}
-            />
+              className="block w-full cursor-default border-0 bg-transparent p-0"
+            >
+              <img
+                className="block"
+                src={imageUrl}
+                alt=""
+                style={{ width: "100%", height: "auto" }}
+              />
+            </button>
           ) : (
-            <Image
-              className="block"
-              src={imageUrl}
-              alt=""
+            <button
+              type="button"
+              aria-label="Select image"
               onClick={onClick}
-              width={imageWidth}
-              height={imageHeight}
-              style={{ width: "100%", height: "auto" }}
-            />
+              className="block w-full cursor-default border-0 bg-transparent p-0"
+            >
+              <Image
+                className="block"
+                src={imageUrl}
+                alt=""
+                width={imageWidth}
+                height={imageHeight}
+                style={{ width: "100%", height: "auto" }}
+              />
+            </button>
           )}
           <div
             style={{
