@@ -5,6 +5,9 @@ export const AI_UNAVAILABLE_MESSAGE = "AI is temporarily unavailable.";
 
 export const AI_FAILED_MESSAGE = "The AI request failed. Please try again.";
 
+export const AI_TIMEOUT_MESSAGE =
+  "The AI model took too long to respond. Please try again with a shorter selection.";
+
 export const AI_RATE_LIMIT_MESSAGE =
   "Too many AI requests. Please try again in a minute.";
 

@@ -27,7 +27,8 @@ export const DEFAULT_AI_MODEL: AiModelId = AI_MODEL_GPT;
 export const RESPONSE_CODE = {
   api_key_not_found: "api_key_not_found",
   api_key_not_set: "api_key_not_set",
-  insufficient_points: "insufficient_points"
+  insufficient_points: "insufficient_points",
+  ai_timeout: "ai_timeout",
 }
 
 export const userColors = ['#fb7185', '#fdba74', '#d9f99d', '#a7f3d0', '#a5f3fc', '#a5b4fc', '#f0abfc']

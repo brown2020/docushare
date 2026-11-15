@@ -136,6 +136,7 @@ describe("improve writing prompt", () => {
     expect(route).toContain("IMPROVE_SYSTEM_PROMPT");
     expect(route).toContain('option === "improve" ? 0');
     expect(route).not.toContain("This sentence needs to be fixed");
-    expect(route).toContain("callSettingsFor(modelName");
+    expect(route).toContain("generateChatText({");
+    expect(route).toContain("modelId: modelName");
   });
 });

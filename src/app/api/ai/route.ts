@@ -1,13 +1,17 @@
-import { generateText } from "ai";
 import { match } from "ts-pattern";
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_AI_MODEL, RESPONSE_CODE } from "@/lib/constants";
-import { callSettingsFor } from "@/lib/ai/providerModels";
 import { createChatModel } from "@/lib/ai/languageModel";
+import { generateChatText } from "@/lib/ai/generateChatText";
+import { aiDeadlineSignal, isAiTimeout } from "@/lib/ai/deadline";
 import { resolvePlatformModel } from "@/lib/ai/platformKeys";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
-import { OUT_OF_CREDITS_MESSAGE, AI_KEY_MISSING_MESSAGE } from "@/lib/ai/userMessages";
+import {
+  OUT_OF_CREDITS_MESSAGE,
+  AI_KEY_MISSING_MESSAGE,
+  AI_TIMEOUT_MESSAGE,
+} from "@/lib/ai/userMessages";
 import { IMPROVE_SYSTEM_PROMPT, improveUserPrompt } from "@/lib/ai/prompts";
 import {
   authorizeAiSpend,
@@ -25,6 +29,9 @@ import {
   isFirebaseAdminReady,
 } from "@/firebase/firebaseAdminConfig";
 import { getAuthenticatedUser } from "@/lib/auth/session";
+
+// Must stay a literal for Next.js; keep equal to AI_MAX_DURATION_SECONDS.
+export const maxDuration = 60;
 
 const AI_OPTIONS = [
   "continue",
@@ -54,6 +61,7 @@ function outOfCredits() {
 }
 
 export const POST = async (req: NextRequest) => {
+  const startedAt = Date.now();
   if (!isFirebaseAdminReady()) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   }
@@ -64,6 +72,7 @@ export const POST = async (req: NextRequest) => {
   }
 
   let reserved = 0;
+  let deadline: AbortSignal | undefined;
   try {
     await assertAiRateLimit(authUser.uid);
 
@@ -176,16 +185,20 @@ export const POST = async (req: NextRequest) => {
       apiKey = modelOfUser.key;
     }
 
-    const { text } = await generateText({
+    deadline = aiDeadlineSignal(startedAt);
+    const text = await generateChatText({
       model: createChatModel(modelName, apiKey),
+      modelId: modelName,
       ...messages,
-      ...callSettingsFor(modelName, {
+      settings: {
         temperature: option === "improve" ? 0 : 0.7,
         topP: 1,
         frequencyPenalty: 0,
         presencePenalty: 0,
-      }),
+      },
+      abortSignal: deadline,
     });
+    deadline = undefined;
 
     if (reserved > 0) {
       const actual = chargeForWords(wordCount(messages.prompt) + wordCount(text));
@@ -207,6 +220,12 @@ export const POST = async (req: NextRequest) => {
     }
     if (error instanceof AiRateLimitError) {
       return NextResponse.json({ error: error.message }, { status: 429 });
+    }
+    if (isAiTimeout(error, deadline)) {
+      return NextResponse.json(
+        { error: AI_TIMEOUT_MESSAGE, code: RESPONSE_CODE.ai_timeout },
+        { status: 504 }
+      );
     }
     if (error instanceof FirebaseAdminNotConfiguredError) {
       return NextResponse.json({ error: "Service unavailable" }, { status: 503 });

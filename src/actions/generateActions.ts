@@ -1,9 +1,9 @@
 "use server";
 
-import { generateText } from "ai";
 import { isAiModelId } from "@/lib/constants";
-import { callSettingsFor } from "@/lib/ai/providerModels";
 import { createChatModel } from "@/lib/ai/languageModel";
+import { generateChatText } from "@/lib/ai/generateChatText";
+import { aiDeadlineSignal } from "@/lib/ai/deadline";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 
 export async function generateResponse(
@@ -12,6 +12,7 @@ export async function generateResponse(
   modelName: string,
   apiKey: string
 ) {
+  const startedAt = Date.now();
   const authUser = await getAuthenticatedUser();
   if (!authUser) {
     throw new Error("User is not signed in.");
@@ -27,16 +28,17 @@ export async function generateResponse(
     return "This is a test response in UAT mode.";
   }
 
-  const { text } = await generateText({
+  return generateChatText({
     model: createChatModel(modelName, apiKey),
+    modelId: modelName,
     system: systemPrompt,
     prompt: userPrompt,
-    ...callSettingsFor(modelName, {
+    settings: {
       temperature: 0.7,
       topP: 1,
       frequencyPenalty: 0,
       presencePenalty: 0,
-    }),
+    },
+    abortSignal: aiDeadlineSignal(startedAt),
   });
-  return text;
 }

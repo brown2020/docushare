@@ -1,3 +1,4 @@
+import type { JSONValue } from "ai";
 import type { ApiKeyField } from "@/lib/ai/apiKeyFields";
 import {
   AI_MODEL_CLAUDE,
@@ -28,6 +29,7 @@ export interface ChatModelSpec {
   keyField: ApiKeyField;
   /** Call settings the provider API rejects for this model. */
   rejectedSettings: readonly CallSettingName[];
+  providerOptions?: Readonly<Record<string, Readonly<Record<string, JSONValue>>>>;
 }
 
 export const CHAT_MODELS: Record<AiModelId, ChatModelSpec> = {
@@ -65,6 +67,8 @@ export const CHAT_MODELS: Record<AiModelId, ChatModelSpec> = {
     gatewayId: "spacexai/grok-4.7",
     keyField: "xai_api_key",
     rejectedSettings: ["presencePenalty", "frequencyPenalty", "stopSequences"],
+    // Grok defaults to high effort, which can outlast the route's time limit.
+    providerOptions: { xai: { reasoningEffort: "low" } },
   },
 };
 

@@ -10,10 +10,12 @@ import { getAuthenticatedUser } from "@/lib/auth/session";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { resolvePlatformModel } from "@/lib/ai/platformKeys";
+import { isAiTimeout } from "@/lib/ai/deadline";
 import {
   AI_FAILED_MESSAGE,
   AI_KEY_MISSING_MESSAGE,
   AI_RATE_LIMIT_MESSAGE,
+  AI_TIMEOUT_MESSAGE,
   AI_UNAVAILABLE_MESSAGE,
   OUT_OF_CREDITS_MESSAGE,
 } from "@/lib/ai/userMessages";
@@ -215,6 +217,9 @@ export async function generateText(
     }
     if (error instanceof InsufficientCreditsError) {
       return failure(OUT_OF_CREDITS_MESSAGE);
+    }
+    if (isAiTimeout(error)) {
+      return failure(AI_TIMEOUT_MESSAGE);
     }
     after(() => {
       console.warn(
