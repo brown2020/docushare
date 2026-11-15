@@ -2,6 +2,8 @@
 
 import { getApiKeyStatus, saveApiKeys } from "@/actions/apiKeyActions";
 import { API_KEY_FIELDS, type ApiKeyField } from "@/lib/ai/apiKeyFields";
+import { CHAT_MODELS } from "@/lib/ai/providerModels";
+import { AI_MODELS_LIST } from "@/lib/constants";
 import { creditsAvailableLabel } from "@/lib/billing/creditBalance";
 import { LoadingState } from "@/components/ui/LoadingState";
 import useProfileStore from "@/zustand/useProfileStore";
@@ -11,28 +13,26 @@ const FIELD_LABELS: Record<ApiKeyField, string> = {
   openai_api_key: "OpenAI API Key",
   anthropic_api_key: "Anthropic API Key",
   google_gen_ai_api_key: "Google Generative AI API Key",
-  mistral_api_key: "Mistral API Key",
-  fireworks_api_key: "Fireworks API Key",
+  xai_api_key: "xAI API Key",
 };
+
+const MODEL_LABEL_BY_FIELD = Object.fromEntries(
+  AI_MODELS_LIST.map((model) => [CHAT_MODELS[model].keyField, CHAT_MODELS[model].label])
+) as Record<ApiKeyField, string>;
+
+function emptyFieldMap<T>(value: T): Record<ApiKeyField, T> {
+  return Object.fromEntries(API_KEY_FIELDS.map((field) => [field, value])) as Record<
+    ApiKeyField,
+    T
+  >;
+}
 
 export default function ProfileComponent() {
   const credits = useProfileStore((state) => state.profile.credits);
   const creditsLoaded = useProfileStore((state) => state.creditsLoaded);
   const creditsLabel = creditsAvailableLabel(creditsLoaded, credits);
-  const [drafts, setDrafts] = useState<Record<ApiKeyField, string>>({
-    openai_api_key: "",
-    anthropic_api_key: "",
-    google_gen_ai_api_key: "",
-    mistral_api_key: "",
-    fireworks_api_key: "",
-  });
-  const [saved, setSaved] = useState<Record<ApiKeyField, boolean>>({
-    openai_api_key: false,
-    anthropic_api_key: false,
-    google_gen_ai_api_key: false,
-    mistral_api_key: false,
-    fireworks_api_key: false,
-  });
+  const [drafts, setDrafts] = useState<Record<ApiKeyField, string>>(() => emptyFieldMap(""));
+  const [saved, setSaved] = useState<Record<ApiKeyField, boolean>>(() => emptyFieldMap(false));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -59,13 +59,7 @@ export default function ProfileComponent() {
       await saveApiKeys(drafts);
       const status = await getApiKeyStatus();
       setSaved(status);
-      setDrafts({
-        openai_api_key: "",
-        anthropic_api_key: "",
-        google_gen_ai_api_key: "",
-        mistral_api_key: "",
-        fireworks_api_key: "",
-      });
+      setDrafts(emptyFieldMap(""));
       setMessage("API keys saved.");
     } catch {
       setMessage("Could not save API keys.");
@@ -89,7 +83,7 @@ export default function ProfileComponent() {
         {API_KEY_FIELDS.map((field) => (
           <div key={field} className="flex flex-col">
             <label htmlFor={field} className="text-base font-light mb-[5px]">
-              {FIELD_LABELS[field]}
+              {FIELD_LABELS[field]} ({MODEL_LABEL_BY_FIELD[field]})
               {saved[field] ? " (saved)" : ""}:
             </label>
             <input

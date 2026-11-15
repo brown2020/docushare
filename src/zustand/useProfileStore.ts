@@ -17,8 +17,7 @@ export interface ProfileType {
   openai_api_key: string;
   anthropic_api_key: string;
   google_gen_ai_api_key: string;
-  mistral_api_key: string;
-  fireworks_api_key: string;
+  xai_api_key: string;
 }
 
 // Updated defaultProfile with new API keys initialized
@@ -33,8 +32,7 @@ const defaultProfile: ProfileType = {
   openai_api_key: "",
   anthropic_api_key: "", // New API key default
   google_gen_ai_api_key: "", // New API key default
-  mistral_api_key: "", // New API key default
-  fireworks_api_key: "", // New API key default
+  xai_api_key: "",
 };
 
 interface AuthState {

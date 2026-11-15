@@ -1,20 +1,10 @@
 import { generateText } from "ai";
 import { match } from "ts-pattern";
-import { createOpenAI } from "@ai-sdk/openai";
 import { NextRequest, NextResponse } from "next/server";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createMistral } from "@ai-sdk/mistral";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import {
-  AI_MODEL_CLAUDE,
-  AI_MODEL_GEMINI,
-  AI_MODEL_GPT,
-  AI_MODEL_LLAMA,
-  AI_MODEL_MISTRAL,
-  DEFAULT_AI_MODEL,
-  RESPONSE_CODE,
-} from "@/lib/constants";
-import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
+import { DEFAULT_AI_MODEL, RESPONSE_CODE } from "@/lib/constants";
+import { callSettingsFor } from "@/lib/ai/providerModels";
+import { createChatModel } from "@/lib/ai/languageModel";
+import { resolvePlatformModel } from "@/lib/ai/platformKeys";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
 import { OUT_OF_CREDITS_MESSAGE, AI_KEY_MISSING_MESSAGE } from "@/lib/ai/userMessages";
@@ -50,28 +40,6 @@ type AiOption = (typeof AI_OPTIONS)[number];
 
 function isAiOption(value: unknown): value is AiOption {
   return typeof value === "string" && (AI_OPTIONS as readonly string[]).includes(value);
-}
-
-async function getModel(modelName: string, apiKey: string) {
-  switch (modelName) {
-    case AI_MODEL_GPT:
-      return createOpenAI({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_GPT]);
-    case AI_MODEL_GEMINI:
-      return createGoogleGenerativeAI({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_GEMINI]);
-    case AI_MODEL_MISTRAL:
-      return createMistral({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_MISTRAL]);
-    case AI_MODEL_CLAUDE:
-      return createAnthropic({ apiKey })(PROVIDER_MODEL_IDS[AI_MODEL_CLAUDE]);
-    case AI_MODEL_LLAMA: {
-      const fireworks = createOpenAI({
-        apiKey,
-        baseURL: "https://api.fireworks.ai/inference/v1",
-      });
-      return fireworks(PROVIDER_MODEL_IDS[AI_MODEL_LLAMA]);
-    }
-    default:
-      throw new Error(`Unsupported model name: ${modelName}`);
-  }
 }
 
 function outOfCredits() {
@@ -187,8 +155,8 @@ export const POST = async (req: NextRequest) => {
           { status: 400 }
         );
       }
-      apiKey = process.env.OPENAI_API_KEY ?? "";
-      if (!apiKey) {
+      const platform = resolvePlatformModel(modelOfUser.model);
+      if (!platform) {
         const refund = reserved;
         reserved = 0;
         if (refund > 0) await refundCredits(authUser.uid, refund);
@@ -201,19 +169,22 @@ export const POST = async (req: NextRequest) => {
           { status: 400 }
         );
       }
+      modelName = platform.model;
+      apiKey = platform.key;
     } else {
       modelName = modelOfUser.model;
       apiKey = modelOfUser.key;
     }
 
-    const aiModel = await getModel(modelName, apiKey);
     const { text } = await generateText({
-      model: aiModel,
+      model: createChatModel(modelName, apiKey),
       ...messages,
-      temperature: option === "improve" ? 0 : 0.7,
-      topP: 1,
-      frequencyPenalty: 0,
-      presencePenalty: 0,
+      ...callSettingsFor(modelName, {
+        temperature: option === "improve" ? 0 : 0.7,
+        topP: 1,
+        frequencyPenalty: 0,
+        presencePenalty: 0,
+      }),
     });
 
     if (reserved > 0) {

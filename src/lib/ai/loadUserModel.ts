@@ -1,6 +1,10 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { db, requireFirebaseAdmin } from "@/firebase/firebaseAdminConfig";
-import { API_KEY_FIELDS, type ApiKeyField } from "@/lib/ai/apiKeyFields";
+import {
+  API_KEY_FIELDS,
+  LEGACY_API_KEY_FIELDS,
+  type ApiKeyField,
+} from "@/lib/ai/apiKeyFields";
 import { resolveModelSelection, type KeyBag, type ModelSelection } from "@/lib/ai/resolveModel";
 import { USER_COLLECTION } from "@/lib/constants";
 
@@ -49,6 +53,9 @@ export async function loadUserKeyBag(uid: string): Promise<KeyBag> {
         if (!fromSecret) merged[field] = fromProfile;
       }
     }
+    for (const field of LEGACY_API_KEY_FIELDS) {
+      if (field in profileData) deletes[field] = FieldValue.delete();
+    }
 
     if (profileSnap.exists && Object.keys(deletes).length > 0) {
       const secretWrite: Partial<Record<ApiKeyField, string>> = {};
@@ -56,7 +63,9 @@ export async function loadUserKeyBag(uid: string): Promise<KeyBag> {
         const value = merged[field];
         if (typeof value === "string" && value) secretWrite[field] = value;
       }
-      tx.set(secrets, secretWrite, { merge: true });
+      if (Object.keys(secretWrite).length > 0) {
+        tx.set(secrets, secretWrite, { merge: true });
+      }
       tx.update(profile, deletes);
     }
 

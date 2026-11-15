@@ -126,7 +126,8 @@ describe("ai credit gate", () => {
       path.resolve(__dirname, "../../app/api/ai/route.ts"),
       "utf8"
     );
-    const missingKey = route.slice(route.indexOf("process.env.OPENAI_API_KEY"));
+    const missingKey = route.slice(route.indexOf("resolvePlatformModel(modelOfUser.model)"));
+    expect(missingKey.length).toBeLessThan(route.length);
     const keyReturn = missingKey.slice(0, missingKey.indexOf("modelName ="));
     expect(keyReturn).toContain("AI_KEY_MISSING_MESSAGE");
     expect(keyReturn).toContain("status: 400");

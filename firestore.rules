@@ -35,6 +35,7 @@ service cloud.firestore {
         'openai_api_key',
         'anthropic_api_key',
         'google_gen_ai_api_key',
+        'xai_api_key',
         'mistral_api_key',
         'fireworks_api_key'
       ]);
@@ -45,6 +46,7 @@ service cloud.firestore {
         && (!('openai_api_key' in request.resource.data) || request.resource.data.openai_api_key == '')
         && (!('anthropic_api_key' in request.resource.data) || request.resource.data.anthropic_api_key == '')
         && (!('google_gen_ai_api_key' in request.resource.data) || request.resource.data.google_gen_ai_api_key == '')
+        && (!('xai_api_key' in request.resource.data) || request.resource.data.xai_api_key == '')
         && (!('mistral_api_key' in request.resource.data) || request.resource.data.mistral_api_key == '')
         && (!('fireworks_api_key' in request.resource.data) || request.resource.data.fireworks_api_key == '');
     }

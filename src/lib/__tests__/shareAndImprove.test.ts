@@ -3,7 +3,6 @@ import path from "node:path";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IMPROVE_SYSTEM_PROMPT, improveUserPrompt } from "@/lib/ai/prompts";
-import { PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import {
   normalizeShareEmail,
   planShareWrite,
@@ -137,8 +136,6 @@ describe("improve writing prompt", () => {
     expect(route).toContain("IMPROVE_SYSTEM_PROMPT");
     expect(route).toContain('option === "improve" ? 0');
     expect(route).not.toContain("This sentence needs to be fixed");
-    expect(PROVIDER_MODEL_IDS["gpt-4o"]).toBe("gpt-4o");
-    expect(PROVIDER_MODEL_IDS["gemini-1.5-pro"]).toBe("gemini-2.5-pro");
-    expect(PROVIDER_MODEL_IDS["claude-3-5-sonnet"]).toBe("claude-sonnet-5-5");
+    expect(route).toContain("callSettingsFor(modelName");
   });
 });

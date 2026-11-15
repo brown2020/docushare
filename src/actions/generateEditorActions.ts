@@ -9,6 +9,7 @@ import { AIOptions } from "@/interfaces/general";
 import { getAuthenticatedUser } from "@/lib/auth/session";
 import { assertAiRateLimit, AiRateLimitError } from "@/lib/ai/rateLimit";
 import { resolveStoredModel } from "@/lib/ai/loadUserModel";
+import { resolvePlatformModel } from "@/lib/ai/platformKeys";
 import {
   AI_FAILED_MESSAGE,
   AI_KEY_MISSING_MESSAGE,
@@ -170,8 +171,8 @@ export async function generateText(
       }
       return failure(AI_KEY_MISSING_MESSAGE);
     }
-    apiKey = process.env.OPENAI_API_KEY ?? "";
-    if (!apiKey) {
+    const platform = resolvePlatformModel(modelOfUser.model);
+    if (!platform) {
       if (reserved > 0) {
         try {
           await refundCredits(authUser.uid, reserved);
@@ -181,6 +182,8 @@ export async function generateText(
       }
       return failure(AI_KEY_MISSING_MESSAGE);
     }
+    modelName = platform.model;
+    apiKey = platform.key;
   } else {
     modelName = modelOfUser.model;
     apiKey = modelOfUser.key;

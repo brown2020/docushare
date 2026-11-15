@@ -8,7 +8,7 @@ import {
 } from "@/lib/billing/checkout";
 import { OUT_OF_CREDITS_MESSAGE } from "@/lib/ai/userMessages";
 import { resolveModelSelection } from "@/lib/ai/resolveModel";
-import { PROVIDER_MODEL_IDS, RETIRED_PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
+import { RETIRED_PROVIDER_MODEL_IDS } from "@/lib/ai/providerModels";
 import { isSafeLinkHref } from "@/lib/links";
 import { isAllowedFontSize } from "@/lib/fontSize";
 import { canReadDocument, contentReferencesImage } from "@/lib/documents/access";
@@ -16,7 +16,7 @@ import { nextRevision } from "@/lib/documents/revision";
 import { isTrustedSessionRequest } from "@/lib/auth/requestOrigin";
 import { acceptsIdTokenSession } from "@/lib/auth/sessionPolicy";
 import { isSafeImageKey, sniffImageType } from "@/lib/images";
-import { AI_MODEL_CLAUDE, AI_MODEL_GPT, RESPONSE_CODE } from "@/lib/constants";
+import { AI_MODEL_CLAUDE, AI_MODEL_GPT, AI_MODEL_GROK, RESPONSE_CODE } from "@/lib/constants";
 
 const root = path.resolve(__dirname, "../../..");
 
@@ -93,6 +93,7 @@ describe("model selection", () => {
     expect(selected).toEqual({
       status: false,
       code: RESPONSE_CODE.api_key_not_found,
+      model: AI_MODEL_CLAUDE,
     });
   });
 
@@ -102,8 +103,21 @@ describe("model selection", () => {
   });
 
   it("uses the first available key when gpt is absent", () => {
-    const selected = resolveModelSelection({ mistral_api_key: "sk-mistral" });
-    expect(selected.status).toBe(true);
+    const selected = resolveModelSelection({ xai_api_key: "xai-key" });
+    expect(selected).toEqual({ status: true, model: AI_MODEL_GROK, key: "xai-key" });
+  });
+
+  it("ignores keys for removed providers", () => {
+    const legacyBag: Record<string, unknown> = {
+      mistral_api_key: "sk-mistral",
+      fireworks_api_key: "fw-key",
+    };
+    const selected = resolveModelSelection(legacyBag);
+    expect(selected).toEqual({
+      status: false,
+      code: RESPONSE_CODE.api_key_not_set,
+      model: AI_MODEL_GPT,
+    });
   });
 
   it("does not call the platform key from generateResponse", () => {
@@ -113,9 +127,9 @@ describe("model selection", () => {
     );
     expect(src).toMatch(/getAuthenticatedUser/);
     expect(src).not.toMatch(/OPENAI_API_KEY/);
+    expect(src).not.toMatch(/process\.env\.[A-Z_]*API_KEY/);
     for (const retired of RETIRED_PROVIDER_MODEL_IDS) {
       expect(src).not.toContain(retired);
-      expect(PROVIDER_MODEL_IDS["claude-3-5-sonnet"]).not.toBe(retired);
     }
   });
 });
@@ -231,8 +245,8 @@ describe("rules", () => {
       expect(aiRoute).not.toContain(retired);
       expect(actions).not.toContain(retired);
     }
-    expect(PROVIDER_MODEL_IDS["gemini-1.5-pro"]).toBe("gemini-2.5-pro");
-    expect(PROVIDER_MODEL_IDS["claude-3-5-sonnet"]).toBe("claude-sonnet-5-5");
+    expect(aiRoute).not.toMatch(/@ai-sdk\/mistral|fireworks/i);
+    expect(actions).not.toMatch(/@ai-sdk\/mistral|fireworks/i);
     expect(aiRoute).toMatch(/resolveStoredModel/);
   });
 });
