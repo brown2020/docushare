@@ -9,7 +9,7 @@ Verified from the current codebase:
 - **Document dashboard** — create, open, list, and delete docs; document stats API
 - **Rich editor** — TipTap 3 (headings, links, images, underline, align, font family/size, typography, markdown bridge)
 - **Sharing** — share documents with other users by email (`/api/share`)
-- **AI writing assist** — `/api/ai` routes to OpenAI, Anthropic, Google, or Mistral based on API keys stored on the user profile
+- **AI writing assist** — `/api/ai` routes to OpenAI GPT-6.1 Sol (default), Anthropic Claude Opus 5.5, Google Gemini 4 Argon, or xAI Grok 4.7 based on API keys stored on the user profile
 - **Auth** — Firebase email/password and Google sign-in, plus HttpOnly session cookies (`/api/auth/session`); route protection via `src/proxy.ts`
 - **Profile & credits** — store provider keys; Stripe payment attempt/success flows
 - **Uploads** — authenticated `/api/image` for images plus PDF, TXT, MD, CSV, and DOCX (5 MB). Unsupported types return an error. Extracted document text is placed in the editor for AI.
@@ -24,7 +24,7 @@ Verified from the current codebase:
 | UI | React 19, Tailwind CSS 4, Radix, Lucide, Floating UI |
 | Editor | TipTap 3 (+ collaboration extensions / Yjs-related packages in deps) |
 | Language | TypeScript 6.0.3. TypeScript 7 is not used: it does not ship a compiler API, which ESLint and Next.js need |
-| AI | Vercel AI SDK 7 + `@ai-sdk/openai`, `anthropic`, `google`, `mistral`; `openai` SDK |
+| AI | Vercel AI SDK 7 + `@ai-sdk/openai`, `anthropic`, `google`, `xai`; `openai` SDK |
 | Backend | Firebase 13 + firebase-admin 14 |
 | Payments | Stripe |
 | Validation | Zod 4 |
@@ -96,8 +96,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `FIREBASE_AUTH_URI` / `FIREBASE_TOKEN_URI` / `FIREBASE_AUTH_PROVIDER_X509_CERT_URL` / `FIREBASE_CLIENT_CERTS_URL` / `FIREBASE_UNIVERSE_DOMAIN` | Admin OAuth metadata | Same / Google defaults |
 | `FIREBASE_STORAGE_BUCKET` | Admin storage bucket | Same |
 | `FIREBASE_DATABASE_URL` | Optional RTDB URL if referenced | Firebase Console |
-| `OPENAI_API_KEY` | Server OpenAI fallback | [platform.openai.com](https://platform.openai.com) |
-| `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `MISTRAL_API_KEY`, `FIREWORKS_API_KEY` | Listed in `.env.example`; primary AI keys for chat are stored on the **user profile** | Respective provider consoles |
+| `OPENAI_API_KEY` | Server fallback for GPT-6.1 Sol, the default model | [platform.openai.com](https://platform.openai.com) |
+| `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `XAI_API_KEY` | Optional server fallbacks for Claude Opus 5.5, Gemini 4 Argon, and Grok 4.7 when a user has saved no key and selected that model; primary AI keys for chat are stored on the **user profile** | Respective provider consoles |
 | `NEXT_PUBLIC_STRIPE_KEY` | Stripe publishable key | Stripe Dashboard |
 | `STRIPE_SECRET_KEY` | Stripe secret key | Stripe Dashboard |
 | `NEXT_PUBLIC_STRIPE_PRODUCT_NAME` | Product name for credits | Stripe product config |

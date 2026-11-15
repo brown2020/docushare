@@ -14,7 +14,7 @@ DocuShare is a collaborative document authoring platform with AI-assisted writin
 - **Auth:** Firebase Authentication (email/password, magic link, Google OAuth)
 - **Database:** Firebase Firestore + Storage
 - **Payments:** Stripe
-- **AI:** Vercel AI SDK with OpenAI, Anthropic, Google, Mistral providers
+- **AI:** Vercel AI SDK with OpenAI, Anthropic, Google, xAI providers
 - **State:** Zustand
 
 ## Commands
@@ -102,7 +102,7 @@ const userId = authUser.uid;
 **Server-side:**
 - Firebase admin credentials (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)
 - Stripe secret key
-- AI provider API keys (OpenAI, Anthropic, Google, Mistral)
+- AI provider API keys (OpenAI, Anthropic, Google, xAI)
 - `IS_UAT=1` for staging/demo mode
 
 ## Firestore Collections
@@ -141,7 +141,7 @@ No testing framework implemented yet. Contributions welcome.
 
 ### Adding new AI functionality
 1. Add server action in `src/actions/generateActions.ts`
-2. Use `getModel()` helper for provider abstraction
+2. Use `createChatModel()` from `@/lib/ai/languageModel` and `callSettingsFor()` from `@/lib/ai/providerModels`
 3. Handle `IS_UAT` flag for test mode
 
 ### Adding a protected route
